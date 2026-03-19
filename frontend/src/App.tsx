@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { DragEvent, FormEvent } from 'react'
 import './App.css'
 
 type Project = {
@@ -140,6 +140,9 @@ function App() {
 
   const [taskDraftStatus, setTaskDraftStatus] = useState<Record<string, number>>({})
   const [taskDraftAssignee, setTaskDraftAssignee] = useState<Record<string, string>>({})
+  const [draggedWorkItemId, setDraggedWorkItemId] = useState<string>('')
+  const [dragTargetStatus, setDragTargetStatus] = useState<number | null>(null)
+  const draggedWorkItemRef = useRef<string>('')
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -359,6 +362,51 @@ function App() {
     await loadProjectViews(selectedProjectId)
   }
 
+  function handleTaskDragStart(event: DragEvent<HTMLDivElement>, workItemId: string) {
+    draggedWorkItemRef.current = workItemId
+    event.dataTransfer.setData('text/work-item-id', workItemId)
+    event.dataTransfer.effectAllowed = 'move'
+    setDraggedWorkItemId(workItemId)
+  }
+
+  function handleTaskDragEnd() {
+    draggedWorkItemRef.current = ''
+    setDraggedWorkItemId('')
+    setDragTargetStatus(null)
+  }
+
+  async function handleTaskDrop(targetStatus: number, workItemId: string) {
+    if (!workItemId || !activeSprint || !selectedProjectId) {
+      setDragTargetStatus(null)
+      return
+    }
+
+    const task = activeSprint.workItems.find((item) => item.id === workItemId)
+    if (!task) {
+      setDragTargetStatus(null)
+      return
+    }
+
+    setTaskDraftStatus((prev) => ({ ...prev, [workItemId]: targetStatus }))
+    await api(`/api/work-items/${workItemId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({
+        status: targetStatus,
+        assignee: (taskDraftAssignee[workItemId] ?? task.assignee ?? '').trim(),
+      }),
+    })
+
+    draggedWorkItemRef.current = ''
+    setDraggedWorkItemId('')
+    setDragTargetStatus(null)
+    await loadProjectViews(selectedProjectId)
+  }
+
+  function getDroppedWorkItemId(event: DragEvent<HTMLElement>): string {
+    const payload = event.dataTransfer.getData('text/work-item-id')
+    return payload || draggedWorkItemRef.current
+  }
+
   function toggleBacklogSelection(backlogItemId: string) {
     setSelectedBacklogIds((previous) =>
       previous.includes(backlogItemId)
@@ -572,11 +620,35 @@ function App() {
               </article>
 
               {[0, 1, 2, 3].map((columnStatus) => (
-                <article className="kanban-column" key={columnStatus}>
+                <article
+                  className={dragTargetStatus === columnStatus ? 'kanban-column kanban-drop-target' : 'kanban-column'}
+                  key={columnStatus}
+                  onDragOver={(event) => {
+                    event.preventDefault()
+                    setDragTargetStatus(columnStatus)
+                  }}
+                  onDragLeave={() => setDragTargetStatus((prev) => (prev === columnStatus ? null : prev))}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    const droppedWorkItemId = getDroppedWorkItemId(event)
+                    void handleTaskDrop(columnStatus, droppedWorkItemId)
+                  }}
+                >
                   <h3>{workItemStatusLabels[columnStatus]}</h3>
                   <ul className="list compact">
                     {(sprintBoard[columnStatus] ?? []).map((item) => (
-                      <li key={item.id} className="ticket">
+                      <li
+                        key={item.id}
+                        className={draggedWorkItemId === item.id ? 'ticket ticket-dragging' : 'ticket'}
+                      >
+                        <div
+                          className="task-drag-handle"
+                          draggable
+                          onDragStart={(event) => handleTaskDragStart(event, item.id)}
+                          onDragEnd={handleTaskDragEnd}
+                        >
+                          Arrastar
+                        </div>
                         <strong>{item.title}</strong>
                         <span>{item.description}</span>
                         <span>Assignee: {item.assignee || 'nao definido'}</span>
