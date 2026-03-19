@@ -18,8 +18,14 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
-    db.Database.Migrate();
+    if (app.Environment.IsEnvironment("Testing"))
+    {
+        db.Database.EnsureCreated();
+    }
+    else
+    {
+        db.Database.Migrate();
+    }
 }
 
 app.UseSwagger();
@@ -76,7 +82,20 @@ app.MapGet("/api/projects/{projectId:guid}/sprints", async (Guid projectId, AppD
             s.StartDate,
             s.EndDate,
             s.Status,
-            WorkItems = db.WorkItems.Where(w => w.SprintId == s.Id).OrderBy(w => w.CreatedAt).ToList()
+            WorkItems = db.WorkItems
+                .Where(w => w.SprintId == s.Id)
+                .OrderBy(w => w.CreatedAt)
+                .Select(w => new
+                {
+                    w.Id,
+                    w.Title,
+                    w.Description,
+                    w.Assignee,
+                    w.Status,
+                    w.CreatedAt,
+                    w.UpdatedAt
+                })
+                .ToList()
         })
         .ToListAsync(ct);
 
@@ -87,7 +106,20 @@ app.MapPost("/api/projects/{projectId:guid}/sprints", async (Guid projectId, Cre
 {
     try
     {
-        return Results.Created($"/api/projects/{projectId}/sprints", await service.CreateSprintAsync(projectId, request, ct));
+        var sprint = await service.CreateSprintAsync(projectId, request, ct);
+        return Results.Created(
+            $"/api/projects/{projectId}/sprints/{sprint.Id}",
+            new
+            {
+                sprint.Id,
+                sprint.ProjectId,
+                sprint.Name,
+                sprint.Goal,
+                sprint.StartDate,
+                sprint.EndDate,
+                sprint.Status,
+                sprint.CreatedAt
+            });
     }
     catch (InvalidOperationException ex)
     {
@@ -245,3 +277,5 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
 });
 
 app.Run();
+
+public partial class Program;
