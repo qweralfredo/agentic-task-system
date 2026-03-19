@@ -1,8 +1,10 @@
 import {
+  Box,
   Card,
   CardContent,
   Chip,
   Grid,
+  Skeleton,
   Stack,
   Typography,
 } from '@mui/material'
@@ -24,11 +26,33 @@ export function DashboardPage() {
   const { selectedProject, dashboard } = useProjectContext()
 
   if (!selectedProject) {
-    return <Typography>Selecione um projeto para visualizar o dashboard.</Typography>
+    return (
+      <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+        <CardContent>
+          <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
+            <Typography variant="h6">Nenhum projeto selecionado</Typography>
+            <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 480 }}>
+              Selecione um projeto no topo para visualizar capacidade da sprint, progresso de tasks e indicadores de conhecimento.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (!dashboard) {
-    return <Typography>Carregando metricas...</Typography>
+    return (
+      <Box>
+        <Skeleton variant="rounded" height={110} sx={{ mb: 2 }} />
+        <Grid container spacing={2}>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+              <Skeleton variant="rounded" height={110} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    )
   }
 
   return (

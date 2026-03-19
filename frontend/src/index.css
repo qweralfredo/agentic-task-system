@@ -6,9 +6,9 @@
   font-weight: 400;
   color: #0d223b;
   background:
-    radial-gradient(circle at 14% 6%, #f6dfa8 0%, #f0ead3 28%, transparent 58%),
-    radial-gradient(circle at 86% 16%, #bfd8f0 0%, #dce9f5 24%, transparent 52%),
-    linear-gradient(180deg, #f3f7fb 0%, #edf3f8 100%);
+    radial-gradient(circle at 10% 0%, #e8eff6 0%, transparent 38%),
+    radial-gradient(circle at 90% 4%, #eaf1f8 0%, transparent 32%),
+    linear-gradient(180deg, #f4f7fb 0%, #eef2f7 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

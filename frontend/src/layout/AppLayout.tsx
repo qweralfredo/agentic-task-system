@@ -7,18 +7,22 @@ import {
   AppBar,
   Box,
   Button,
+  Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Drawer,
   FormControl,
   InputLabel,
+  LinearProgress,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   MenuItem,
+  Paper,
   Select,
   Stack,
   TextField,
@@ -29,7 +33,7 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useProjectContext } from '../context/useProjectContext'
 
-const drawerWidth = 268
+const drawerWidth = 244
 
 const menu = [
   { label: 'Dashboard', to: '/', icon: <DashboardOutlinedIcon /> },
@@ -53,6 +57,7 @@ export function AppLayout() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
+  const showErrorBanner = Boolean(error && selectedProjectId)
 
   const pageTitle = useMemo(
     () => menu.find((item) => item.to === location.pathname)?.label ?? 'Project Space',
@@ -78,10 +83,10 @@ export function AppLayout() {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, minHeight: 68 }}>
           <Box>
             <Typography variant="h6">Agentic Jira Flow</Typography>
-            <Typography variant="body2" sx={{ opacity: 0.85 }}>
+            <Typography variant="caption" sx={{ opacity: 0.88 }}>
               Projeto &gt; Backlog &gt; Sprint &gt; Tasks &gt; Knowledge
             </Typography>
           </Box>
@@ -102,7 +107,7 @@ export function AppLayout() {
                 ))}
               </Select>
             </FormControl>
-            <Button variant="contained" color="secondary" onClick={() => setDialogOpen(true)}>
+            <Button variant="contained" color="secondary" onClick={() => setDialogOpen(true)} sx={{ px: 2.2 }}>
               Novo projeto
             </Button>
           </Stack>
@@ -118,7 +123,7 @@ export function AppLayout() {
             width: drawerWidth,
             boxSizing: 'border-box',
             borderRight: '1px solid #d8e2ed',
-            background: 'linear-gradient(180deg, #f9fcff 0%, #f2f7fb 100%)',
+            backgroundColor: '#f7f9fc',
           },
         }}
       >
@@ -133,6 +138,7 @@ export function AppLayout() {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {selectedProject?.description ?? 'Crie ou selecione um projeto para começar.'}
           </Typography>
+          <Divider sx={{ mt: 1.6 }} />
         </Box>
 
         <List sx={{ px: 1.4 }}>
@@ -146,14 +152,14 @@ export function AppLayout() {
                 sx={{
                   borderRadius: 2,
                   mb: 0.6,
-                  bgcolor: isActive ? 'primary.light' : 'transparent',
-                  color: isActive ? '#fff' : 'text.primary',
+                  bgcolor: isActive ? 'rgba(15, 76, 129, 0.10)' : 'transparent',
+                  color: isActive ? 'primary.dark' : 'text.primary',
                   ['&:hover']: {
-                    bgcolor: isActive ? 'primary.main' : 'rgba(15, 76, 129, 0.08)',
+                    bgcolor: 'rgba(15, 76, 129, 0.10)',
                   },
                 }}
               >
-                <ListItemIcon sx={{ color: isActive ? '#fff' : 'primary.main', minWidth: 36 }}>
+                <ListItemIcon sx={{ color: 'primary.main', minWidth: 36 }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText primary={item.label} />
@@ -163,13 +169,30 @@ export function AppLayout() {
         </List>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, mt: 8 }}>
-        <Stack spacing={2}>
-          <Typography variant="h4">{pageTitle}</Typography>
-          {error ? <Alert severity="error">{error}</Alert> : null}
-          {loading ? <Alert severity="info">Atualizando dados do projeto...</Alert> : null}
-          <Outlet />
-        </Stack>
+      <Box component="main" sx={{ flexGrow: 1, mt: 8, pb: 3 }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, md: 3 } }}>
+          <Paper
+            elevation={0}
+            sx={{
+              border: '1px solid #dde6f0',
+              borderRadius: 3,
+              p: { xs: 2, md: 2.5 },
+              backgroundColor: 'rgba(255, 255, 255, 0.82)',
+              backdropFilter: 'blur(3px)',
+            }}
+          >
+            <Stack spacing={1.4}>
+              <Typography variant="h4">{pageTitle}</Typography>
+              {loading ? <LinearProgress sx={{ borderRadius: 999, height: 6 }} /> : null}
+              {showErrorBanner ? (
+                <Alert severity="error" variant="outlined" sx={{ py: 0.25 }}>
+                  {error}
+                </Alert>
+              ) : null}
+              <Outlet />
+            </Stack>
+          </Paper>
+        </Container>
       </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">

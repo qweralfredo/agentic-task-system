@@ -193,7 +193,18 @@ export function SprintsPage() {
   }
 
   if (!selectedProject) {
-    return <Typography>Selecione um projeto para gerenciar sprints.</Typography>
+    return (
+      <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+        <CardContent>
+          <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
+            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 520 }}>
+              Selecione um projeto para montar sprint, distribuir tarefas no kanban e acompanhar o fluxo.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

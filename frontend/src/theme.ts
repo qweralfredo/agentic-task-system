@@ -4,17 +4,17 @@ export const appTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#0f4c81',
-      light: '#4f78a0',
-      dark: '#0b355a',
+      main: '#1e5a8a',
+      light: '#7ea5c3',
+      dark: '#164466',
     },
     secondary: {
-      main: '#00796b',
-      light: '#4db6ac',
-      dark: '#004d40',
+      main: '#1d7f74',
+      light: '#67b2a8',
+      dark: '#11554e',
     },
     background: {
-      default: '#eef3f7',
+      default: '#f1f4f8',
       paper: '#ffffff',
     },
   },
@@ -37,14 +37,22 @@ export const appTheme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: '0 10px 24px rgba(23, 40, 65, 0.10)',
+          boxShadow: '0 4px 12px rgba(23, 40, 65, 0.06)',
         },
       },
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'linear-gradient(90deg, #0f4c81 0%, #1a659e 58%, #2288b9 100%)',
+          backgroundColor: '#1f5b89',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 700,
         },
       },
     },

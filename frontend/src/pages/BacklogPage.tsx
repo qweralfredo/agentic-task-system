@@ -43,7 +43,18 @@ export function BacklogPage() {
   }
 
   if (!selectedProject) {
-    return <Typography>Selecione um projeto para gerenciar o backlog.</Typography>
+    return (
+      <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+        <CardContent>
+          <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
+            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 520 }}>
+              Escolha um projeto para criar stories, priorizar backlog e organizar o planejamento de sprint.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

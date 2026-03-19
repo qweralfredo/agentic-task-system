@@ -99,7 +99,18 @@ export function KnowledgePage() {
   }
 
   if (!selectedProject) {
-    return <Typography>Selecione um projeto para acessar a base de conhecimento.</Typography>
+    return (
+      <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+        <CardContent>
+          <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
+            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 540 }}>
+              Selecione um projeto para cadastrar wiki, checkpoints e documentação da execução.
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
