@@ -1,13 +1,16 @@
 # Backup e Restore PostgreSQL
 
-## Backup automatico em disco local
+## Backup em disco local fora do Docker
 
-No `docker-compose.yml`, o servico `postgres-backup` salva dumps diarios em:
+Os backups sao gerados por script PowerShell no host (Windows), nao por container.
 
 - `ops/postgres/backups`
 
-Retencao configurada:
-- 30 dias
+Comando:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\ops\scripts\backup-postgres.ps1
+```
 
 ## Persistencia do banco
 
@@ -19,7 +22,7 @@ Dados do Postgres:
 Com stack subida, restaure um arquivo dump com:
 
 ```powershell
-docker exec -i agentic-postgres psql -U agentic -d agentic_todolist < .\ops\postgres\backups\SEU_ARQUIVO.sql
+powershell -ExecutionPolicy Bypass -File .\ops\scripts\restore-postgres.ps1 -FilePath .\ops\postgres\backups\SEU_ARQUIVO.sql
 ```
 
 ## Verificacao
@@ -27,6 +30,6 @@ docker exec -i agentic-postgres psql -U agentic -d agentic_todolist < .\ops\post
 1. Suba a stack
    - `docker compose up -d`
 2. Verifique API
-   - `curl http://localhost:8080/health`
+   - `curl http://localhost:58080/health`
 3. Acesse UI
-   - `http://localhost:3000`
+   - `http://localhost:53000`

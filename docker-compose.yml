@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: agentic
       POSTGRES_PASSWORD: agentic
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - ./ops/postgres/data:/var/lib/postgresql/data
     healthcheck:
@@ -27,29 +27,15 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=agentic_todolist;Username=agentic;Password=agentic
     ports:
-      - "8080:8080"
+      - "58080:8080"
 
   frontend:
     build:
       context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:58080
     container_name: agentic-frontend
     depends_on:
       - api
     ports:
-      - "3000:80"
-
-  postgres-backup:
-    image: prodrigestivill/postgres-backup-local:17
-    container_name: agentic-postgres-backup
-    depends_on:
-      - postgres
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_DB: agentic_todolist
-      POSTGRES_USER: agentic
-      POSTGRES_PASSWORD: agentic
-      SCHEDULE: "@daily"
-      BACKUP_KEEP_DAYS: "30"
-      BACKUP_DIR: /backups
-    volumes:
-      - ./ops/postgres/backups:/backups
+      - "53000:80"

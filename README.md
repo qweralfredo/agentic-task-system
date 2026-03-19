@@ -16,7 +16,9 @@ Plataforma completa para gestao de desenvolvimento de software com foco em uso h
 - `frontend`: dashboard web React
 - `docker-compose.yml`: stack completa
 - `ops/postgres/data`: dados persistidos do Postgres no host
-- `ops/postgres/backups`: backups diarios persistidos no host
+- `ops/postgres/backups`: backups gerados no host (fora do Docker)
+- `ops/scripts/backup-postgres.ps1`: script de backup no host
+- `ops/scripts/restore-postgres.ps1`: script de restore no host
 
 ## Funcionalidades principais
 
@@ -67,6 +69,20 @@ Tools disponiveis:
 
 - `docker compose up -d --build`
 
+Portas publicadas no host (portas altas):
+- PostgreSQL: `55432`
+- API: `58080`
+- Frontend: `53000`
+
+## Backup fora do Docker (host)
+
+Com stack ativa, execute:
+
+- Backup:
+   - `powershell -ExecutionPolicy Bypass -File .\ops\scripts\backup-postgres.ps1`
+- Restore:
+   - `powershell -ExecutionPolicy Bypass -File .\ops\scripts\restore-postgres.ps1 -FilePath .\ops\postgres\backups\NOME_ARQUIVO.sql`
+
 Observacao: se Docker Desktop nao estiver em execucao no Windows, o compose falhara ao conectar no engine.
 
 ## Endpoints REST
@@ -92,8 +108,8 @@ Observacao: se Docker Desktop nao estiver em execucao no Windows, o compose falh
 - `dotnet test AgenticTodoList.slnx --collect:"XPlat Code Coverage"`
 
 Status atual:
-- Testes passando: 4/4
-- Cobertura medida: 27.52% (necessario ampliar para meta >= 80%)
+- Testes passando: 24/24
+- Cobertura medida (line): 97.66%
 
 ## Sem fallback e sem mock
 
