@@ -1,12 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap');
+
 :root {
-  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Verdana, sans-serif;
+  font-family: 'Nunito Sans', 'Segoe UI', sans-serif;
   line-height: 1.4;
   font-weight: 400;
   color: #0d223b;
   background:
-    radial-gradient(circle at 12% 8%, #f6d991 0%, #f4e8bf 24%, transparent 56%),
-    radial-gradient(circle at 82% 22%, #c2d8ee 0%, #d8e7f6 26%, transparent 55%),
-    linear-gradient(180deg, #f4efe1 0%, #f0f5f9 100%);
+    radial-gradient(circle at 14% 6%, #f6dfa8 0%, #f0ead3 28%, transparent 58%),
+    radial-gradient(circle at 86% 16%, #bfd8f0 0%, #dce9f5 24%, transparent 52%),
+    linear-gradient(180deg, #f3f7fb 0%, #edf3f8 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -20,6 +22,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: transparent;
 }
 
 #root {
