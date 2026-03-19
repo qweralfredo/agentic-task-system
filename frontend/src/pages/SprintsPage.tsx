@@ -32,24 +32,80 @@ export function SprintsPage() {
   const [taskDraftAssignee, setTaskDraftAssignee] = useState<Record<string, string>>({})
   const [draggedWorkItemId, setDraggedWorkItemId] = useState('')
   const [dragTargetStatus, setDragTargetStatus] = useState<number | null>(null)
+  const [selectedBoardSprintId, setSelectedBoardSprintId] = useState('')
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
   const draggedWorkItemRef = useRef('')
+
+  const fallbackBoardSprintId =
+    sprints.find((sprint) => toNumberStatus(sprint.status) === 1)?.id ?? sprints[0]?.id ?? ''
+  const boardSprintId = selectedBoardSprintId || fallbackBoardSprintId
+
+  const boardSprint = useMemo(
+    () =>
+      sprints.find((sprint) => sprint.id === boardSprintId) ??
+      sprints.find((sprint) => toNumberStatus(sprint.status) === 1) ??
+      sprints[0] ??
+      null,
+    [boardSprintId, sprints],
+  )
 
   const activeSprint = useMemo(
     () => sprints.find((sprint) => toNumberStatus(sprint.status) === 1) ?? sprints[0] ?? null,
     [sprints],
   )
 
+  const workItemPriorityByTitle = useMemo(
+    () =>
+      backlog.reduce<Record<string, number>>((acc, item) => {
+        acc[item.title.trim().toLowerCase()] = item.priority
+        return acc
+      }, {}),
+    [backlog],
+  )
+
+  const availableAssignees = useMemo(() => {
+    const assignees = new Set<string>()
+    const items = boardSprint?.workItems ?? []
+    for (const item of items) {
+      const currentAssignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
+      if (currentAssignee) {
+        assignees.add(currentAssignee)
+      }
+    }
+    return Array.from(assignees).sort((a, b) => a.localeCompare(b))
+  }, [boardSprint, taskDraftAssignee])
+
+  const availablePriorities = useMemo(() => {
+    const priorities = new Set<number>()
+    for (const item of boardSprint?.workItems ?? []) {
+      const priority = workItemPriorityByTitle[item.title.trim().toLowerCase()]
+      if (typeof priority === 'number') {
+        priorities.add(priority)
+      }
+    }
+    return Array.from(priorities).sort((a, b) => a - b)
+  }, [boardSprint, workItemPriorityByTitle])
+
   const sprintBoard = useMemo(() => {
-    const columns: Record<number, typeof activeSprint.workItems> = { 0: [], 1: [], 2: [], 3: [] }
-    const items = activeSprint?.workItems ?? []
+    const columns: Record<number, typeof boardSprint.workItems> = { 0: [], 1: [], 2: [], 3: [] }
+    const items = boardSprint?.workItems ?? []
     for (const item of items) {
       const status = toNumberStatus(item.status)
-      if (columns[status]) {
+      const assignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
+      const priority = workItemPriorityByTitle[item.title.trim().toLowerCase()]
+
+      const matchesAssignee = assigneeFilter === 'all' || assignee === assigneeFilter
+      const matchesPriority =
+        priorityFilter === 'all' ||
+        (typeof priority === 'number' && String(priority) === priorityFilter)
+
+      if (columns[status] && matchesAssignee && matchesPriority) {
         columns[status].push(item)
       }
     }
     return columns
-  }, [activeSprint])
+  }, [assigneeFilter, boardSprint, priorityFilter, taskDraftAssignee, workItemPriorityByTitle])
 
   function toggleBacklogSelection(backlogItemId: string) {
     setSelectedBacklogIds((previous) =>
@@ -78,12 +134,12 @@ export function SprintsPage() {
   }
 
   async function handleTaskDrop(targetStatus: number, workItemId: string) {
-    if (!workItemId || !activeSprint || !selectedProjectId) {
+    if (!workItemId || !boardSprint || !selectedProjectId) {
       setDragTargetStatus(null)
       return
     }
 
-    const task = activeSprint.workItems.find((item) => item.id === workItemId)
+    const task = boardSprint.workItems.find((item) => item.id === workItemId)
     if (!task) {
       setDragTargetStatus(null)
       return
@@ -222,11 +278,74 @@ export function SprintsPage() {
         </CardContent>
       </Card>
 
-      {!activeSprint ? (
+      <Card>
+        <CardContent>
+          <Typography variant="h6">Filtros do Board</Typography>
+          <Grid container spacing={1.2} sx={{ mt: 0.6 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel id="board-sprint-label">Sprint</InputLabel>
+                <Select
+                  labelId="board-sprint-label"
+                  label="Sprint"
+                  value={boardSprintId}
+                  onChange={(event) => setSelectedBoardSprintId(event.target.value)}
+                >
+                  {sprints.map((sprint) => (
+                    <MenuItem key={sprint.id} value={sprint.id}>
+                      {sprint.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel id="board-assignee-label">Assignee</InputLabel>
+                <Select
+                  labelId="board-assignee-label"
+                  label="Assignee"
+                  value={assigneeFilter}
+                  onChange={(event) => setAssigneeFilter(event.target.value)}
+                >
+                  <MenuItem value="all">Todos</MenuItem>
+                  {availableAssignees.map((assignee) => (
+                    <MenuItem key={assignee} value={assignee}>
+                      {assignee}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 4 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel id="board-priority-label">Prioridade</InputLabel>
+                <Select
+                  labelId="board-priority-label"
+                  label="Prioridade"
+                  value={priorityFilter}
+                  onChange={(event) => setPriorityFilter(event.target.value)}
+                >
+                  <MenuItem value="all">Todas</MenuItem>
+                  {availablePriorities.map((priority) => (
+                    <MenuItem key={priority} value={String(priority)}>
+                      P{priority}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {!boardSprint ? (
         <Alert severity="info">Crie uma sprint para visualizar o quadro Kanban.</Alert>
       ) : (
         <Stack spacing={1.2}>
-          <Typography variant="h6">Kanban da Sprint: {activeSprint.name}</Typography>
+          <Typography variant="h6">Kanban da Sprint: {boardSprint.name}</Typography>
           <Grid container spacing={1.2}>
             {[0, 1, 2, 3].map((columnStatus) => (
               <Grid key={columnStatus} size={{ xs: 12, md: 6, lg: 3 }}>
