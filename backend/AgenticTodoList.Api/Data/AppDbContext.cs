@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<WorkItemEntity> WorkItems => Set<WorkItemEntity>();
     public DbSet<ReviewEntity> Reviews => Set<ReviewEntity>();
     public DbSet<WikiPageEntity> WikiPages => Set<WikiPageEntity>();
+    public DbSet<DocumentationPageEntity> DocumentationPages => Set<DocumentationPageEntity>();
     public DbSet<KnowledgeCheckpointEntity> KnowledgeCheckpoints => Set<KnowledgeCheckpointEntity>();
     public DbSet<AgentRunLogEntity> AgentRunLogs => Set<AgentRunLogEntity>();
 
@@ -42,9 +43,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(w => new { w.ProjectId, w.Title })
             .IsUnique();
 
+        modelBuilder.Entity<WikiPageEntity>()
+            .Property(w => w.Category)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<DocumentationPageEntity>()
+            .Property(d => d.Category)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<DocumentationPageEntity>()
+            .HasIndex(d => new { d.ProjectId, d.Category, d.Title });
+
         modelBuilder.Entity<KnowledgeCheckpointEntity>()
             .Property(k => k.Name)
             .HasMaxLength(150);
+
+        modelBuilder.Entity<KnowledgeCheckpointEntity>()
+            .Property(k => k.Category)
+            .HasMaxLength(120);
 
         modelBuilder.Entity<AgentRunLogEntity>()
             .HasIndex(a => new { a.ProjectId, a.AgentName, a.StartedAt });

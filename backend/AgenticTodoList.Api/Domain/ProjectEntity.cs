@@ -10,6 +10,7 @@ public class ProjectEntity
     public List<BacklogItemEntity> BacklogItems { get; set; } = [];
     public List<SprintEntity> Sprints { get; set; } = [];
     public List<WikiPageEntity> WikiPages { get; set; } = [];
+    public List<DocumentationPageEntity> DocumentationPages { get; set; } = [];
     public List<KnowledgeCheckpointEntity> KnowledgeCheckpoints { get; set; } = [];
     public List<AgentRunLogEntity> AgentRuns { get; set; } = [];
 }

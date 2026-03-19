@@ -1,6 +1,6 @@
 namespace AgenticTodoList.Api.Domain;
 
-public class WikiPageEntity
+public class DocumentationPageEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ProjectId { get; set; }

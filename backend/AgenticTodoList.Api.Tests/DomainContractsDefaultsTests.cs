@@ -14,6 +14,7 @@ public class DomainContractsDefaultsTests
         var workItem = new WorkItemEntity();
         var review = new ReviewEntity();
         var wiki = new WikiPageEntity();
+        var doc = new DocumentationPageEntity();
         var checkpoint = new KnowledgeCheckpointEntity();
         var run = new AgentRunLogEntity();
 
@@ -23,6 +24,7 @@ public class DomainContractsDefaultsTests
         Assert.NotEqual(Guid.Empty, workItem.Id);
         Assert.NotEqual(Guid.Empty, review.Id);
         Assert.NotEqual(Guid.Empty, wiki.Id);
+        Assert.NotEqual(Guid.Empty, doc.Id);
         Assert.NotEqual(Guid.Empty, checkpoint.Id);
         Assert.NotEqual(Guid.Empty, run.Id);
 
@@ -32,6 +34,7 @@ public class DomainContractsDefaultsTests
         Assert.Equal(string.Empty, workItem.Title);
         Assert.Equal(string.Empty, review.Type);
         Assert.Equal(string.Empty, wiki.Title);
+        Assert.Equal(string.Empty, doc.Title);
         Assert.Equal(string.Empty, checkpoint.Name);
         Assert.Equal(string.Empty, run.AgentName);
 
@@ -50,6 +53,7 @@ public class DomainContractsDefaultsTests
         var review = new AddReviewRequest("review", "sum", "notes");
         var wiki = new AddWikiPageRequest("wiki", "body", "tag");
         var checkpoint = new AddCheckpointRequest("cp", "ctx", "dec", "risk", "next");
+        var documentation = new AddDocumentationPageRequest("adr", "body", "Architecture", "tag");
         var run = new AddAgentRunLogRequest("a", "mcp", "in", "out", "ok", DateTimeOffset.UtcNow, null);
         var dashboard = new DashboardDto(Guid.NewGuid(), "Proj", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
         var mcpReq = new McpRequest("2.0", "tools/list", null, "1");
@@ -62,6 +66,7 @@ public class DomainContractsDefaultsTests
         Assert.Equal("review", review.Type);
         Assert.Equal("wiki", wiki.Title);
         Assert.Equal("cp", checkpoint.Name);
+        Assert.Equal("Architecture", documentation.Category);
         Assert.Equal("a", run.AgentName);
         Assert.Equal("Proj", dashboard.ProjectName);
         Assert.Equal("tools/list", mcpReq.Method);

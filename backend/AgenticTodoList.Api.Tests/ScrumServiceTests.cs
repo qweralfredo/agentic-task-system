@@ -84,8 +84,9 @@ public class ScrumServiceTests
         var service = new ScrumService(db);
 
         var project = await service.CreateProjectAsync(new CreateProjectRequest("Knowledge", "Desc"), CancellationToken.None);
-        await service.AddWikiPageAsync(project.Id, new AddWikiPageRequest("Onboarding", "## Steps", "onboarding,docs"), CancellationToken.None);
-        await service.AddCheckpointAsync(project.Id, new AddCheckpointRequest("Checkpoint 1", "Contexto", "Decisao", "Risco", "Proximas acoes"), CancellationToken.None);
+        await service.AddWikiPageAsync(project.Id, new AddWikiPageRequest("Onboarding", "## Steps", "onboarding,docs", "How-To"), CancellationToken.None);
+        await service.AddCheckpointAsync(project.Id, new AddCheckpointRequest("Checkpoint 1", "Contexto", "Decisao", "Risco", "Proximas acoes", "Arquitetura"), CancellationToken.None);
+        await service.AddDocumentationPageAsync(project.Id, new AddDocumentationPageRequest("ADR-0001", "# Contexto", "Arquitetura", "adr"), CancellationToken.None);
         await service.AddAgentRunAsync(project.Id, new AddAgentRunLogRequest("vscode-agent", "mcp", "entrada", "saida", "success", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow), CancellationToken.None);
 
         var dashboard = await service.GetDashboardAsync(project.Id, CancellationToken.None);
@@ -93,5 +94,9 @@ public class ScrumServiceTests
         Assert.Equal(1, dashboard.KnowledgeCheckpoints);
         Assert.Equal(1, dashboard.WikiPages);
         Assert.Equal(1, dashboard.AgentRuns);
+
+        var docs = await db.DocumentationPages.Where(d => d.ProjectId == project.Id).ToListAsync();
+        Assert.Single(docs);
+        Assert.Equal("Arquitetura", docs[0].Category);
     }
 }

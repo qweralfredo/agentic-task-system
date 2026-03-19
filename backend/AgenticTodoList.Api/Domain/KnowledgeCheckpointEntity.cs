@@ -7,6 +7,7 @@ public class KnowledgeCheckpointEntity
     public ProjectEntity? Project { get; set; }
 
     public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = "General";
     public string ContextSnapshot { get; set; } = string.Empty;
     public string Decisions { get; set; } = string.Empty;
     public string Risks { get; set; } = string.Empty;

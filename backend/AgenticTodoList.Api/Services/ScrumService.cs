@@ -142,6 +142,7 @@ public class ScrumService(AppDbContext db)
             ProjectId = projectId,
             Title = request.Title.Trim(),
             ContentMarkdown = request.ContentMarkdown,
+            Category = string.IsNullOrWhiteSpace(request.Category) ? "General" : request.Category.Trim(),
             Tags = request.Tags.Trim(),
             UpdatedAt = DateTimeOffset.UtcNow
         };
@@ -163,6 +164,7 @@ public class ScrumService(AppDbContext db)
         {
             ProjectId = projectId,
             Name = request.Name.Trim(),
+            Category = string.IsNullOrWhiteSpace(request.Category) ? "General" : request.Category.Trim(),
             ContextSnapshot = request.ContextSnapshot,
             Decisions = request.Decisions,
             Risks = request.Risks,
@@ -172,6 +174,29 @@ public class ScrumService(AppDbContext db)
         db.KnowledgeCheckpoints.Add(checkpoint);
         await db.SaveChangesAsync(cancellationToken);
         return checkpoint;
+    }
+
+    public async Task<DocumentationPageEntity> AddDocumentationPageAsync(Guid projectId, AddDocumentationPageRequest request, CancellationToken cancellationToken)
+    {
+        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId, cancellationToken);
+        if (!projectExists)
+        {
+            throw new InvalidOperationException("Project not found.");
+        }
+
+        var page = new DocumentationPageEntity
+        {
+            ProjectId = projectId,
+            Title = request.Title.Trim(),
+            ContentMarkdown = request.ContentMarkdown,
+            Category = string.IsNullOrWhiteSpace(request.Category) ? "General" : request.Category.Trim(),
+            Tags = request.Tags.Trim(),
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        db.DocumentationPages.Add(page);
+        await db.SaveChangesAsync(cancellationToken);
+        return page;
     }
 
     public async Task<AgentRunLogEntity> AddAgentRunAsync(Guid projectId, AddAgentRunLogRequest request, CancellationToken cancellationToken)

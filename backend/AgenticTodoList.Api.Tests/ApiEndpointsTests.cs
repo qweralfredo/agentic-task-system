@@ -90,11 +90,14 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
             .Content.ReadFromJsonAsync<JsonElement>();
         var projectId = project.GetProperty("id").GetGuid();
 
-        var wikiResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/wiki", new AddWikiPageRequest("Onboarding", "## Steps", "wiki,onboarding"));
+        var wikiResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/wiki", new AddWikiPageRequest("Onboarding", "## Steps", "wiki,onboarding", "How-To"));
         wikiResponse.EnsureSuccessStatusCode();
 
-        var checkpointResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/checkpoints", new AddCheckpointRequest("CP-1", "ctx", "dec", "risk", "next"));
+        var checkpointResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/checkpoints", new AddCheckpointRequest("CP-1", "ctx", "dec", "risk", "next", "Release"));
         checkpointResponse.EnsureSuccessStatusCode();
+
+        var docsResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/documentation", new AddDocumentationPageRequest("Arquitetura", "# ADR", "Arquitetura", "adr,design"));
+        docsResponse.EnsureSuccessStatusCode();
 
         var runResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/agent-runs", new AddAgentRunLogRequest("vscode", "mcp", "in", "out", "success", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
         runResponse.EnsureSuccessStatusCode();
@@ -104,7 +107,10 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
 
         var knowledge = await knowledgeResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(1, knowledge.GetProperty("wikiPages").GetArrayLength());
+        Assert.Equal("How-To", knowledge.GetProperty("wikiPages")[0].GetProperty("category").GetString());
         Assert.Equal(1, knowledge.GetProperty("checkpoints").GetArrayLength());
+        Assert.Equal("Release", knowledge.GetProperty("checkpoints")[0].GetProperty("category").GetString());
+        Assert.Equal(1, knowledge.GetProperty("documentationPages").GetArrayLength());
         Assert.Equal(1, knowledge.GetProperty("agentRuns").GetArrayLength());
     }
 
