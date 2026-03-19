@@ -1,0 +1,10 @@
+bin/
+obj/
+**/bin/
+**/obj/
+.vscode/
+frontend/node_modules/
+frontend/dist/
+backend/**/TestResults/
+ops/postgres/data/
+ops/postgres/backups/
