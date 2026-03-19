@@ -7,8 +7,19 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var corsOrigins = builder.Configuration["Cors:AllowedOrigins"]
+    ?? builder.Configuration["FRONTEND_ORIGINS"]
+    ?? "http://localhost:53000";
+var allowedCorsOrigins = corsOrigins
+    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors(options =>
+    options.AddPolicy("FrontendCors", policy =>
+        policy.WithOrigins(allowedCorsOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()));
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 builder.Services.AddScoped<ScrumService>();
@@ -30,6 +41,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("FrontendCors");
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTimeOffset.UtcNow }));
 

@@ -22,6 +22,21 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
+    public async Task CorsPreflight_ShouldAllowFrontendOrigin()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Options, "/api/projects");
+        request.Headers.Add("Origin", "http://localhost:53000");
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+        request.Headers.Add("Access-Control-Request-Headers", "content-type");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var origins));
+        Assert.Contains("http://localhost:53000", origins!);
+    }
+
+    [Fact]
     public async Task ProjectFlow_ShouldCreateAndListProject()
     {
         var createResponse = await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto VSCode", "Fluxo agentico"));
