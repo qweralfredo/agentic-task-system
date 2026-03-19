@@ -1,9 +1,12 @@
 :root {
-  font-family: 'Segoe UI', 'Trebuchet MS', Verdana, sans-serif;
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Verdana, sans-serif;
   line-height: 1.4;
   font-weight: 400;
-  color: #0f172a;
-  background: radial-gradient(circle at 20% 10%, #dbeafe 0%, #f1f5f9 40%, #f8fafc 100%);
+  color: #0d223b;
+  background:
+    radial-gradient(circle at 12% 8%, #f6d991 0%, #f4e8bf 24%, transparent 56%),
+    radial-gradient(circle at 82% 22%, #c2d8ee 0%, #d8e7f6 26%, transparent 55%),
+    linear-gradient(180deg, #f4efe1 0%, #f0f5f9 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

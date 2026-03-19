@@ -22,13 +22,14 @@ type Sprint = {
   id: string
   name: string
   goal: string
-  status: string
-  workItems: Array<{ id: string; title: string; status: string; assignee: string }>
+  status: number | string
+  workItems: Array<{ id: string; title: string; description: string; status: number | string; assignee: string }>
 }
 
 type KnowledgeResponse = {
-  wikiPages: Array<{ id: string; title: string; tags: string; updatedAt: string }>
-  checkpoints: Array<{ id: string; name: string; createdAt: string }>
+  wikiPages: Array<{ id: string; title: string; tags: string; category: string; updatedAt: string }>
+  checkpoints: Array<{ id: string; name: string; category: string; createdAt: string }>
+  documentationPages: Array<{ id: string; title: string; tags: string; category: string; updatedAt: string }>
   agentRuns: Array<{ id: string; agentName: string; status: string; startedAt: string }>
 }
 
@@ -47,7 +48,38 @@ type Dashboard = {
   agentRuns: number
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:58080'
+
+const workItemStatusLabels: Record<number, string> = {
+  0: 'To Do',
+  1: 'In Progress',
+  2: 'Review',
+  3: 'Done',
+  4: 'Blocked',
+}
+
+const backlogStatusLabels: Record<number, string> = {
+  0: 'New',
+  1: 'Planned',
+  2: 'In Sprint',
+  3: 'Done',
+  4: 'Blocked',
+}
+
+function toNumberStatus(value: string | number): number {
+  return typeof value === 'number' ? value : Number(value)
+}
+
+function groupByCategory<T extends { category?: string }>(items: T[]): Record<string, T[]> {
+  return items.reduce<Record<string, T[]>>((acc, item) => {
+    const category = item.category?.trim() || 'General'
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(item)
+    return acc
+  }, {})
+}
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -83,10 +115,57 @@ function App() {
   const [newBacklogPoints, setNewBacklogPoints] = useState(3)
   const [newBacklogPriority, setNewBacklogPriority] = useState(1)
 
+  const [newSprintName, setNewSprintName] = useState('')
+  const [newSprintGoal, setNewSprintGoal] = useState('')
+  const [newSprintStartDate, setNewSprintStartDate] = useState('')
+  const [newSprintEndDate, setNewSprintEndDate] = useState('')
+  const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([])
+
+  const [newWikiTitle, setNewWikiTitle] = useState('')
+  const [newWikiCategory, setNewWikiCategory] = useState('How-To')
+  const [newWikiTags, setNewWikiTags] = useState('')
+  const [newWikiContent, setNewWikiContent] = useState('')
+
+  const [newCheckpointName, setNewCheckpointName] = useState('')
+  const [newCheckpointCategory, setNewCheckpointCategory] = useState('Release')
+  const [newCheckpointContext, setNewCheckpointContext] = useState('')
+  const [newCheckpointDecisions, setNewCheckpointDecisions] = useState('')
+  const [newCheckpointRisks, setNewCheckpointRisks] = useState('')
+  const [newCheckpointNextActions, setNewCheckpointNextActions] = useState('')
+
+  const [newDocTitle, setNewDocTitle] = useState('')
+  const [newDocCategory, setNewDocCategory] = useState('Architecture')
+  const [newDocTags, setNewDocTags] = useState('')
+  const [newDocContent, setNewDocContent] = useState('')
+
+  const [taskDraftStatus, setTaskDraftStatus] = useState<Record<string, number>>({})
+  const [taskDraftAssignee, setTaskDraftAssignee] = useState<Record<string, string>>({})
+
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   )
+
+  const activeSprint = useMemo(
+    () => sprints.find((s) => toNumberStatus(s.status) === 1) ?? sprints[0] ?? null,
+    [sprints],
+  )
+
+  const wikiByCategory = useMemo(() => groupByCategory(knowledge?.wikiPages ?? []), [knowledge])
+  const checkpointByCategory = useMemo(() => groupByCategory(knowledge?.checkpoints ?? []), [knowledge])
+  const docsByCategory = useMemo(() => groupByCategory(knowledge?.documentationPages ?? []), [knowledge])
+
+  const sprintBoard = useMemo(() => {
+    const columns: Record<number, Sprint['workItems']> = { 0: [], 1: [], 2: [], 3: [] }
+    const items = activeSprint?.workItems ?? []
+    for (const item of items) {
+      const status = toNumberStatus(item.status)
+      if (columns[status]) {
+        columns[status].push(item)
+      }
+    }
+    return columns
+  }, [activeSprint])
 
   async function loadProjects() {
     const result = await api<Project[]>('/api/projects')
@@ -171,13 +250,136 @@ function App() {
     await loadProjectViews(selectedProjectId)
   }
 
+  async function handleCreateSprint(event: FormEvent) {
+    event.preventDefault()
+    if (!selectedProjectId || !newSprintName.trim() || !newSprintGoal.trim()) {
+      return
+    }
+
+    await api(`/api/projects/${selectedProjectId}/sprints`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: newSprintName,
+        goal: newSprintGoal,
+        startDate: newSprintStartDate || new Date().toISOString().slice(0, 10),
+        endDate: newSprintEndDate || new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+        backlogItemIds: selectedBacklogIds,
+      }),
+    })
+
+    setNewSprintName('')
+    setNewSprintGoal('')
+    setSelectedBacklogIds([])
+    await loadProjectViews(selectedProjectId)
+  }
+
+  async function handleCreateWiki(event: FormEvent) {
+    event.preventDefault()
+    if (!selectedProjectId || !newWikiTitle.trim() || !newWikiContent.trim()) {
+      return
+    }
+
+    await api(`/api/projects/${selectedProjectId}/wiki`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: newWikiTitle,
+        contentMarkdown: newWikiContent,
+        category: newWikiCategory,
+        tags: newWikiTags,
+      }),
+    })
+
+    setNewWikiTitle('')
+    setNewWikiTags('')
+    setNewWikiContent('')
+    await loadProjectViews(selectedProjectId)
+  }
+
+  async function handleCreateCheckpoint(event: FormEvent) {
+    event.preventDefault()
+    if (!selectedProjectId || !newCheckpointName.trim()) {
+      return
+    }
+
+    await api(`/api/projects/${selectedProjectId}/checkpoints`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: newCheckpointName,
+        category: newCheckpointCategory,
+        contextSnapshot: newCheckpointContext,
+        decisions: newCheckpointDecisions,
+        risks: newCheckpointRisks,
+        nextActions: newCheckpointNextActions,
+      }),
+    })
+
+    setNewCheckpointName('')
+    setNewCheckpointContext('')
+    setNewCheckpointDecisions('')
+    setNewCheckpointRisks('')
+    setNewCheckpointNextActions('')
+    await loadProjectViews(selectedProjectId)
+  }
+
+  async function handleCreateDocumentation(event: FormEvent) {
+    event.preventDefault()
+    if (!selectedProjectId || !newDocTitle.trim() || !newDocContent.trim()) {
+      return
+    }
+
+    await api(`/api/projects/${selectedProjectId}/documentation`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: newDocTitle,
+        contentMarkdown: newDocContent,
+        category: newDocCategory,
+        tags: newDocTags,
+      }),
+    })
+
+    setNewDocTitle('')
+    setNewDocTags('')
+    setNewDocContent('')
+    await loadProjectViews(selectedProjectId)
+  }
+
+  async function handleMoveTask(workItemId: string, currentStatus: number | string, currentAssignee: string) {
+    if (!selectedProjectId) {
+      return
+    }
+
+    await api(`/api/work-items/${workItemId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({
+        status: taskDraftStatus[workItemId] ?? toNumberStatus(currentStatus),
+        assignee: (taskDraftAssignee[workItemId] ?? currentAssignee ?? '').trim(),
+      }),
+    })
+
+    await loadProjectViews(selectedProjectId)
+  }
+
+  function toggleBacklogSelection(backlogItemId: string) {
+    setSelectedBacklogIds((previous) =>
+      previous.includes(backlogItemId)
+        ? previous.filter((id) => id !== backlogItemId)
+        : [...previous, backlogItemId],
+    )
+  }
+
   return (
     <main className="page">
       <header>
-        <h1>Agentic TodoList Scrum Command Center</h1>
+        <h1>Project Flowboard</h1>
         <p>
-          Gerencie projetos de software, backlog, sprint, tasks, reviews e conhecimento para humanos e IA.
+          Hierarquia Trello/Jira: Projeto &gt; Backlog | Wiki | Checkpoint | Documentacao &gt; Sprint &gt; Tasks.
         </p>
+        <div className="hierarchy-strip">
+          <span>Projeto</span>
+          <span>Backlog | Wiki | Checkpoint | Documentacao</span>
+          <span>Sprint</span>
+          <span>Tasks (Kanban)</span>
+        </div>
       </header>
 
       {error && <div className="alert">{error}</div>}
@@ -223,72 +425,186 @@ function App() {
             </div>
           </section>
 
-          <section className="panel">
-            <h2>Backlog</h2>
-            <form className="form" onSubmit={handleCreateBacklogItem}>
-              <input value={newBacklogTitle} onChange={(e) => setNewBacklogTitle(e.target.value)} placeholder="Titulo da story" required />
-              <input value={newBacklogDescription} onChange={(e) => setNewBacklogDescription(e.target.value)} placeholder="Descricao" required />
-              <input type="number" min={1} value={newBacklogPoints} onChange={(e) => setNewBacklogPoints(Number(e.target.value))} />
-              <input type="number" min={1} value={newBacklogPriority} onChange={(e) => setNewBacklogPriority(Number(e.target.value))} />
-              <button type="submit">Adicionar Item</button>
-            </form>
+          <section className="panel split">
+            <div>
+              <h2>Backlog</h2>
+              <form className="form" onSubmit={handleCreateBacklogItem}>
+                <input value={newBacklogTitle} onChange={(e) => setNewBacklogTitle(e.target.value)} placeholder="Titulo da story" required />
+                <input value={newBacklogDescription} onChange={(e) => setNewBacklogDescription(e.target.value)} placeholder="Descricao" required />
+                <input type="number" min={1} value={newBacklogPoints} onChange={(e) => setNewBacklogPoints(Number(e.target.value))} />
+                <input type="number" min={1} value={newBacklogPriority} onChange={(e) => setNewBacklogPriority(Number(e.target.value))} />
+                <button type="submit">Adicionar Item</button>
+              </form>
 
-            <ul className="list">
-              {backlog.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.title}</strong>
-                  <span>{item.description}</span>
-                  <span>SP: {item.storyPoints} | P: {item.priority} | Status: {item.status}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+              <ul className="list">
+                {backlog.map((item) => (
+                  <li key={item.id} className="ticket">
+                    <strong>{item.title}</strong>
+                    <span>{item.description}</span>
+                    <span>SP: {item.storyPoints} | P: {item.priority} | {backlogStatusLabels[toNumberStatus(item.status)] ?? item.status}</span>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selectedBacklogIds.includes(item.id)}
+                        onChange={() => toggleBacklogSelection(item.id)}
+                      />
+                      Selecionar para sprint
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <section className="panel">
-            <h2>Sprints</h2>
-            <div className="grid sprint-grid">
-              {sprints.map((sprint) => (
-                <article key={sprint.id}>
-                  <h3>{sprint.name}</h3>
-                  <p>{sprint.goal}</p>
-                  <p>Status: {sprint.status}</p>
-                  <ul className="list compact">
-                    {sprint.workItems.map((item) => (
-                      <li key={item.id}>{item.title} - {item.status} - {item.assignee || 'sem responsavel'}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
+            <div>
+              <h2>Criar Sprint</h2>
+              <form className="form" onSubmit={handleCreateSprint}>
+                <input value={newSprintName} onChange={(e) => setNewSprintName(e.target.value)} placeholder="Nome da sprint" required />
+                <input value={newSprintGoal} onChange={(e) => setNewSprintGoal(e.target.value)} placeholder="Objetivo" required />
+                <input type="date" value={newSprintStartDate} onChange={(e) => setNewSprintStartDate(e.target.value)} />
+                <input type="date" value={newSprintEndDate} onChange={(e) => setNewSprintEndDate(e.target.value)} />
+                <button type="submit">Iniciar Sprint</button>
+              </form>
+
+              <h3>Sprints</h3>
+              <ul className="list compact">
+                {sprints.map((sprint) => (
+                  <li key={sprint.id} className={activeSprint?.id === sprint.id ? 'active-sprint' : ''}>
+                    <strong>{sprint.name}</strong>
+                    <span>{sprint.goal}</span>
+                    <span>Status: {toNumberStatus(sprint.status) === 1 ? 'Ativa' : 'Planejada/Fechada'}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
 
           <section className="panel">
-            <h2>Knowledge Hub</h2>
-            <div className="grid knowledge-grid">
+            <h2>Knowledge Space (categorizado)</h2>
+            <div className="knowledge-forms">
+              <form className="form stack" onSubmit={handleCreateWiki}>
+                <h3>Wiki</h3>
+                <input value={newWikiTitle} onChange={(e) => setNewWikiTitle(e.target.value)} placeholder="Titulo" required />
+                <input value={newWikiCategory} onChange={(e) => setNewWikiCategory(e.target.value)} placeholder="Categoria" required />
+                <input value={newWikiTags} onChange={(e) => setNewWikiTags(e.target.value)} placeholder="Tags" />
+                <textarea value={newWikiContent} onChange={(e) => setNewWikiContent(e.target.value)} placeholder="Conteudo markdown" required />
+                <button type="submit">Salvar Wiki</button>
+              </form>
+
+              <form className="form stack" onSubmit={handleCreateCheckpoint}>
+                <h3>Checkpoint</h3>
+                <input value={newCheckpointName} onChange={(e) => setNewCheckpointName(e.target.value)} placeholder="Nome" required />
+                <input value={newCheckpointCategory} onChange={(e) => setNewCheckpointCategory(e.target.value)} placeholder="Categoria" required />
+                <textarea value={newCheckpointContext} onChange={(e) => setNewCheckpointContext(e.target.value)} placeholder="Contexto" />
+                <textarea value={newCheckpointDecisions} onChange={(e) => setNewCheckpointDecisions(e.target.value)} placeholder="Decisoes" />
+                <textarea value={newCheckpointRisks} onChange={(e) => setNewCheckpointRisks(e.target.value)} placeholder="Riscos" />
+                <textarea value={newCheckpointNextActions} onChange={(e) => setNewCheckpointNextActions(e.target.value)} placeholder="Proximas acoes" />
+                <button type="submit">Salvar Checkpoint</button>
+              </form>
+
+              <form className="form stack" onSubmit={handleCreateDocumentation}>
+                <h3>Documentacao</h3>
+                <input value={newDocTitle} onChange={(e) => setNewDocTitle(e.target.value)} placeholder="Titulo" required />
+                <input value={newDocCategory} onChange={(e) => setNewDocCategory(e.target.value)} placeholder="Categoria" required />
+                <input value={newDocTags} onChange={(e) => setNewDocTags(e.target.value)} placeholder="Tags" />
+                <textarea value={newDocContent} onChange={(e) => setNewDocContent(e.target.value)} placeholder="Conteudo markdown" required />
+                <button type="submit">Salvar Documento</button>
+              </form>
+            </div>
+
+            <div className="knowledge-grid">
               <article>
-                <h3>Wikis</h3>
+                <h3>Wiki por categoria</h3>
+                {Object.entries(wikiByCategory).map(([category, items]) => (
+                  <div key={category} className="category-block">
+                    <h4>{category}</h4>
+                    <ul className="list compact">
+                      {items.map((wiki) => (
+                        <li key={wiki.id}>{wiki.title} ({wiki.tags})</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </article>
+
+              <article>
+                <h3>Checkpoints por categoria</h3>
+                {Object.entries(checkpointByCategory).map(([category, items]) => (
+                  <div key={category} className="category-block">
+                    <h4>{category}</h4>
+                    <ul className="list compact">
+                      {items.map((checkpoint) => (
+                        <li key={checkpoint.id}>{checkpoint.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </article>
+
+              <article>
+                <h3>Documentacao por categoria</h3>
+                {Object.entries(docsByCategory).map(([category, items]) => (
+                  <div key={category} className="category-block">
+                    <h4>{category}</h4>
+                    <ul className="list compact">
+                      {items.map((doc) => (
+                        <li key={doc.id}>{doc.title} ({doc.tags})</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </article>
+            </div>
+          </section>
+
+          <section className="panel">
+            <h2>Kanban da Sprint {activeSprint ? `- ${activeSprint.name}` : ''}</h2>
+            <div className="kanban-grid">
+              <article className="kanban-column">
+                <h3>Backlog Pool</h3>
                 <ul className="list compact">
-                  {(knowledge?.wikiPages ?? []).map((wiki) => (
-                    <li key={wiki.id}>{wiki.title} ({wiki.tags})</li>
+                  {backlog.filter((item) => toNumberStatus(item.status) <= 2).map((item) => (
+                    <li key={item.id} className="ticket">
+                      <strong>{item.title}</strong>
+                      <span>{backlogStatusLabels[toNumberStatus(item.status)] ?? item.status}</span>
+                    </li>
                   ))}
                 </ul>
               </article>
-              <article>
-                <h3>Checkpoints</h3>
-                <ul className="list compact">
-                  {(knowledge?.checkpoints ?? []).map((checkpoint) => (
-                    <li key={checkpoint.id}>{checkpoint.name}</li>
-                  ))}
-                </ul>
-              </article>
-              <article>
-                <h3>Agent Runs</h3>
-                <ul className="list compact">
-                  {(knowledge?.agentRuns ?? []).map((run) => (
-                    <li key={run.id}>{run.agentName} - {run.status}</li>
-                  ))}
-                </ul>
-              </article>
+
+              {[0, 1, 2, 3].map((columnStatus) => (
+                <article className="kanban-column" key={columnStatus}>
+                  <h3>{workItemStatusLabels[columnStatus]}</h3>
+                  <ul className="list compact">
+                    {(sprintBoard[columnStatus] ?? []).map((item) => (
+                      <li key={item.id} className="ticket">
+                        <strong>{item.title}</strong>
+                        <span>{item.description}</span>
+                        <span>Assignee: {item.assignee || 'nao definido'}</span>
+                        <div className="task-actions">
+                          <select
+                            value={taskDraftStatus[item.id] ?? toNumberStatus(item.status)}
+                            onChange={(e) => setTaskDraftStatus((prev) => ({ ...prev, [item.id]: Number(e.target.value) }))}
+                          >
+                            <option value={0}>To Do</option>
+                            <option value={1}>In Progress</option>
+                            <option value={2}>Review</option>
+                            <option value={3}>Done</option>
+                            <option value={4}>Blocked</option>
+                          </select>
+                          <input
+                            value={taskDraftAssignee[item.id] ?? item.assignee ?? ''}
+                            onChange={(e) => setTaskDraftAssignee((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                            placeholder="Assignee"
+                          />
+                          <button type="button" onClick={() => handleMoveTask(item.id, item.status, item.assignee)}>
+                            Mover
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
             </div>
           </section>
         </>
