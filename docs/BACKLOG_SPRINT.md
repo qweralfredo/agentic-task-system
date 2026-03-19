@@ -41,5 +41,5 @@
 **Critérios de aceite:**
 - [x] Cobertura de testes >= 80%
 - [x] Todos os testes passando
-- [ ] Validação E2E (API e UI) executada
+- [x] Validação E2E (API e UI) executada
 - [x] Sem fallback e sem mock em runtime
