@@ -49,10 +49,29 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  updateWorkItemStatus: (payload: { workItemId: string; status: number; assignee: string }) =>
+  updateWorkItemStatus: (payload: {
+    workItemId: string
+    status: number
+    assignee: string
+    agentName?: string
+    modelUsed?: string
+    ideUsed?: string
+    tokensUsed?: number
+    feedback?: string
+    metadataJson?: string
+  }) =>
     request(`/api/work-items/${payload.workItemId}/status`, {
       method: 'POST',
-      body: JSON.stringify({ status: payload.status, assignee: payload.assignee }),
+      body: JSON.stringify({
+        status: payload.status,
+        assignee: payload.assignee,
+        agentName: payload.agentName ?? '',
+        modelUsed: payload.modelUsed ?? '',
+        ideUsed: payload.ideUsed ?? '',
+        tokensUsed: payload.tokensUsed ?? 0,
+        feedback: payload.feedback ?? '',
+        metadataJson: payload.metadataJson ?? '',
+      }),
     }),
   getKnowledge: (projectId: string) => request<KnowledgeResponse>(`/api/projects/${projectId}/knowledge`),
   createWikiPage: (

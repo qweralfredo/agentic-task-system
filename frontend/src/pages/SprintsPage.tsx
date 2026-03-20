@@ -51,6 +51,12 @@ export function SprintsPage() {
   const [editingWorkItemId, setEditingWorkItemId] = useState('')
   const [editingWorkItemStatus, setEditingWorkItemStatus] = useState(0)
   const [editingWorkItemAssignee, setEditingWorkItemAssignee] = useState('')
+  const [editingAgentName, setEditingAgentName] = useState('')
+  const [editingModelUsed, setEditingModelUsed] = useState('')
+  const [editingIdeUsed, setEditingIdeUsed] = useState('')
+  const [editingTokensUsed, setEditingTokensUsed] = useState(0)
+  const [editingFeedback, setEditingFeedback] = useState('')
+  const [editingMetadataJson, setEditingMetadataJson] = useState('')
   const [expandedFeedbackIds, setExpandedFeedbackIds] = useState<Set<string>>(new Set())
 
   function toggleFeedbacks(workItemId: string) {
@@ -207,6 +213,12 @@ export function SprintsPage() {
     setEditingWorkItemId(workItemId)
     setEditingWorkItemStatus(taskDraftStatus[workItemId] ?? toNumberStatus(currentStatus))
     setEditingWorkItemAssignee(taskDraftAssignee[workItemId] ?? currentAssignee ?? '')
+    setEditingAgentName('')
+    setEditingModelUsed('')
+    setEditingIdeUsed('')
+    setEditingTokensUsed(0)
+    setEditingFeedback('')
+    setEditingMetadataJson('')
   }
 
   async function handleSaveTaskFromModal() {
@@ -218,6 +230,12 @@ export function SprintsPage() {
       workItemId: editingWorkItemId,
       status: editingWorkItemStatus,
       assignee: editingWorkItemAssignee.trim(),
+      agentName: editingAgentName.trim(),
+      modelUsed: editingModelUsed.trim(),
+      ideUsed: editingIdeUsed.trim(),
+      tokensUsed: editingTokensUsed,
+      feedback: editingFeedback.trim(),
+      metadataJson: editingMetadataJson.trim(),
     })
 
     setTaskDraftStatus((prev) => ({ ...prev, [editingWorkItemId]: editingWorkItemStatus }))
@@ -618,31 +636,105 @@ export function SprintsPage() {
         </Stack>
       </Dialog>
 
-      <Dialog open={Boolean(editingWorkItemId)} onClose={() => setEditingWorkItemId('')} fullWidth maxWidth="xs">
+      <Dialog open={Boolean(editingWorkItemId)} onClose={() => setEditingWorkItemId('')} fullWidth maxWidth="md">
         <DialogTitle>Editar task</DialogTitle>
         <DialogContent>
-          <Stack spacing={1.2} sx={{ mt: 1 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel id="modal-task-status-label">Status</InputLabel>
-              <Select
-                labelId="modal-task-status-label"
-                label="Status"
-                value={editingWorkItemStatus}
-                onChange={(event) => setEditingWorkItemStatus(Number(event.target.value))}
-              >
-                <MenuItem value={0}>To Do</MenuItem>
-                <MenuItem value={1}>In Progress</MenuItem>
-                <MenuItem value={2}>Review</MenuItem>
-                <MenuItem value={3}>Done</MenuItem>
-                <MenuItem value={4}>Blocked</MenuItem>
-              </Select>
-            </FormControl>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Typography variant="overline" color="text.secondary">Status & Responsável</Typography>
+            <Grid container spacing={1.5}>
+              <Grid size={6}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="modal-task-status-label">Status</InputLabel>
+                  <Select
+                    labelId="modal-task-status-label"
+                    label="Status"
+                    value={editingWorkItemStatus}
+                    onChange={(event) => setEditingWorkItemStatus(Number(event.target.value))}
+                  >
+                    <MenuItem value={0}>To Do</MenuItem>
+                    <MenuItem value={1}>In Progress</MenuItem>
+                    <MenuItem value={2}>Review</MenuItem>
+                    <MenuItem value={3}>Done</MenuItem>
+                    <MenuItem value={4}>Blocked</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid size={6}>
+                <TextField
+                  size="small"
+                  label="Assignee"
+                  fullWidth
+                  value={editingWorkItemAssignee}
+                  onChange={(event) => setEditingWorkItemAssignee(event.target.value)}
+                />
+              </Grid>
+            </Grid>
 
+            <Typography variant="overline" color="text.secondary">Contexto do Agente</Typography>
+            <Grid container spacing={1.5}>
+              <Grid size={6}>
+                <TextField
+                  size="small"
+                  label="Nome do Agente"
+                  fullWidth
+                  placeholder="ex: GitHub Copilot"
+                  value={editingAgentName}
+                  onChange={(event) => setEditingAgentName(event.target.value)}
+                />
+              </Grid>
+              <Grid size={6}>
+                <TextField
+                  size="small"
+                  label="Tokens usados nesta sessão"
+                  fullWidth
+                  type="number"
+                  inputProps={{ min: 0 }}
+                  value={editingTokensUsed}
+                  onChange={(event) => setEditingTokensUsed(Math.max(0, Number(event.target.value)))}
+                />
+              </Grid>
+              <Grid size={6}>
+                <TextField
+                  size="small"
+                  label="Modelo usado"
+                  fullWidth
+                  placeholder="ex: claude-sonnet-4.6"
+                  value={editingModelUsed}
+                  onChange={(event) => setEditingModelUsed(event.target.value)}
+                />
+              </Grid>
+              <Grid size={6}>
+                <TextField
+                  size="small"
+                  label="IDE usada"
+                  fullWidth
+                  placeholder="ex: VS Code"
+                  value={editingIdeUsed}
+                  onChange={(event) => setEditingIdeUsed(event.target.value)}
+                />
+              </Grid>
+            </Grid>
+
+            <Typography variant="overline" color="text.secondary">Registro de Trabalho</Typography>
             <TextField
               size="small"
-              label="Assignee"
-              value={editingWorkItemAssignee}
-              onChange={(event) => setEditingWorkItemAssignee(event.target.value)}
+              label="Feedback / O que foi feito"
+              fullWidth
+              multiline
+              minRows={3}
+              placeholder="Descreva o que foi feito, decisões tomadas, próximos passos..."
+              value={editingFeedback}
+              onChange={(event) => setEditingFeedback(event.target.value)}
+            />
+            <TextField
+              size="small"
+              label="Metadata JSON (opcional)"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder='{"branch": "feat/xyz", "commit": "abc123"}'
+              value={editingMetadataJson}
+              onChange={(event) => setEditingMetadataJson(event.target.value)}
             />
           </Stack>
         </DialogContent>
