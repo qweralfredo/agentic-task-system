@@ -55,6 +55,32 @@ Write-Host "Reabra o VS Code ou execute o comando 'Developer: Reload Window'."
 
 if ($OpenInstallLink) {
     $deepLink = "vscode:mcp/install?%7B%22name%22%3A%22pandora-todo-list-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A58080%2Fmcp%22%7D"
-    Start-Process $deepLink | Out-Null
-    Write-Host "Deep link de instalacao aberto no VS Code."
+
+    $opened = $false
+    $codeCmd = Get-Command code -ErrorAction SilentlyContinue
+    if ($null -ne $codeCmd) {
+        try {
+            code --open-url $deepLink | Out-Null
+            $opened = $true
+            Write-Host "Deep link enviado via 'code --open-url'."
+        }
+        catch {
+            Write-Host "Falha ao abrir via code CLI, tentando fallback do sistema..."
+        }
+    }
+
+    if (-not $opened) {
+        try {
+            Start-Process $deepLink | Out-Null
+            $opened = $true
+            Write-Host "Deep link enviado via Start-Process."
+        }
+        catch {
+            Write-Host "Nao foi possivel abrir automaticamente o deep link."
+        }
+    }
+
+    if (-not $opened) {
+        Write-Host "Abra manualmente no terminal: code --open-url $deepLink"
+    }
 }
