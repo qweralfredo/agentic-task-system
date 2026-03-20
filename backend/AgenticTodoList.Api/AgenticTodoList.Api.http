@@ -7,6 +7,37 @@ Accept: application/json
 
 ###
 
+# MCP - initialize (handshake)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "init-1",
+	"method": "initialize",
+	"params": {
+		"protocolVersion": "2025-03-26",
+		"capabilities": {},
+		"clientInfo": {
+			"name": "vscode-http-client",
+			"version": "1.0.0"
+		}
+	}
+}
+
+###
+
+# MCP - initialized (notification sem id)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"method": "initialized"
+}
+
+###
+
 # MCP - listar tools
 POST {{Mcp_HostAddress}}/mcp
 Content-Type: application/json
@@ -16,6 +47,25 @@ Content-Type: application/json
 	"id": "tools-list-1",
 	"method": "tools/list"
 }
+
+###
+
+# MCP - batch (tools/list + prompts/list)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+[
+	{
+		"jsonrpc": "2.0",
+		"id": "batch-tools-1",
+		"method": "tools/list"
+	},
+	{
+		"jsonrpc": "2.0",
+		"id": "batch-prompts-1",
+		"method": "prompts/list"
+	}
+]
 
 ###
 
@@ -49,6 +99,42 @@ Content-Type: application/json
 	"params": {
 		"name": "project.list",
 		"arguments": {}
+	}
+}
+
+###
+
+# MCP - listar projetos (incluindo arquivados)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "project-list-2",
+	"method": "tools/call",
+	"params": {
+		"name": "project.list",
+		"arguments": {
+			"includeArchived": true
+		}
+	}
+}
+
+###
+
+# MCP - arquivar projeto (soft delete)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "project-delete-1",
+	"method": "tools/call",
+	"params": {
+		"name": "project.delete",
+		"arguments": {
+			"projectId": "{{projectId}}"
+		}
 	}
 }
 

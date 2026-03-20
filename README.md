@@ -45,17 +45,33 @@ Endpoint:
 - `POST /mcp`
 
 Metodos:
+- `initialize`
+- `initialized`
 - `tools/list`
 - `tools/call`
+- `prompts/list`
+- `prompts/get`
 
 Tools disponiveis:
 - `project.list`
 - `project.create`
+- `project.delete` (soft delete por status)
 - `backlog.add`
 - `backlog.list`
 - `sprint.create`
 - `workitem.list`
 - `knowledge.checkpoint`
+
+Prompts disponiveis:
+- `pandora.project.create`
+- `pandora.backlog.add`
+- `pandora.sprint.create`
+- `pandora.knowledge.checkpoint`
+- `pandora.project.status`
+
+Formato de retorno de `tools/call`:
+- `result.content`: array de blocos texto MCP (ex.: `[{ "type": "text", "text": "..." }]`)
+- `result.structuredContent`: JSON estruturado para consumo por cliente
 
 ## Subir local sem Docker
 

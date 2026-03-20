@@ -27,6 +27,8 @@ Deep link para adicionar no VS Code:
 
 ## Metodos MCP suportados
 
+- `initialize`
+- `initialized`
 - `tools/list`
 - `tools/call`
 - `prompts/list`
@@ -36,6 +38,7 @@ Deep link para adicionar no VS Code:
 
 - `project.list`: lista projetos
 - `project.create`: cria projeto
+- `project.delete`: arquiva projeto (soft delete por status)
 - `backlog.add`: adiciona item de backlog
 - `backlog.list`: lista backlog por projeto
 - `sprint.create`: cria sprint com backlog items
@@ -51,6 +54,33 @@ Deep link para adicionar no VS Code:
 - `pandora.project.status`: orienta consulta de status/lista de projetos
 
 ## Handshake
+
+Request (`initialize`):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "init-1",
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-03-26",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "vscode",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+Request de notificacao (`initialized`, sem id):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "initialized"
+}
+```
 
 Request (`tools/list`):
 
@@ -89,12 +119,77 @@ Request (`prompts/list`):
 }
 ```
 
-## Exemplo de chamada de prompt
+Exemplo de resposta de `tools/call`:
 
 ```json
 {
   "jsonrpc": "2.0",
-  "id": "4",
+  "id": "3",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"id\":\"...\",\"name\":\"Pandora Todo List\"}"
+      }
+    ],
+    "structuredContent": {
+      "id": "...",
+      "name": "Pandora Todo List"
+    }
+  }
+}
+```
+
+Exemplo de arquivamento logico:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "5",
+  "method": "tools/call",
+  "params": {
+    "name": "project.delete",
+    "arguments": {
+      "projectId": "<project-id>"
+    }
+  }
+}
+```
+
+Para listar incluindo arquivados:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "6",
+  "method": "tools/call",
+  "params": {
+    "name": "project.list",
+    "arguments": {
+      "includeArchived": true
+    }
+  }
+}
+```
+
+## Exemplo de chamada de prompt
+
+Listagem de prompts (`prompts/list`):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "4a",
+  "method": "prompts/list"
+}
+```
+
+Obter prompt (`prompts/get`):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "4b",
   "method": "prompts/get",
   "params": {
     "name": "pandora.project.status",

@@ -24,7 +24,9 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
             method = "tools/list"
         });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(-32600, json.GetProperty("error").GetProperty("code").GetInt32());
     }
 
     [Fact]
@@ -37,7 +39,9 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
             method = "unknown.method"
         });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(-32601, json.GetProperty("error").GetProperty("code").GetInt32());
     }
 
     [Fact]
@@ -55,7 +59,9 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
             }
         });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(-32602, json.GetProperty("error").GetProperty("code").GetInt32());
     }
 
     [Fact]
@@ -73,7 +79,9 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
             }
         });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(-32602, json.GetProperty("error").GetProperty("code").GetInt32());
     }
 
     [Fact]
@@ -95,7 +103,7 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
 
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
-        var content = json.GetProperty("result").GetProperty("content").GetString();
+        var content = json.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString();
         Assert.False(string.IsNullOrWhiteSpace(content));
     }
 
@@ -179,6 +187,46 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
         getResponse.EnsureSuccessStatusCode();
         var getJson = await getResponse.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(getJson.GetProperty("result").GetProperty("messages").GetArrayLength() > 0);
+    }
+
+    [Fact]
+    public async Task Mcp_Initialize_ShouldReturnCapabilities()
+    {
+        var response = await _client.PostAsJsonAsync("/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = "init-1",
+            method = "initialize",
+            @params = new
+            {
+                protocolVersion = "2025-03-26",
+                capabilities = new { },
+                clientInfo = new { name = "tests", version = "1.0.0" }
+            }
+        });
+
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("2025-03-26", json.GetProperty("result").GetProperty("protocolVersion").GetString());
+        Assert.True(json.GetProperty("result").GetProperty("capabilities").TryGetProperty("prompts", out _));
+    }
+
+    [Fact]
+    public async Task Mcp_Batch_ShouldReturnResponsesForRequestsOnly()
+    {
+        var payload = new object[]
+        {
+            new { jsonrpc = "2.0", id = "batch-1", method = "tools/list" },
+            new { jsonrpc = "2.0", method = "initialized" },
+            new { jsonrpc = "2.0", id = "batch-2", method = "prompts/list" }
+        };
+
+        var response = await _client.PostAsJsonAsync("/mcp", payload);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Array, json.ValueKind);
+        Assert.Equal(2, json.GetArrayLength());
     }
 }
 
