@@ -59,6 +59,24 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
+    public async Task Mcp_UnknownPrompt_ShouldReturnBadRequest()
+    {
+        var response = await _client.PostAsJsonAsync("/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = "err-4",
+            method = "prompts/get",
+            @params = new
+            {
+                name = "prompt.not.exists",
+                arguments = new { }
+            }
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Mcp_ProjectListTool_ShouldReturnContent()
     {
         await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("MCP Project", "Desc"));
@@ -130,6 +148,37 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
 
         Assert.Equal(HttpStatusCode.OK, backlogResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, checkpointResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Mcp_PromptsListAndGet_ShouldReturnOk()
+    {
+        var listResponse = await _client.PostAsJsonAsync("/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = "ok-4",
+            method = "prompts/list"
+        });
+
+        listResponse.EnsureSuccessStatusCode();
+        var listJson = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(listJson.GetProperty("result").GetProperty("prompts").GetArrayLength() >= 5);
+
+        var getResponse = await _client.PostAsJsonAsync("/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = "ok-5",
+            method = "prompts/get",
+            @params = new
+            {
+                name = "pandora.project.status",
+                arguments = new { }
+            }
+        });
+
+        getResponse.EnsureSuccessStatusCode();
+        var getJson = await getResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(getJson.GetProperty("result").GetProperty("messages").GetArrayLength() > 0);
     }
 }
 

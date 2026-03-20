@@ -53,3 +53,31 @@ Content-Type: application/json
 
 ###
 
+# MCP - listar prompts
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "prompts-list-1",
+	"method": "prompts/list"
+}
+
+###
+
+# MCP - obter prompt (status de projeto)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "prompts-get-1",
+	"method": "prompts/get",
+	"params": {
+		"name": "pandora.project.status",
+		"arguments": {}
+	}
+}
+
+###
+

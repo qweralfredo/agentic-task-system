@@ -244,6 +244,187 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
         return Results.Ok(new McpResponse("2.0", mcpRequest.Id, Result: result));
     }
 
+    if (mcpRequest.Method == "prompts/list")
+    {
+        var result = new
+        {
+            prompts = new object[]
+            {
+                new
+                {
+                    name = "pandora.project.create",
+                    description = "Guia para criar um projeto no Pandora via MCP tool.",
+                    arguments = new[]
+                    {
+                        new { name = "name", description = "Nome do projeto.", required = true },
+                        new { name = "description", description = "Descricao do projeto.", required = true }
+                    }
+                },
+                new
+                {
+                    name = "pandora.backlog.add",
+                    description = "Guia para adicionar item de backlog a um projeto.",
+                    arguments = new[]
+                    {
+                        new { name = "projectId", description = "Id do projeto.", required = true },
+                        new { name = "title", description = "Titulo da story.", required = true },
+                        new { name = "description", description = "Descricao da story.", required = true },
+                        new { name = "storyPoints", description = "Story points (inteiro).", required = true },
+                        new { name = "priority", description = "Prioridade (inteiro).", required = true }
+                    }
+                },
+                new
+                {
+                    name = "pandora.sprint.create",
+                    description = "Guia para criar sprint a partir de backlog items.",
+                    arguments = new[]
+                    {
+                        new { name = "projectId", description = "Id do projeto.", required = true },
+                        new { name = "name", description = "Nome da sprint.", required = true },
+                        new { name = "goal", description = "Objetivo da sprint.", required = true },
+                        new { name = "startDate", description = "Data inicio (YYYY-MM-DD).", required = true },
+                        new { name = "endDate", description = "Data fim (YYYY-MM-DD).", required = true },
+                        new { name = "backlogItemIds", description = "Lista de ids do backlog.", required = true }
+                    }
+                },
+                new
+                {
+                    name = "pandora.knowledge.checkpoint",
+                    description = "Guia para registrar knowledge checkpoint no projeto.",
+                    arguments = new[]
+                    {
+                        new { name = "projectId", description = "Id do projeto.", required = true },
+                        new { name = "name", description = "Nome do checkpoint.", required = true },
+                        new { name = "contextSnapshot", description = "Contexto atual.", required = true },
+                        new { name = "decisions", description = "Decisoes tomadas.", required = true },
+                        new { name = "risks", description = "Riscos identificados.", required = true },
+                        new { name = "nextActions", description = "Proximas acoes.", required = true }
+                    }
+                },
+                new
+                {
+                    name = "pandora.project.status",
+                    description = "Guia para consultar projetos e obter status operacional.",
+                    arguments = Array.Empty<object>()
+                }
+            }
+        };
+
+        return Results.Ok(new McpResponse("2.0", mcpRequest.Id, Result: result));
+    }
+
+    if (mcpRequest.Method == "prompts/get")
+    {
+        if (mcpRequest.Params is null || !mcpRequest.Params.Value.TryGetProperty("name", out var promptNameJson))
+        {
+            return Results.BadRequest(new McpResponse("2.0", mcpRequest.Id, Error: new { code = -32602, message = "Invalid params." }));
+        }
+
+        var promptName = promptNameJson.GetString() ?? string.Empty;
+        var promptArgs = mcpRequest.Params.Value.TryGetProperty("arguments", out var promptArgumentsJson)
+            ? promptArgumentsJson
+            : default;
+
+        string GetPromptArg(string name, string fallback)
+        {
+            if (promptArgs.ValueKind == JsonValueKind.Object
+                && promptArgs.TryGetProperty(name, out var value)
+                && value.ValueKind == JsonValueKind.String)
+            {
+                return value.GetString() ?? fallback;
+            }
+
+            return fallback;
+        }
+
+        var promptResult = promptName switch
+        {
+            "pandora.project.create" => new
+            {
+                description = "Criar projeto no Pandora via MCP tool.",
+                messages = new object[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new
+                        {
+                            type = "text",
+                            text = $"Use a tool project.create com name='{GetPromptArg("name", "Novo Projeto")}' e description='{GetPromptArg("description", "Projeto criado via prompt MCP")}'."
+                        }
+                    }
+                }
+            },
+            "pandora.backlog.add" => new
+            {
+                description = "Adicionar story no backlog do projeto.",
+                messages = new object[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new
+                        {
+                            type = "text",
+                            text = $"Use a tool backlog.add com projectId='{GetPromptArg("projectId", "<project-id>")}', title='{GetPromptArg("title", "Nova story")}', description='{GetPromptArg("description", "Descricao da story")}', storyPoints={GetPromptArg("storyPoints", "3")} e priority={GetPromptArg("priority", "1")}."
+                        }
+                    }
+                }
+            },
+            "pandora.sprint.create" => new
+            {
+                description = "Criar sprint com itens do backlog.",
+                messages = new object[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new
+                        {
+                            type = "text",
+                            text = $"Use a tool sprint.create com projectId='{GetPromptArg("projectId", "<project-id>")}', name='{GetPromptArg("name", "Sprint 1")}', goal='{GetPromptArg("goal", "Entregar funcionalidades prioritarias")}', startDate='{GetPromptArg("startDate", DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"))}', endDate='{GetPromptArg("endDate", DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)).ToString("yyyy-MM-dd"))}' e backlogItemIds={GetPromptArg("backlogItemIds", "[\"<backlog-item-id>\"]")}."
+                        }
+                    }
+                }
+            },
+            "pandora.knowledge.checkpoint" => new
+            {
+                description = "Registrar checkpoint de conhecimento do projeto.",
+                messages = new object[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new
+                        {
+                            type = "text",
+                            text = $"Use a tool knowledge.checkpoint com projectId='{GetPromptArg("projectId", "<project-id>")}', name='{GetPromptArg("name", "Checkpoint")}', contextSnapshot='{GetPromptArg("contextSnapshot", "Contexto atual")}', decisions='{GetPromptArg("decisions", "Decisoes registradas")}', risks='{GetPromptArg("risks", "Riscos mapeados")}' e nextActions='{GetPromptArg("nextActions", "Proximos passos")}'."
+                        }
+                    }
+                }
+            },
+            "pandora.project.status" => new
+            {
+                description = "Consultar status de projetos no Pandora.",
+                messages = new object[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new
+                        {
+                            type = "text",
+                            text = "Use a tool project.list e responda com nome, id e data de criacao dos projetos."
+                        }
+                    }
+                }
+            },
+            _ => throw new InvalidOperationException("Prompt not found.")
+        };
+
+        return Results.Ok(new McpResponse("2.0", mcpRequest.Id, Result: promptResult));
+    }
+
     if (mcpRequest.Method != "tools/call" || mcpRequest.Params is null)
     {
         return Results.BadRequest(new McpResponse("2.0", mcpRequest.Id, Error: new { code = -32601, message = "Method not found." }));

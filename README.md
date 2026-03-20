@@ -1,5 +1,7 @@
 ﻿# Pandora Todo List Scrum Platform
 
+[![Add MCP Server](https://img.shields.io/badge/Add%20MCP%20Server-VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](vscode:mcp/install?%7B%22name%22%3A%22pandora-todo-list-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A58080%2Fmcp%22%7D)
+
 Plataforma completa para gestao de desenvolvimento de software com foco em uso humano + IA:
 
 - Backend: .NET 10 Web API com PostgreSQL real (EF Core)
