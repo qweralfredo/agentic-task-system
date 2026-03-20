@@ -13,6 +13,16 @@ Plataforma completa para gestao de desenvolvimento de software com foco em uso h
 - Knowledge hub: wiki, checkpoints de contexto, historico de execucoes agenticas
 - Operacao: Docker Compose com persistencia e backup em disco local
 
+## Instalar MCP no VS Code (1 comando)
+
+No Windows, execute na raiz do repo:
+
+- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1`
+
+Opcional para abrir automaticamente o deep link de instalacao no VS Code:
+
+- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1 -OpenInstallLink`
+
 ## Arquitetura
 
 - `backend/AgenticTodoList.Api`: API principal com dominio, servicos e MCP

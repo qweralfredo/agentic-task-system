@@ -8,6 +8,14 @@ Este projeto expoe um endpoint MCP HTTP/JSON-RPC em `POST /mcp`.
 
 ## Configuracao do servidor no VS Code
 
+Instalacao simples por script (Windows, 1 comando):
+
+- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1`
+
+Opcional para abrir o deep link automaticamente:
+
+- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1 -OpenInstallLink`
+
 Workspace config em `.vscode/mcp.json`:
 
 ```json
