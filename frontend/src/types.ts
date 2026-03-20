@@ -16,6 +16,7 @@ export type BacklogItem = {
 
 export type SprintWorkItem = {
   id: string
+  backlogItemId: string
   title: string
   description: string
   status: number | string

@@ -16,12 +16,14 @@ import {
 } from '@mui/material'
 import { MarkdownField } from '../components/MarkdownField'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
 import { backlogStatusLabels, toNumberStatus } from '../types'
 
 export function BacklogPage() {
   const { selectedProjectId, selectedProject, backlog, refreshProjectViews } = useProjectContext()
+  const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [storyPoints, setStoryPoints] = useState(3)
@@ -99,6 +101,13 @@ export function BacklogPage() {
                     <Chip label={`SP ${item.storyPoints}`} color="primary" variant="outlined" />
                     <Chip label={`P${item.priority}`} color="secondary" variant="outlined" />
                     <Chip label={backlogStatusLabels[toNumberStatus(item.status)] ?? String(item.status)} color="default" />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => navigate(`/sprints?backlogId=${item.id}`)}
+                    >
+                      Acessar Sprints
+                    </Button>
                   </Stack>
                 </Stack>
                 <Divider sx={{ my: 1.2 }} />

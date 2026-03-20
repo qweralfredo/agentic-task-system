@@ -128,6 +128,7 @@ app.MapGet("/api/projects/{projectId:guid}/sprints", async (Guid projectId, AppD
                 .Select(w => new
                 {
                     w.Id,
+                    w.BacklogItemId,
                     w.Title,
                     w.Description,
                     w.Assignee,

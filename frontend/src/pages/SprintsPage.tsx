@@ -22,12 +22,16 @@ import {
 } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
 import { backlogStatusLabels, toNumberStatus, workItemStatusLabels } from '../types'
 
 export function SprintsPage() {
   const { selectedProjectId, selectedProject, backlog, sprints, refreshProjectViews } = useProjectContext()
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const backlogIdFilter = searchParams.get('backlogId') ?? ''
 
   const [newSprintName, setNewSprintName] = useState('')
   const [newSprintGoal, setNewSprintGoal] = useState('')
@@ -109,13 +113,32 @@ export function SprintsPage() {
       const matchesPriority =
         priorityFilter === 'all' ||
         (typeof priority === 'number' && String(priority) === priorityFilter)
+      const matchesBacklog = !backlogIdFilter || item.backlogItemId === backlogIdFilter
 
-      if (columns[status] && matchesAssignee && matchesPriority) {
+      if (columns[status] && matchesAssignee && matchesPriority && matchesBacklog) {
         columns[status].push(item)
       }
     }
     return columns
-  }, [assigneeFilter, boardSprint, priorityFilter, taskDraftAssignee, workItemPriorityByTitle])
+  }, [assigneeFilter, backlogIdFilter, boardSprint, priorityFilter, taskDraftAssignee, workItemPriorityByTitle])
+
+  // For the grouped view: organize sprints by backlog item when no filter is active
+  const sprintsGroupedByBacklog = useMemo(() => {
+    if (backlogIdFilter) return null
+    const groups = new Map<string, { backlogItem: (typeof backlog)[0]; sprintIds: Set<string> }>()
+    for (const sprint of sprints) {
+      for (const wi of sprint.workItems) {
+        if (!wi.backlogItemId) continue
+        if (!groups.has(wi.backlogItemId)) {
+          const backlogItem = backlog.find((b) => b.id === wi.backlogItemId)
+          if (!backlogItem) continue
+          groups.set(wi.backlogItemId, { backlogItem, sprintIds: new Set() })
+        }
+        groups.get(wi.backlogItemId)!.sprintIds.add(sprint.id)
+      }
+    }
+    return Array.from(groups.values()).sort((a, b) => a.backlogItem.priority - b.backlogItem.priority)
+  }, [backlog, backlogIdFilter, sprints])
 
   function toggleBacklogSelection(backlogItemId: string) {
     setSelectedBacklogIds((previous) =>
@@ -263,6 +286,124 @@ export function SprintsPage() {
         </CardContent>
       </Card>
 
+      {/* Backlog filter */}
+      <Card>
+        <CardContent>
+          <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} spacing={1.2}>
+            <Typography variant="subtitle1" fontWeight={700} sx={{ minWidth: 140 }}>
+              Filtrar por Backlog
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 260 }}>
+              <InputLabel id="backlog-filter-label">Backlog</InputLabel>
+              <Select
+                labelId="backlog-filter-label"
+                label="Backlog"
+                value={backlogIdFilter}
+                onChange={(event) => {
+                  if (event.target.value) {
+                    setSearchParams({ backlogId: event.target.value })
+                  } else {
+                    setSearchParams({})
+                  }
+                }}
+              >
+                <MenuItem value="">Todas as Sprints (agrupadas por backlog)</MenuItem>
+                {backlog.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {backlogIdFilter && (
+              <Button size="small" variant="outlined" onClick={() => setSearchParams({})}>
+                Limpar filtro
+              </Button>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* Grouped view: no backlog filter active */}
+      {!backlogIdFilter && (
+        <Stack spacing={1.2}>
+          <Typography variant="h6">Sprints agrupadas por Backlog</Typography>
+          {sprints.length === 0 ? (
+            <Alert severity="info">Crie uma sprint para visualizar a listagem.</Alert>
+          ) : sprintsGroupedByBacklog && sprintsGroupedByBacklog.length === 0 ? (
+            <Alert severity="info">Nenhum item de backlog associado a sprints ainda.</Alert>
+          ) : (
+            (sprintsGroupedByBacklog ?? []).map(({ backlogItem, sprintIds }) => {
+              const relatedSprints = sprints.filter((s) => sprintIds.has(s.id))
+              return (
+                <Card key={backlogItem.id} variant="outlined">
+                  <CardContent>
+                    <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'flex-start' }} spacing={1}>
+                      <Stack spacing={0.4}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="subtitle1" fontWeight={700}>{backlogItem.title}</Typography>
+                          <Chip label={`SP ${backlogItem.storyPoints}`} size="small" color="primary" variant="outlined" />
+                          <Chip label={`P${backlogItem.priority}`} size="small" color="secondary" variant="outlined" />
+                          <Chip label={backlogStatusLabels[toNumberStatus(backlogItem.status)] ?? String(backlogItem.status)} size="small" />
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary">{backlogItem.description}</Typography>
+                      </Stack>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => setSearchParams({ backlogId: backlogItem.id })}
+                      >
+                        Ver Kanban
+                      </Button>
+                    </Stack>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
+                      {relatedSprints.map((sprint) => (
+                        <Chip
+                          key={sprint.id}
+                          size="small"
+                          clickable
+                          color={toNumberStatus(sprint.status) === 1 ? 'success' : 'default'}
+                          variant="outlined"
+                          label={`${sprint.name} • ${toNumberStatus(sprint.status) === 1 ? 'Ativa' : 'Planejada/Fechada'} • ${sprint.workItems.filter((w) => w.backlogItemId === backlogItem.id).length} tasks`}
+                          onClick={() => {
+                            setSearchParams({ backlogId: backlogItem.id })
+                            setSelectedBoardSprintId(sprint.id)
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              )
+            })
+          )}
+          {/* Sprints with no backlog items */}
+          {sprints.filter((s) => s.workItems.length === 0).length > 0 && (
+            <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+              <CardContent>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Sprints sem tasks vinculadas
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {sprints.filter((s) => s.workItems.length === 0).map((sprint) => (
+                    <Chip
+                      key={sprint.id}
+                      size="small"
+                      variant="outlined"
+                      label={sprint.name}
+                      clickable
+                      onClick={() => setSelectedBoardSprintId(sprint.id)}
+                    />
+                  ))}
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
+        </Stack>
+      )}
+
+      {backlogIdFilter && (
+        <>
       <Card>
         <CardContent>
           <Typography variant="h6">Filtros do Board</Typography>
@@ -414,6 +555,9 @@ export function SprintsPage() {
             ))}
           </Grid>
         </Stack>
+      )}
+
+        </>
       )}
 
       <Dialog open={isSprintModalOpen} onClose={() => setSprintModalOpen(false)} fullWidth maxWidth="md">
