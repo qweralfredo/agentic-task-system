@@ -2,6 +2,8 @@
 
 [![Add MCP Server](https://img.shields.io/badge/Add%20MCP%20Server-VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](vscode:mcp/install?%7B%22name%22%3A%22pandora-todo-list-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A58080%2Fmcp%22%7D)
 
+[Add SQL MCP Server](vscode:mcp/install?%7B%22name%22%3A%22sql-mcp-server%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22dab%22%2C%22args%22%3A%5B%22start%22%2C%22--mcp-stdio%22%2C%22role%3Aanonymous%22%2C%22--config%22%2C%22%24%7BworkspaceFolder%7D%2Fdab-config.json%22%5D%7D)
+
 Plataforma completa para gestao de desenvolvimento de software com foco em uso humano + IA:
 
 - Backend: .NET 10 Web API com PostgreSQL real (EF Core)
@@ -50,7 +52,9 @@ Tools disponiveis:
 - `project.list`
 - `project.create`
 - `backlog.add`
+- `backlog.list`
 - `sprint.create`
+- `workitem.list`
 - `knowledge.checkpoint`
 
 ## Subir local sem Docker

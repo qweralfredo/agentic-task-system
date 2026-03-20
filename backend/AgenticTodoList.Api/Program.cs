@@ -236,7 +236,9 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
                 new { name = "project.list", description = "List software projects", inputSchema = new { type = "object", properties = new { } } },
                 new { name = "project.create", description = "Create project", inputSchema = new { type = "object", properties = new { name = new { type = "string" }, description = new { type = "string" } }, required = new[] { "name", "description" } } },
                 new { name = "backlog.add", description = "Add backlog item", inputSchema = new { type = "object", properties = new { projectId = new { type = "string" }, title = new { type = "string" }, description = new { type = "string" }, storyPoints = new { type = "integer" }, priority = new { type = "integer" } }, required = new[] { "projectId", "title", "description", "storyPoints", "priority" } } },
+                new { name = "backlog.list", description = "List backlog items from a project", inputSchema = new { type = "object", properties = new { projectId = new { type = "string" } }, required = new[] { "projectId" } } },
                 new { name = "sprint.create", description = "Create sprint from backlog items", inputSchema = new { type = "object", properties = new { projectId = new { type = "string" }, name = new { type = "string" }, goal = new { type = "string" }, startDate = new { type = "string" }, endDate = new { type = "string" }, backlogItemIds = new { type = "array", items = new { type = "string" } } }, required = new[] { "projectId", "name", "goal", "startDate", "endDate", "backlogItemIds" } } },
+                new { name = "workitem.list", description = "List work items from a project and optional sprint", inputSchema = new { type = "object", properties = new { projectId = new { type = "string" }, sprintId = new { type = "string" } }, required = new[] { "projectId" } } },
                 new { name = "knowledge.checkpoint", description = "Create knowledge checkpoint", inputSchema = new { type = "object", properties = new { projectId = new { type = "string" }, name = new { type = "string" }, contextSnapshot = new { type = "string" }, decisions = new { type = "string" }, risks = new { type = "string" }, nextActions = new { type = "string" } }, required = new[] { "projectId", "name", "contextSnapshot", "decisions", "risks", "nextActions" } } }
             }
         };
@@ -337,92 +339,99 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
             return fallback;
         }
 
-        var promptResult = promptName switch
+        try
         {
-            "pandora.project.create" => new
+            var promptResult = promptName switch
             {
-                description = "Criar projeto no Pandora via MCP tool.",
-                messages = new object[]
+                "pandora.project.create" => new
                 {
-                    new
+                    description = "Criar projeto no Pandora via MCP tool.",
+                    messages = new object[]
                     {
-                        role = "user",
-                        content = new
+                        new
                         {
-                            type = "text",
-                            text = $"Use a tool project.create com name='{GetPromptArg("name", "Novo Projeto")}' e description='{GetPromptArg("description", "Projeto criado via prompt MCP")}'."
+                            role = "user",
+                            content = new
+                            {
+                                type = "text",
+                                text = $"Use a tool project.create com name='{GetPromptArg("name", "Novo Projeto")}' e description='{GetPromptArg("description", "Projeto criado via prompt MCP")}'."
+                            }
                         }
                     }
-                }
-            },
-            "pandora.backlog.add" => new
-            {
-                description = "Adicionar story no backlog do projeto.",
-                messages = new object[]
+                },
+                "pandora.backlog.add" => new
                 {
-                    new
+                    description = "Adicionar story no backlog do projeto.",
+                    messages = new object[]
                     {
-                        role = "user",
-                        content = new
+                        new
                         {
-                            type = "text",
-                            text = $"Use a tool backlog.add com projectId='{GetPromptArg("projectId", "<project-id>")}', title='{GetPromptArg("title", "Nova story")}', description='{GetPromptArg("description", "Descricao da story")}', storyPoints={GetPromptArg("storyPoints", "3")} e priority={GetPromptArg("priority", "1")}."
+                            role = "user",
+                            content = new
+                            {
+                                type = "text",
+                                text = $"Use a tool backlog.add com projectId='{GetPromptArg("projectId", "<project-id>")}', title='{GetPromptArg("title", "Nova story")}', description='{GetPromptArg("description", "Descricao da story")}', storyPoints={GetPromptArg("storyPoints", "3")} e priority={GetPromptArg("priority", "1")}."
+                            }
                         }
                     }
-                }
-            },
-            "pandora.sprint.create" => new
-            {
-                description = "Criar sprint com itens do backlog.",
-                messages = new object[]
+                },
+                "pandora.sprint.create" => new
                 {
-                    new
+                    description = "Criar sprint com itens do backlog.",
+                    messages = new object[]
                     {
-                        role = "user",
-                        content = new
+                        new
                         {
-                            type = "text",
-                            text = $"Use a tool sprint.create com projectId='{GetPromptArg("projectId", "<project-id>")}', name='{GetPromptArg("name", "Sprint 1")}', goal='{GetPromptArg("goal", "Entregar funcionalidades prioritarias")}', startDate='{GetPromptArg("startDate", DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"))}', endDate='{GetPromptArg("endDate", DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)).ToString("yyyy-MM-dd"))}' e backlogItemIds={GetPromptArg("backlogItemIds", "[\"<backlog-item-id>\"]")}."
+                            role = "user",
+                            content = new
+                            {
+                                type = "text",
+                                text = $"Use a tool sprint.create com projectId='{GetPromptArg("projectId", "<project-id>")}', name='{GetPromptArg("name", "Sprint 1")}', goal='{GetPromptArg("goal", "Entregar funcionalidades prioritarias")}', startDate='{GetPromptArg("startDate", DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"))}', endDate='{GetPromptArg("endDate", DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)).ToString("yyyy-MM-dd"))}' e backlogItemIds={GetPromptArg("backlogItemIds", "[\"<backlog-item-id>\"]")}."
+                            }
                         }
                     }
-                }
-            },
-            "pandora.knowledge.checkpoint" => new
-            {
-                description = "Registrar checkpoint de conhecimento do projeto.",
-                messages = new object[]
+                },
+                "pandora.knowledge.checkpoint" => new
                 {
-                    new
+                    description = "Registrar checkpoint de conhecimento do projeto.",
+                    messages = new object[]
                     {
-                        role = "user",
-                        content = new
+                        new
                         {
-                            type = "text",
-                            text = $"Use a tool knowledge.checkpoint com projectId='{GetPromptArg("projectId", "<project-id>")}', name='{GetPromptArg("name", "Checkpoint")}', contextSnapshot='{GetPromptArg("contextSnapshot", "Contexto atual")}', decisions='{GetPromptArg("decisions", "Decisoes registradas")}', risks='{GetPromptArg("risks", "Riscos mapeados")}' e nextActions='{GetPromptArg("nextActions", "Proximos passos")}'."
+                            role = "user",
+                            content = new
+                            {
+                                type = "text",
+                                text = $"Use a tool knowledge.checkpoint com projectId='{GetPromptArg("projectId", "<project-id>")}', name='{GetPromptArg("name", "Checkpoint")}', contextSnapshot='{GetPromptArg("contextSnapshot", "Contexto atual")}', decisions='{GetPromptArg("decisions", "Decisoes registradas")}', risks='{GetPromptArg("risks", "Riscos mapeados")}' e nextActions='{GetPromptArg("nextActions", "Proximos passos")}'."
+                            }
                         }
                     }
-                }
-            },
-            "pandora.project.status" => new
-            {
-                description = "Consultar status de projetos no Pandora.",
-                messages = new object[]
+                },
+                "pandora.project.status" => new
                 {
-                    new
+                    description = "Consultar status de projetos no Pandora.",
+                    messages = new object[]
                     {
-                        role = "user",
-                        content = new
+                        new
                         {
-                            type = "text",
-                            text = "Use a tool project.list e responda com nome, id e data de criacao dos projetos."
+                            role = "user",
+                            content = new
+                            {
+                                type = "text",
+                                text = "Use a tool project.list e responda com nome, id e data de criacao dos projetos."
+                            }
                         }
                     }
-                }
-            },
-            _ => throw new InvalidOperationException("Prompt not found.")
-        };
+                },
+                _ => throw new InvalidOperationException("Prompt not found.")
+            };
 
-        return Results.Ok(new McpResponse("2.0", mcpRequest.Id, Result: promptResult));
+            return Results.Ok(new McpResponse("2.0", mcpRequest.Id, Result: promptResult));
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new McpResponse("2.0", mcpRequest.Id, Error: new { code = -32000, message = ex.Message }));
+        }
     }
 
     if (mcpRequest.Method != "tools/call" || mcpRequest.Params is null)
@@ -453,6 +462,12 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
                     args.GetProperty("storyPoints").GetInt32(),
                     args.GetProperty("priority").GetInt32()),
                 ct),
+            "backlog.list" => await db.BacklogItems
+                .Where(b => b.ProjectId == Guid.Parse(args.GetProperty("projectId").GetString() ?? string.Empty))
+                .OrderBy(b => b.Priority)
+                .ThenBy(b => b.CreatedAt)
+                .Select(b => new { b.Id, b.ProjectId, b.Title, b.Description, b.StoryPoints, b.Priority, b.Status, b.CreatedAt })
+                .ToListAsync(ct),
             "sprint.create" => await service.CreateSprintAsync(
                 Guid.Parse(args.GetProperty("projectId").GetString() ?? string.Empty),
                 new CreateSprintRequest(
@@ -462,6 +477,24 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
                     DateOnly.Parse(args.GetProperty("endDate").GetString() ?? string.Empty),
                     args.GetProperty("backlogItemIds").EnumerateArray().Select(p => Guid.Parse(p.GetString() ?? string.Empty)).ToArray()),
                 ct),
+            "workitem.list" => await (args.TryGetProperty("sprintId", out var sprintIdJson)
+                    && sprintIdJson.ValueKind == JsonValueKind.String
+                    && Guid.TryParse(sprintIdJson.GetString(), out var sprintId)
+                ? db.WorkItems
+                    .AsNoTracking()
+                    .Where(w => w.ProjectId == Guid.Parse(args.GetProperty("projectId").GetString() ?? string.Empty)
+                        && w.SprintId == sprintId)
+                    .OrderBy(w => w.Status)
+                    .ThenBy(w => w.CreatedAt)
+                    .Select(w => new { w.Id, w.ProjectId, w.SprintId, w.BacklogItemId, w.Title, w.Description, w.Assignee, w.Status, w.CreatedAt, w.UpdatedAt })
+                    .ToListAsync(ct)
+                : db.WorkItems
+                    .AsNoTracking()
+                    .Where(w => w.ProjectId == Guid.Parse(args.GetProperty("projectId").GetString() ?? string.Empty))
+                    .OrderBy(w => w.Status)
+                    .ThenBy(w => w.CreatedAt)
+                    .Select(w => new { w.Id, w.ProjectId, w.SprintId, w.BacklogItemId, w.Title, w.Description, w.Assignee, w.Status, w.CreatedAt, w.UpdatedAt })
+                    .ToListAsync(ct)),
             "knowledge.checkpoint" => await service.AddCheckpointAsync(
                 Guid.Parse(args.GetProperty("projectId").GetString() ?? string.Empty),
                 new AddCheckpointRequest(

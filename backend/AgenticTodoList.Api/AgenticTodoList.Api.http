@@ -1,5 +1,6 @@
 ﻿@PandoraTodoList.Api_HostAddress = http://localhost:5146
 @Mcp_HostAddress = http://127.0.0.1:58080
+@projectId = 00000000-0000-0000-0000-000000000000
 
 GET {{PandoraTodoList.Api_HostAddress}}/weatherforecast/
 Accept: application/json
@@ -48,6 +49,42 @@ Content-Type: application/json
 	"params": {
 		"name": "project.list",
 		"arguments": {}
+	}
+}
+
+###
+
+# MCP - listar backlog por projeto
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "backlog-list-1",
+	"method": "tools/call",
+	"params": {
+		"name": "backlog.list",
+		"arguments": {
+			"projectId": "{{projectId}}"
+		}
+	}
+}
+
+###
+
+# MCP - listar work items por projeto (opcional sprintId)
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "workitem-list-1",
+	"method": "tools/call",
+	"params": {
+		"name": "workitem.list",
+		"arguments": {
+			"projectId": "{{projectId}}"
+		}
 	}
 }
 

@@ -37,7 +37,9 @@ Deep link para adicionar no VS Code:
 - `project.list`: lista projetos
 - `project.create`: cria projeto
 - `backlog.add`: adiciona item de backlog
+- `backlog.list`: lista backlog por projeto
 - `sprint.create`: cria sprint com backlog items
+- `workitem.list`: lista tarefas (work items) por projeto e sprint opcional
 - `knowledge.checkpoint`: registra checkpoint de conhecimento
 
 ## Catalogo de prompts

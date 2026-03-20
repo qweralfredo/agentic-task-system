@@ -126,7 +126,7 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
         listResponse.EnsureSuccessStatusCode();
 
         var listJson = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(listJson.GetProperty("result").GetProperty("tools").GetArrayLength() >= 5);
+        Assert.True(listJson.GetProperty("result").GetProperty("tools").GetArrayLength() >= 7);
 
         var callResponse = await _client.PostAsJsonAsync("/mcp", new
         {
@@ -148,6 +148,67 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
         var callJson = await callResponse.Content.ReadFromJsonAsync<JsonElement>();
         var content = callJson.GetProperty("result").GetProperty("content").GetString();
         Assert.False(string.IsNullOrWhiteSpace(content));
+    }
+
+    [Fact]
+    public async Task McpReadTools_ShouldListBacklogAndWorkItems()
+    {
+        var projectResponse = await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto MCP Read", "Descricao"));
+        projectResponse.EnsureSuccessStatusCode();
+        var project = await projectResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var backlogResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/backlog", new AddBacklogItemRequest("Story Read", "Desc", 3, 1));
+        backlogResponse.EnsureSuccessStatusCode();
+        var backlog = await backlogResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+        var sprintRequest = new
+        {
+            name = "Sprint Read",
+            goal = "Validar listagem MCP",
+            startDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            backlogItemIds = new[] { backlog.GetProperty("id").GetGuid() }
+        };
+
+        var sprintResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/sprints", sprintRequest);
+        sprintResponse.EnsureSuccessStatusCode();
+        var sprint = await sprintResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var sprintId = sprint.GetProperty("id").GetGuid();
+
+        var backlogListResponse = await _client.PostAsJsonAsync("/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = "read-1",
+            method = "tools/call",
+            @params = new
+            {
+                name = "backlog.list",
+                arguments = new { projectId = projectId.ToString() }
+            }
+        });
+
+        backlogListResponse.EnsureSuccessStatusCode();
+        var backlogListJson = await backlogListResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var backlogListContent = backlogListJson.GetProperty("result").GetProperty("content").GetString() ?? "[]";
+        Assert.Contains("Story Read", backlogListContent, StringComparison.Ordinal);
+
+        var workItemListResponse = await _client.PostAsJsonAsync("/mcp", new
+        {
+            jsonrpc = "2.0",
+            id = "read-2",
+            method = "tools/call",
+            @params = new
+            {
+                name = "workitem.list",
+                arguments = new { projectId = projectId.ToString(), sprintId = sprintId.ToString() }
+            }
+        });
+
+        workItemListResponse.EnsureSuccessStatusCode();
+        var workItemListJson = await workItemListResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var workItemListContent = workItemListJson.GetProperty("result").GetProperty("content").GetString() ?? "[]";
+        Assert.Contains("Story Read", workItemListContent, StringComparison.Ordinal);
     }
 }
 
