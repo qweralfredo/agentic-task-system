@@ -14,6 +14,17 @@ export type BacklogItem = {
   status: number | string
 }
 
+export type WorkItemFeedback = {
+  id: string
+  agentName: string
+  modelUsed: string
+  ideUsed: string
+  tokensUsed: number
+  feedback: string
+  metadataJson: string
+  createdAt: string
+}
+
 export type SprintWorkItem = {
   id: string
   backlogItemId: string
@@ -21,6 +32,12 @@ export type SprintWorkItem = {
   description: string
   status: number | string
   assignee: string
+  totalTokensSpent: number
+  lastModelUsed: string
+  lastIdeUsed: string
+  createdAt: string
+  updatedAt?: string
+  feedbacks: WorkItemFeedback[]
 }
 
 export type Sprint = {
@@ -28,6 +45,8 @@ export type Sprint = {
   name: string
   goal: string
   status: number | string
+  startDate: string
+  endDate: string
   workItems: SprintWorkItem[]
 }
 

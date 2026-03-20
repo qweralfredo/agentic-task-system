@@ -6,6 +6,7 @@ import {
   CardContent,
   Checkbox,
   Chip,
+  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -18,6 +19,7 @@ import {
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { useMemo, useRef, useState } from 'react'
@@ -49,6 +51,19 @@ export function SprintsPage() {
   const [editingWorkItemId, setEditingWorkItemId] = useState('')
   const [editingWorkItemStatus, setEditingWorkItemStatus] = useState(0)
   const [editingWorkItemAssignee, setEditingWorkItemAssignee] = useState('')
+  const [expandedFeedbackIds, setExpandedFeedbackIds] = useState<Set<string>>(new Set())
+
+  function toggleFeedbacks(workItemId: string) {
+    setExpandedFeedbackIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(workItemId)) {
+        next.delete(workItemId)
+      } else {
+        next.add(workItemId)
+      }
+      return next
+    })
+  }
   const draggedWorkItemRef = useRef('')
 
   const fallbackBoardSprintId = backlogIdFilter
@@ -397,20 +412,36 @@ export function SprintsPage() {
                       </Button>
                     </Stack>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
-                      {relatedSprints.map((sprint) => (
-                        <Chip
-                          key={sprint.id}
-                          size="small"
-                          clickable
-                          color={toNumberStatus(sprint.status) === 1 ? 'success' : 'default'}
-                          variant="outlined"
-                          label={`${sprint.name} • ${toNumberStatus(sprint.status) === 1 ? 'Ativa' : 'Planejada/Fechada'} • ${sprint.workItems.filter((w) => w.backlogItemId === backlogItem.id).length} tasks`}
-                          onClick={() => {
-                            setSearchParams({ backlogId: backlogItem.id })
-                            setSelectedBoardSprintId(sprint.id)
-                          }}
-                        />
-                      ))}
+                      {relatedSprints.map((sprint) => {
+                        const sprintWorkItems = sprint.workItems.filter((w) => w.backlogItemId === backlogItem.id)
+                        const totalTokens = sprintWorkItems.reduce((acc, w) => acc + (w.totalTokensSpent ?? 0), 0)
+                        const totalFeedbacks = sprintWorkItems.reduce((acc, w) => acc + (w.feedbacks?.length ?? 0), 0)
+                        const sprintActive = toNumberStatus(sprint.status) === 1
+                        const dateRange = sprint.startDate && sprint.endDate
+                          ? `${new Date(sprint.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} – ${new Date(sprint.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+                          : ''
+                        return (
+                          <Chip
+                            key={sprint.id}
+                            size="small"
+                            clickable
+                            color={sprintActive ? 'success' : 'default'}
+                            variant="outlined"
+                            label={[
+                              sprint.name,
+                              sprintActive ? 'Ativa' : 'Planejada/Fechada',
+                              `${sprintWorkItems.length} tasks`,
+                              dateRange,
+                              totalTokens > 0 ? `${totalTokens} tk` : '',
+                              totalFeedbacks > 0 ? `${totalFeedbacks} fb` : '',
+                            ].filter(Boolean).join(' • ')}
+                            onClick={() => {
+                              setSearchParams({ backlogId: backlogItem.id })
+                              setSelectedBoardSprintId(sprint.id)
+                            }}
+                          />
+                        )
+                      })}
                     </Stack>
                   </CardContent>
                 </Card>
@@ -484,36 +515,17 @@ export function SprintsPage() {
                     </Stack>
                     <Stack spacing={1}>
                       {(sprintBoard[columnStatus] ?? []).map((item) => (
-                        <Paper
+                        <WorkItemCard
                           key={item.id}
-                          sx={{
-                            borderRadius: 2,
-                            border: '1px solid #d7dfeb',
-                            borderLeft: '4px solid #2f78c5',
-                            bgcolor: '#ffffff',
-                            boxShadow: '0 1px 1px rgba(9,30,66,0.09)',
-                            opacity: draggedWorkItemId === item.id ? 0.65 : 1,
-                          }}
-                        >
-                          <CardContent sx={{ p: 1.1, '&:last-child': { pb: 1.1 } }}>
-                            <Stack spacing={0.8}>
-                              <BoxDragHandle onDragStart={(event) => handleTaskDragStart(event, item.id)} onDragEnd={handleTaskDragEnd} />
-                              <Typography variant="subtitle2" fontWeight={700}>{item.title}</Typography>
-                              <Typography variant="body2" color="text.secondary">{item.description}</Typography>
-                              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="caption">Assignee: {item.assignee || 'nao definido'}</Typography>
-                                <Chip size="small" label={`P${workItemPriorityByTitle[item.title.trim().toLowerCase()] ?? '-'}`} />
-                              </Stack>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => handleOpenTaskModal(item.id, item.status, item.assignee)}
-                              >
-                                Editar task
-                              </Button>
-                            </Stack>
-                          </CardContent>
-                        </Paper>
+                          item={item}
+                          priority={workItemPriorityByTitle[item.title.trim().toLowerCase()]}
+                          isDragging={draggedWorkItemId === item.id}
+                          feedbackExpanded={expandedFeedbackIds.has(item.id)}
+                          onToggleFeedbacks={() => toggleFeedbacks(item.id)}
+                          onDragStart={(event) => handleTaskDragStart(event, item.id)}
+                          onDragEnd={handleTaskDragEnd}
+                          onEdit={() => handleOpenTaskModal(item.id, item.status, item.assignee)}
+                        />
                       ))}
                       {(sprintBoard[columnStatus] ?? []).length === 0 ? (
                         <Box
@@ -669,5 +681,199 @@ function BoxDragHandle({
     >
       <Typography variant="caption" fontWeight={700}>Arrastar</Typography>
     </Stack>
+  )
+}
+
+const statusBorderColor: Record<number, string> = {
+  0: '#2f78c5',
+  1: '#ed9f1d',
+  2: '#9c27b0',
+  3: '#2e7d32',
+  4: '#d32f2f',
+}
+
+import type { DragEvent as ReactDragEvent } from 'react'
+import type { SprintWorkItem, WorkItemFeedback } from '../types'
+
+function WorkItemCard({
+  item,
+  priority,
+  isDragging,
+  feedbackExpanded,
+  onToggleFeedbacks,
+  onDragStart,
+  onDragEnd,
+  onEdit,
+}: {
+  item: SprintWorkItem
+  priority: number | undefined
+  isDragging: boolean
+  feedbackExpanded: boolean
+  onToggleFeedbacks: () => void
+  onDragStart: (event: ReactDragEvent<HTMLDivElement>) => void
+  onDragEnd: () => void
+  onEdit: () => void
+}) {
+  const statusNum = typeof item.status === 'number' ? item.status : Number(item.status)
+  const borderColor = statusBorderColor[statusNum] ?? '#2f78c5'
+  const lastActivity = item.updatedAt ?? item.createdAt
+  const formattedDate = lastActivity
+    ? new Date(lastActivity).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : null
+
+  return (
+    <Paper
+      sx={{
+        borderRadius: 2,
+        border: '1px solid #d7dfeb',
+        borderLeft: `4px solid ${borderColor}`,
+        bgcolor: '#ffffff',
+        boxShadow: '0 1px 1px rgba(9,30,66,0.09)',
+        opacity: isDragging ? 0.65 : 1,
+      }}
+    >
+      <CardContent sx={{ p: 1.1, '&:last-child': { pb: 1.1 } }}>
+        <Stack spacing={0.75}>
+          {/* Drag handle */}
+          <BoxDragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
+
+          {/* Title + Priority chip + Tokens chip */}
+          <Stack direction="row" spacing={0.75} alignItems="flex-start" flexWrap="wrap" useFlexGap>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ flex: 1, minWidth: 0 }}>
+              {item.title}
+            </Typography>
+            {typeof priority === 'number' && (
+              <Chip size="small" label={`P${priority}`} variant="outlined" color="secondary" />
+            )}
+            {item.totalTokensSpent > 0 && (
+              <Tooltip title="Total de tokens gastos nesta task">
+                <Chip size="small" label={`${item.totalTokensSpent} tk`} color="info" variant="outlined" />
+              </Tooltip>
+            )}
+          </Stack>
+
+          {/* Description */}
+          {item.description && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {item.description}
+            </Typography>
+          )}
+
+          {/* Agent context row */}
+          {item.lastModelUsed && (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+              <Chip
+                size="small"
+                label={`Modelo: ${item.lastModelUsed}`}
+                sx={{ bgcolor: '#f0f4ff', fontSize: 11 }}
+              />
+              {item.lastIdeUsed && (
+                <Chip
+                  size="small"
+                  label={`IDE: ${item.lastIdeUsed}`}
+                  sx={{ bgcolor: '#f5f0ff', fontSize: 11 }}
+                />
+              )}
+            </Stack>
+          )}
+
+          {/* Assignee + Last updated */}
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="caption" color="text.secondary">
+              {item.assignee ? `@${item.assignee}` : 'sem assignee'}
+            </Typography>
+            {formattedDate && (
+              <Typography variant="caption" color="text.disabled">
+                {item.updatedAt ? 'Atualizado' : 'Criado'} {formattedDate}
+              </Typography>
+            )}
+          </Stack>
+
+          {/* Feedbacks toggle */}
+          {item.feedbacks && item.feedbacks.length > 0 && (
+            <>
+              <Button
+                size="small"
+                variant="text"
+                onClick={onToggleFeedbacks}
+                sx={{ justifyContent: 'flex-start', px: 0, fontSize: 12, color: 'text.secondary' }}
+              >
+                {feedbackExpanded ? '▾' : '▸'} {item.feedbacks.length} feedback{item.feedbacks.length > 1 ? 's' : ''} de agente
+              </Button>
+              <Collapse in={feedbackExpanded} unmountOnExit>
+                <Stack spacing={0.6}>
+                  {item.feedbacks.map((fb) => (
+                    <FeedbackEntry key={fb.id} feedback={fb} />
+                  ))}
+                </Stack>
+              </Collapse>
+            </>
+          )}
+
+          {/* Edit button */}
+          <Button size="small" variant="contained" onClick={onEdit}>
+            Editar task
+          </Button>
+        </Stack>
+      </CardContent>
+    </Paper>
+  )
+}
+
+function FeedbackEntry({ feedback }: { feedback: WorkItemFeedback }) {
+  const date = new Date(feedback.createdAt).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return (
+    <Box
+      sx={{
+        bgcolor: '#f8f9fc',
+        borderRadius: 1,
+        border: '1px solid #e3e8f0',
+        p: 0.8,
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.3 }}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <Typography variant="caption" fontWeight={700} color="text.primary">
+            {feedback.agentName || 'agente'}
+          </Typography>
+          {feedback.modelUsed && (
+            <Typography variant="caption" color="text.disabled">
+              · {feedback.modelUsed}
+            </Typography>
+          )}
+          {feedback.ideUsed && (
+            <Typography variant="caption" color="text.disabled">
+              · {feedback.ideUsed}
+            </Typography>
+          )}
+        </Stack>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          {feedback.tokensUsed > 0 && (
+            <Chip size="small" label={`${feedback.tokensUsed} tk`} sx={{ fontSize: 10, height: 16 }} />
+          )}
+          <Typography variant="caption" color="text.disabled">{date}</Typography>
+        </Stack>
+      </Stack>
+      {feedback.feedback && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          {feedback.feedback}
+        </Typography>
+      )}
+    </Box>
   )
 }
