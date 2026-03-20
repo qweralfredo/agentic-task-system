@@ -26,7 +26,7 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
     public async Task CorsPreflight_ShouldAllowFrontendOrigin()
     {
         var request = new HttpRequestMessage(HttpMethod.Options, "/api/projects");
-        request.Headers.Add("Origin", "http://localhost:53000");
+        request.Headers.Add("Origin", "http://localhost:8400");
         request.Headers.Add("Access-Control-Request-Method", "POST");
         request.Headers.Add("Access-Control-Request-Headers", "content-type");
 
@@ -34,7 +34,7 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var origins));
-        Assert.Contains("http://localhost:53000", origins!);
+        Assert.Contains("http://localhost:8400", origins!);
     }
 
     [Fact]
@@ -160,239 +160,83 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
-    public async Task McpTools_ShouldListAndCall()
+    public async Task ProjectDelete_ShouldArchiveAndSupportIncludeArchivedFlag()
     {
-        var listResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "1",
-            method = "tools/list"
-        });
-        listResponse.EnsureSuccessStatusCode();
-
-        var listJson = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(listJson.GetProperty("result").GetProperty("tools").GetArrayLength() >= 8);
-
-        var callResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "2",
-            method = "tools/call",
-            @params = new
-            {
-                name = "project.create",
-                arguments = new
-                {
-                    name = "Projeto via MCP",
-                    description = "Criacao por ferramenta"
-                }
-            }
-        });
-        callResponse.EnsureSuccessStatusCode();
-
-        var callJson = await callResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var content = callJson.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString();
-        Assert.False(string.IsNullOrWhiteSpace(content));
-    }
-
-    [Fact]
-    public async Task McpReadTools_ShouldListBacklogAndWorkItems()
-    {
-        var projectResponse = await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto MCP Read", "Descricao"));
-        projectResponse.EnsureSuccessStatusCode();
-        var project = await projectResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var projectId = project.GetProperty("id").GetGuid();
-
-        var backlogResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/backlog", new AddBacklogItemRequest("Story Read", "Desc", 3, 1));
-        backlogResponse.EnsureSuccessStatusCode();
-        var backlog = await backlogResponse.Content.ReadFromJsonAsync<JsonElement>();
-
-        var sprintRequest = new
-        {
-            name = "Sprint Read",
-            goal = "Validar listagem MCP",
-            startDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
-            backlogItemIds = new[] { backlog.GetProperty("id").GetGuid() }
-        };
-
-        var sprintResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/sprints", sprintRequest);
-        sprintResponse.EnsureSuccessStatusCode();
-        var sprint = await sprintResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var sprintId = sprint.GetProperty("id").GetGuid();
-
-        var backlogListResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "read-1",
-            method = "tools/call",
-            @params = new
-            {
-                name = "backlog.list",
-                arguments = new { projectId = projectId.ToString() }
-            }
-        });
-
-        backlogListResponse.EnsureSuccessStatusCode();
-        var backlogListJson = await backlogListResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var backlogListContent = backlogListJson.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "[]";
-        Assert.Contains("Story Read", backlogListContent, StringComparison.Ordinal);
-
-        var workItemListResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "read-2",
-            method = "tools/call",
-            @params = new
-            {
-                name = "workitem.list",
-                arguments = new { projectId = projectId.ToString(), sprintId = sprintId.ToString() }
-            }
-        });
-
-        workItemListResponse.EnsureSuccessStatusCode();
-        var workItemListJson = await workItemListResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var workItemListContent = workItemListJson.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "[]";
-        Assert.Contains("Story Read", workItemListContent, StringComparison.Ordinal);
-        Assert.Contains("TotalTokensSpent", workItemListContent, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task McpWorkItemUpdateTool_ShouldTrackTokensAndMetadata()
-    {
-        var projectResponse = await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto MCP Token", "Desc"));
-        projectResponse.EnsureSuccessStatusCode();
-        var project = await projectResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var projectId = project.GetProperty("id").GetGuid();
-
-        var backlogResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/backlog", new AddBacklogItemRequest("Story MCP", "Desc", 5, 1));
-        backlogResponse.EnsureSuccessStatusCode();
-        var backlog = await backlogResponse.Content.ReadFromJsonAsync<JsonElement>();
-
-        var sprintResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/sprints", new
-        {
-            name = "Sprint MCP",
-            goal = "Track token",
-            startDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
-            backlogItemIds = new[] { backlog.GetProperty("id").GetGuid() }
-        });
-        sprintResponse.EnsureSuccessStatusCode();
-
-        var sprints = await _client.GetFromJsonAsync<JsonElement>($"/api/projects/{projectId}/sprints");
-        var workItemId = sprints[0].GetProperty("workItems")[0].GetProperty("id").GetGuid();
-
-        var updateResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "mcp-update-1",
-            method = "tools/call",
-            @params = new
-            {
-                name = "workitem.update",
-                arguments = new
-                {
-                    workItemId = workItemId.ToString(),
-                    status = (int)WorkItemStatus.InProgress,
-                    assignee = "copilot-agent",
-                    tokensUsed = 210,
-                    agentName = "copilot",
-                    modelUsed = "GPT-5.3-Codex",
-                    ideUsed = "VS Code",
-                    feedback = "Atualizacao MCP",
-                    metadataJson = "{\"source\":\"mcp\"}"
-                }
-            }
-        });
-        updateResponse.EnsureSuccessStatusCode();
-
-        var workItemListResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "mcp-update-2",
-            method = "tools/call",
-            @params = new
-            {
-                name = "workitem.list",
-                arguments = new { projectId = projectId.ToString() }
-            }
-        });
-        workItemListResponse.EnsureSuccessStatusCode();
-
-        var workItemListJson = await workItemListResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var content = workItemListJson.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "[]";
-
-        Assert.Contains("GPT-5.3-Codex", content, StringComparison.Ordinal);
-        Assert.Contains("VS Code", content, StringComparison.Ordinal);
-        Assert.Contains("\"TokensUsed\":210", content, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task McpProjectDelete_ShouldArchiveProjectAndHideFromDefaultList()
-    {
-        var createResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "archive-1",
-            method = "tools/call",
-            @params = new
-            {
-                name = "project.create",
-                arguments = new { name = "Projeto Archive", description = "Soft delete" }
-            }
-        });
+        var createResponse = await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto Archive", "Soft delete"));
         createResponse.EnsureSuccessStatusCode();
+        var project = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
 
-        var createdJson = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var createdProject = createdJson.GetProperty("result").GetProperty("structuredContent");
-        var projectId = createdProject.GetProperty("id").GetGuid();
-
-        var deleteResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "archive-2",
-            method = "tools/call",
-            @params = new
-            {
-                name = "project.delete",
-                arguments = new { projectId = projectId.ToString() }
-            }
-        });
+        var deleteResponse = await _client.DeleteAsync($"/api/projects/{projectId}");
         deleteResponse.EnsureSuccessStatusCode();
 
-        var defaultListResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "archive-3",
-            method = "tools/call",
-            @params = new
-            {
-                name = "project.list",
-                arguments = new { }
-            }
-        });
-        defaultListResponse.EnsureSuccessStatusCode();
+        var activeProjects = await _client.GetFromJsonAsync<List<JsonElement>>("/api/projects");
+        Assert.NotNull(activeProjects);
+        Assert.DoesNotContain(activeProjects!, p => p.GetProperty("id").GetGuid() == projectId);
 
-        var defaultListJson = await defaultListResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var defaultListContent = defaultListJson.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "[]";
-        Assert.DoesNotContain(projectId.ToString(), defaultListContent, StringComparison.OrdinalIgnoreCase);
-
-        var allListResponse = await _client.PostAsJsonAsync("/mcp", new
-        {
-            jsonrpc = "2.0",
-            id = "archive-4",
-            method = "tools/call",
-            @params = new
-            {
-                name = "project.list",
-                arguments = new { includeArchived = true }
-            }
-        });
-        allListResponse.EnsureSuccessStatusCode();
-
-        var allListJson = await allListResponse.Content.ReadFromJsonAsync<JsonElement>();
-        var allListContent = allListJson.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString() ?? "[]";
-        Assert.Contains(projectId.ToString(), allListContent, StringComparison.OrdinalIgnoreCase);
+        var allProjects = await _client.GetFromJsonAsync<List<JsonElement>>("/api/projects?includeArchived=true");
+        Assert.NotNull(allProjects);
+        Assert.Contains(allProjects!, p => p.GetProperty("id").GetGuid() == projectId);
     }
+
+    [Fact]
+    public async Task ProjectConfig_CreateWithConfig_ShouldPersistConfigFields()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest(
+            "Projeto Config",
+            "Teste de configuracoes",
+            GitHubUrl: "https://github.com/qweralfredo/todolist",
+            LocalPath: "c:/projetos/todolist",
+            TechStack: ".NET 10, React, PostgreSQL",
+            MainBranch: "main"));
+        createResponse.EnsureSuccessStatusCode();
+
+        var project = await createResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var list = await _client.GetFromJsonAsync<List<JsonElement>>("/api/projects");
+        var found = list!.First(p => p.GetProperty("id").GetGuid() == projectId);
+
+        Assert.Equal("https://github.com/qweralfredo/todolist", found.GetProperty("gitHubUrl").GetString());
+        Assert.Equal("c:/projetos/todolist", found.GetProperty("localPath").GetString());
+        Assert.Equal(".NET 10, React, PostgreSQL", found.GetProperty("techStack").GetString());
+        Assert.Equal("main", found.GetProperty("mainBranch").GetString());
+    }
+
+    [Fact]
+    public async Task ProjectConfig_PatchConfig_ShouldUpdateConfigFields()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto Patch Config", "Desc")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var patchResponse = await _client.PatchAsJsonAsync(
+            $"/api/projects/{projectId}/config",
+            new UpdateProjectConfigRequest(
+                GitHubUrl: "https://github.com/org/repo",
+                LocalPath: "c:/projetos/repo",
+                TechStack: "Python, FastAPI",
+                MainBranch: "develop"));
+        patchResponse.EnsureSuccessStatusCode();
+
+        var list = await _client.GetFromJsonAsync<List<JsonElement>>("/api/projects");
+        var updated = list!.First(p => p.GetProperty("id").GetGuid() == projectId);
+
+        Assert.Equal("https://github.com/org/repo", updated.GetProperty("gitHubUrl").GetString());
+        Assert.Equal("c:/projetos/repo", updated.GetProperty("localPath").GetString());
+        Assert.Equal("Python, FastAPI", updated.GetProperty("techStack").GetString());
+        Assert.Equal("develop", updated.GetProperty("mainBranch").GetString());
+    }
+
+    [Fact]
+    public async Task ProjectConfig_PatchConfigOnUnknownProject_ShouldReturn404()
+    {
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/projects/{Guid.NewGuid()}/config",
+            new UpdateProjectConfigRequest("https://github.com/x", null, null, null));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
 }
 

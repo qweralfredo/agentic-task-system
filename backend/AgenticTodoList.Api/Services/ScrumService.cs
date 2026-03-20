@@ -12,7 +12,12 @@ public class ScrumService(AppDbContext db)
         var project = new ProjectEntity
         {
             Name = request.Name.Trim(),
-            Description = request.Description.Trim()
+            Description = request.Description.Trim(),
+            Status = ProjectStatus.Active,
+            GitHubUrl = request.GitHubUrl?.Trim(),
+            LocalPath = request.LocalPath?.Trim(),
+            TechStack = request.TechStack?.Trim(),
+            MainBranch = request.MainBranch?.Trim() ?? "main"
         };
 
         db.Projects.Add(project);
@@ -22,7 +27,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<BacklogItemEntity> AddBacklogItemAsync(Guid projectId, AddBacklogItemRequest request, CancellationToken cancellationToken)
     {
-        var exists = await db.Projects.AnyAsync(p => p.Id == projectId, cancellationToken);
+        var exists = await db.Projects.AnyAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken);
         if (!exists)
         {
             throw new InvalidOperationException("Project not found.");
@@ -45,7 +50,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<SprintEntity> CreateSprintAsync(Guid projectId, CreateSprintRequest request, CancellationToken cancellationToken)
     {
-        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken)
+        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken)
             ?? throw new InvalidOperationException("Project not found.");
 
         var sprint = new SprintEntity
@@ -91,9 +96,37 @@ public class ScrumService(AppDbContext db)
         var workItem = await db.WorkItems.FirstOrDefaultAsync(w => w.Id == workItemId, cancellationToken)
             ?? throw new InvalidOperationException("Work item not found.");
 
+        if (request.TokensUsed < 0)
+        {
+            throw new InvalidOperationException("Tokens used cannot be negative.");
+        }
+
         workItem.Status = request.Status;
         workItem.Assignee = request.Assignee.Trim();
+        workItem.TotalTokensSpent += request.TokensUsed;
+        if (!string.IsNullOrWhiteSpace(request.ModelUsed))
+        {
+            workItem.LastModelUsed = request.ModelUsed.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.IdeUsed))
+        {
+            workItem.LastIdeUsed = request.IdeUsed.Trim();
+        }
         workItem.UpdatedAt = DateTimeOffset.UtcNow;
+
+        var feedback = new WorkItemFeedbackEntity
+        {
+            WorkItemId = workItem.Id,
+            AgentName = string.IsNullOrWhiteSpace(request.AgentName) ? "unknown-agent" : request.AgentName.Trim(),
+            ModelUsed = string.IsNullOrWhiteSpace(request.ModelUsed) ? "unknown-model" : request.ModelUsed.Trim(),
+            IdeUsed = string.IsNullOrWhiteSpace(request.IdeUsed) ? "unknown-ide" : request.IdeUsed.Trim(),
+            TokensUsed = request.TokensUsed,
+            Feedback = request.Feedback.Trim(),
+            MetadataJson = request.MetadataJson.Trim(),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        db.WorkItemFeedbacks.Add(feedback);
 
         if (request.Status == WorkItemStatus.Done)
         {
@@ -131,7 +164,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<WikiPageEntity> AddWikiPageAsync(Guid projectId, AddWikiPageRequest request, CancellationToken cancellationToken)
     {
-        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId, cancellationToken);
+        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken);
         if (!projectExists)
         {
             throw new InvalidOperationException("Project not found.");
@@ -154,7 +187,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<KnowledgeCheckpointEntity> AddCheckpointAsync(Guid projectId, AddCheckpointRequest request, CancellationToken cancellationToken)
     {
-        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId, cancellationToken);
+        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken);
         if (!projectExists)
         {
             throw new InvalidOperationException("Project not found.");
@@ -178,7 +211,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<DocumentationPageEntity> AddDocumentationPageAsync(Guid projectId, AddDocumentationPageRequest request, CancellationToken cancellationToken)
     {
-        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId, cancellationToken);
+        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken);
         if (!projectExists)
         {
             throw new InvalidOperationException("Project not found.");
@@ -201,7 +234,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<AgentRunLogEntity> AddAgentRunAsync(Guid projectId, AddAgentRunLogRequest request, CancellationToken cancellationToken)
     {
-        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId, cancellationToken);
+        var projectExists = await db.Projects.AnyAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken);
         if (!projectExists)
         {
             throw new InvalidOperationException("Project not found.");
@@ -226,7 +259,7 @@ public class ScrumService(AppDbContext db)
 
     public async Task<DashboardDto> GetDashboardAsync(Guid projectId, CancellationToken cancellationToken)
     {
-        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken)
+        var project = await db.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.Status == ProjectStatus.Active, cancellationToken)
             ?? throw new InvalidOperationException("Project not found.");
 
         var backlog = await db.BacklogItems.Where(b => b.ProjectId == projectId).ToListAsync(cancellationToken);
