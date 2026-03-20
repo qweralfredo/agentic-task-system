@@ -51,8 +51,9 @@ export function SprintsPage() {
   const [editingWorkItemAssignee, setEditingWorkItemAssignee] = useState('')
   const draggedWorkItemRef = useRef('')
 
-  const fallbackBoardSprintId =
-    sprints.find((sprint) => toNumberStatus(sprint.status) === 1)?.id ?? sprints[0]?.id ?? ''
+  const fallbackBoardSprintId = backlogIdFilter
+    ? 'all'
+    : (sprints.find((sprint) => toNumberStatus(sprint.status) === 1)?.id ?? sprints[0]?.id ?? '')
   const boardSprintId = selectedBoardSprintId || fallbackBoardSprintId
 
   const boardSprint = useMemo(
@@ -64,11 +65,6 @@ export function SprintsPage() {
     [boardSprintId, sprints],
   )
 
-  const activeSprint = useMemo(
-    () => sprints.find((sprint) => toNumberStatus(sprint.status) === 1) ?? sprints[0] ?? null,
-    [sprints],
-  )
-
   const workItemPriorityByTitle = useMemo(
     () =>
       backlog.reduce<Record<string, number>>((acc, item) => {
@@ -78,33 +74,36 @@ export function SprintsPage() {
     [backlog],
   )
 
+  const boardItems = useMemo(
+    () => (boardSprintId === 'all' ? sprints.flatMap((s) => s.workItems) : (boardSprint?.workItems ?? [])),
+    [boardSprintId, boardSprint, sprints],
+  )
+
   const availableAssignees = useMemo(() => {
     const assignees = new Set<string>()
-    const items = boardSprint?.workItems ?? []
-    for (const item of items) {
+    for (const item of boardItems) {
       const currentAssignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
       if (currentAssignee) {
         assignees.add(currentAssignee)
       }
     }
     return Array.from(assignees).sort((a, b) => a.localeCompare(b))
-  }, [boardSprint, taskDraftAssignee])
+  }, [boardItems, taskDraftAssignee])
 
   const availablePriorities = useMemo(() => {
     const priorities = new Set<number>()
-    for (const item of boardSprint?.workItems ?? []) {
+    for (const item of boardItems) {
       const priority = workItemPriorityByTitle[item.title.trim().toLowerCase()]
       if (typeof priority === 'number') {
         priorities.add(priority)
       }
     }
     return Array.from(priorities).sort((a, b) => a - b)
-  }, [boardSprint, workItemPriorityByTitle])
+  }, [boardItems, workItemPriorityByTitle])
 
   const sprintBoard = useMemo(() => {
-    const columns: Record<number, typeof boardSprint.workItems> = { 0: [], 1: [], 2: [], 3: [] }
-    const items = boardSprint?.workItems ?? []
-    for (const item of items) {
+    const columns: Record<number, typeof boardItems> = { 0: [], 1: [], 2: [], 3: [] }
+    for (const item of boardItems) {
       const status = toNumberStatus(item.status)
       const assignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
       const priority = workItemPriorityByTitle[item.title.trim().toLowerCase()]
@@ -120,7 +119,7 @@ export function SprintsPage() {
       }
     }
     return columns
-  }, [assigneeFilter, backlogIdFilter, boardSprint, priorityFilter, taskDraftAssignee, workItemPriorityByTitle])
+  }, [assigneeFilter, backlogIdFilter, boardItems, priorityFilter, taskDraftAssignee, workItemPriorityByTitle])
 
   // For the grouped view: organize sprints by backlog item when no filter is active
   const sprintsGroupedByBacklog = useMemo(() => {
@@ -167,12 +166,12 @@ export function SprintsPage() {
   }
 
   async function handleTaskDrop(targetStatus: number, workItemId: string) {
-    if (!workItemId || !boardSprint || !selectedProjectId) {
+    if (!workItemId || !selectedProjectId) {
       setDragTargetStatus(null)
       return
     }
 
-    const task = boardSprint.workItems.find((item) => item.id === workItemId)
+    const task = boardItems.find((item) => item.id === workItemId)
     if (!task) {
       setDragTargetStatus(null)
       return
@@ -268,38 +267,18 @@ export function SprintsPage() {
         </CardContent>
       </Card>
 
+      {/* Filtros */}
       <Card>
         <CardContent>
-          <Typography variant="h6">Sprints do Projeto</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
-            {sprints.map((sprint) => (
-              <Chip
-                key={sprint.id}
-                clickable
-                color={boardSprintId === sprint.id ? 'primary' : 'default'}
-                variant={activeSprint?.id === sprint.id ? 'filled' : 'outlined'}
-                label={`${sprint.name} • ${toNumberStatus(sprint.status) === 1 ? 'Ativa' : 'Planejada/Fechada'}`}
-                onClick={() => setSelectedBoardSprintId(sprint.id)}
-              />
-            ))}
-          </Stack>
-        </CardContent>
-      </Card>
-
-      {/* Backlog filter */}
-      <Card>
-        <CardContent>
-          <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'center' }} spacing={1.2}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ minWidth: 140 }}>
-              Filtrar por Backlog
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 260 }}>
+          <Stack direction="row" spacing={1.2} alignItems="center" flexWrap="wrap" useFlexGap>
+            <FormControl size="small" sx={{ minWidth: 240 }}>
               <InputLabel id="backlog-filter-label">Backlog</InputLabel>
               <Select
                 labelId="backlog-filter-label"
                 label="Backlog"
                 value={backlogIdFilter}
                 onChange={(event) => {
+                  setSelectedBoardSprintId('')
                   if (event.target.value) {
                     setSearchParams({ backlogId: event.target.value })
                   } else {
@@ -307,7 +286,7 @@ export function SprintsPage() {
                   }
                 }}
               >
-                <MenuItem value="">Todas as Sprints (agrupadas por backlog)</MenuItem>
+                <MenuItem value="">Todas as Sprints</MenuItem>
                 {backlog.map((item) => (
                   <MenuItem key={item.id} value={item.id}>
                     {item.title}
@@ -315,10 +294,71 @@ export function SprintsPage() {
                 ))}
               </Select>
             </FormControl>
+
             {backlogIdFilter && (
-              <Button size="small" variant="outlined" onClick={() => setSearchParams({})}>
-                Limpar filtro
-              </Button>
+              <>
+                <FormControl size="small" sx={{ minWidth: 180 }}>
+                  <InputLabel id="board-sprint-label">Sprint</InputLabel>
+                  <Select
+                    labelId="board-sprint-label"
+                    label="Sprint"
+                    value={boardSprintId}
+                    onChange={(event) => setSelectedBoardSprintId(event.target.value)}
+                  >
+                    <MenuItem value="all">Todas</MenuItem>
+                    {sprints.map((sprint) => (
+                      <MenuItem key={sprint.id} value={sprint.id}>
+                        {sprint.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel id="board-assignee-label">Assignee</InputLabel>
+                  <Select
+                    labelId="board-assignee-label"
+                    label="Assignee"
+                    value={assigneeFilter}
+                    onChange={(event) => setAssigneeFilter(event.target.value)}
+                  >
+                    <MenuItem value="all">Todos</MenuItem>
+                    {availableAssignees.map((assignee) => (
+                      <MenuItem key={assignee} value={assignee}>
+                        {assignee}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 130 }}>
+                  <InputLabel id="board-priority-label">Prioridade</InputLabel>
+                  <Select
+                    labelId="board-priority-label"
+                    label="Prioridade"
+                    value={priorityFilter}
+                    onChange={(event) => setPriorityFilter(event.target.value)}
+                  >
+                    <MenuItem value="all">Todas</MenuItem>
+                    {availablePriorities.map((priority) => (
+                      <MenuItem key={priority} value={String(priority)}>
+                        P{priority}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    setSelectedBoardSprintId('')
+                    setSearchParams({})
+                  }}
+                >
+                  Limpar filtro
+                </Button>
+              </>
             )}
           </Stack>
         </CardContent>
@@ -404,74 +444,15 @@ export function SprintsPage() {
 
       {backlogIdFilter && (
         <>
-      <Card>
-        <CardContent>
-          <Typography variant="h6">Filtros do Board</Typography>
-          <Grid container spacing={1.2} sx={{ mt: 0.6 }}>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel id="board-sprint-label">Sprint</InputLabel>
-                <Select
-                  labelId="board-sprint-label"
-                  label="Sprint"
-                  value={boardSprintId}
-                  onChange={(event) => setSelectedBoardSprintId(event.target.value)}
-                >
-                  {sprints.map((sprint) => (
-                    <MenuItem key={sprint.id} value={sprint.id}>
-                      {sprint.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel id="board-assignee-label">Assignee</InputLabel>
-                <Select
-                  labelId="board-assignee-label"
-                  label="Assignee"
-                  value={assigneeFilter}
-                  onChange={(event) => setAssigneeFilter(event.target.value)}
-                >
-                  <MenuItem value="all">Todos</MenuItem>
-                  {availableAssignees.map((assignee) => (
-                    <MenuItem key={assignee} value={assignee}>
-                      {assignee}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel id="board-priority-label">Prioridade</InputLabel>
-                <Select
-                  labelId="board-priority-label"
-                  label="Prioridade"
-                  value={priorityFilter}
-                  onChange={(event) => setPriorityFilter(event.target.value)}
-                >
-                  <MenuItem value="all">Todas</MenuItem>
-                  {availablePriorities.map((priority) => (
-                    <MenuItem key={priority} value={String(priority)}>
-                      P{priority}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {!boardSprint ? (
+      {sprints.length === 0 ? (
         <Alert severity="info">Crie uma sprint para visualizar o quadro Kanban.</Alert>
       ) : (
         <Stack spacing={1.2}>
-          <Typography variant="h6">Kanban da Sprint: {boardSprint.name}</Typography>
+          <Typography variant="h6">
+            {boardSprintId === 'all'
+              ? `Kanban — ${backlog.find((b) => b.id === backlogIdFilter)?.title ?? 'Backlog'}`
+              : `Kanban da Sprint: ${boardSprint?.name ?? ''}`}
+          </Typography>
           <Grid container spacing={1.2}>
             {[0, 1, 2, 3].map((columnStatus) => (
               <Grid key={columnStatus} size={{ xs: 12, md: 6, lg: 3 }}>
