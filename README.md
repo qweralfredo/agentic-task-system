@@ -1,168 +1,241 @@
-﻿# Pandora Todo List Scrum Platform
+﻿# Pandora Todo List — Agentic Scrum Platform
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![MCP Python Server](https://img.shields.io/badge/MCP-Python%20FastMCP-3776AB?style=for-the-badge&logo=python&logoColor=white)](mcp-server-python/README.md)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](backend/AgenticTodoList.Api)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](frontend)
 
-[Add SQL MCP Server](vscode:mcp/install?%7B%22name%22%3A%22sql-mcp-server%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22dab%22%2C%22args%22%3A%5B%22start%22%2C%22--mcp-stdio%22%2C%22role%3Aanonymous%22%2C%22--config%22%2C%22%24%7BworkspaceFolder%7D%2Fdab-config.json%22%5D%7D)
+An open-source, full-stack Scrum project management platform designed for **human + AI collaboration**. Built around the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), it integrates natively with agentic environments such as VS Code Copilot, enabling AI agents to create sprints, manage backlogs, and track work items — all in real time.
 
-Plataforma completa para gestao de desenvolvimento de software com foco em uso humano + IA:
+- **Backend:** .NET 10 Web API with PostgreSQL (EF Core)
+- **Frontend:** React 19 + TypeScript (Vite + MUI)
+- **Agentic protocol:** Python MCP server (official FastMCP SDK) for integration with agentic apps and VS Code
+- **Methodology:** Full Scrum structure — projects, backlog, sprints, tasks, reviews
+- **Knowledge hub:** wiki pages, context checkpoints, agentic run history
+- **Operations:** Docker Compose with local disk persistence and backup scripts
 
-- Backend: .NET 10 Web API com PostgreSQL real (EF Core)
-- Frontend: React + TypeScript
-- Protocolo agentico: servidor MCP em Python (SDK oficial FastMCP) para integracao com apps agenticos, especialmente VS Code
-- Metodologia: estrutura Scrum (projeto, backlog, sprint, tasks, review)
-- Knowledge hub: wiki, checkpoints de contexto, historico de execucoes agenticas
-- Operacao: Docker Compose com persistencia e backup em disco local
+---
 
-## Instalar MCP no VS Code (1 comando)
+## Quick Start
 
-No Windows, execute na raiz do repo:
+### Install MCP in VS Code (one command — Windows)
 
-- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1`
+```powershell
+powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1
+```
 
-Opcional para abrir automaticamente o deep link de instalacao no VS Code:
+To automatically open the VS Code install deep link:
 
-- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1 -OpenInstallLink`
+```powershell
+powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1 -OpenInstallLink
+```
 
-## Arquitetura
+### Run with Docker
 
-- `backend/AgenticTodoList.Api`: API principal com dominio e servicos REST
-- `mcp-server-python`: servidor MCP oficial em Python (FastMCP) conectado a API REST e executado via Docker
-- `backend/AgenticTodoList.Api.Tests`: testes xUnit
-- `frontend`: dashboard web React
-- `docker-compose.yml`: stack completa
-- `ops/postgres/data`: dados persistidos do Postgres no host
-- `ops/postgres/backups`: backups gerados no host (fora do Docker)
-- `ops/scripts/backup-postgres.ps1`: script de backup no host
-- `ops/scripts/restore-postgres.ps1`: script de restore no host
+```bash
+docker compose up -d --build
+```
 
-## Funcionalidades principais
+Host ports:
 
-### Scrum
-- CRUD de projetos
-- Backlog por projeto
-- Criacao de sprint com itens de backlog selecionados
-- Conversao automatica de backlog item para work item na sprint
-- Atualizacao de status de task
-- Reviews por sprint
+| Service    | Port  |
+|------------|-------|
+| Frontend   | 8400  |
+| API        | 8480  |
+| MCP Server | 8481  |
+| PostgreSQL | 8432  |
 
-### Pandora Knowledge
-- Wiki por projeto
-- Knowledge checkpoints (snapshot de contexto, decisoes, riscos, proximos passos)
-- Log de execucoes de agentes
-- Dashboard com metricas operacionais
+### Run without Docker
 
-### MCP para VS Code e apps agenticos
-
-O servidor MCP roda em Python com SDK oficial FastMCP, publicado em HTTP pelo Docker Compose.
-
-Setup rapido:
-- `cd mcp-server-python`
-- `python -m venv .venv`
-- `. .venv/Scripts/activate`
-- `pip install -r requirements.txt`
-
-Endpoint MCP local:
-- `http://127.0.0.1:8481/mcp`
-
-Tools disponiveis:
-- `project_list`
-- `project_create`
-- `project_delete` (soft delete por status)
-- `backlog_add`
-- `backlog_list`
-- `sprint_create`
-- `workitem_list`
-- `workitem_update`
-- `knowledge_checkpoint`
-
-Prompts disponiveis:
-- `pandora_project_create`
-- `pandora_sprint_create`
-- `pandora_resources_guide` (guia detalhado de todos os recursos da UI e mapeamento MCP/API)
-
-Resources MCP (read-only para contexto de agentes):
-- Diretos:
-   - `pandora://about`
-   - `pandora://projects/active`
-   - `pandora://projects/all`
-- Templates:
-   - `pandora://projects/{project_id}/context`
-   - `pandora://projects/{project_id}/dashboard`
-   - `pandora://projects/{project_id}/backlog`
-   - `pandora://projects/{project_id}/sprints`
-   - `pandora://projects/{project_id}/workitems`
-   - `pandora://projects/{project_id}/workitems/status/{status}`
-   - `pandora://projects/{project_id}/sprints/{sprint_id}/workitems`
-   - `pandora://projects/{project_id}/tasks/overview`
-   - `pandora://projects/{project_id}/tasks/triage`
-   - `pandora://projects/{project_id}/knowledge`
-
-## Subir local sem Docker
-
-1. Inicie um PostgreSQL local na porta 5432 com:
+1. Start a local PostgreSQL instance on port `5432`:
    - database: `pandora_todo_list`
    - user: `Pandora`
    - password: `Pandora`
+
 2. Backend:
-   - `cd backend/AgenticTodoList.Api`
-   - `dotnet run`
+   ```bash
+   cd backend/AgenticTodoList.Api
+   dotnet run
+   ```
+
 3. Frontend:
-   - `cd frontend`
-   - `npm install`
-   - `npm run dev`
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-## Subir com Docker
+---
 
-- `docker compose up -d --build`
+## Architecture
 
-Portas publicadas no host (portas altas):
-- PostgreSQL: `8432`
-- API: `8480`
-- Frontend: `8400`
-- MCP: `8481` (`/mcp`)
+```
+backend/AgenticTodoList.Api/         # .NET 10 REST API — domain, services, EF Core
+backend/AgenticTodoList.Api.Tests/   # xUnit integration tests (no mocks, real PostgreSQL)
+frontend/src/                        # React 19 + TypeScript dashboard
+mcp-server-python/server.py          # Python MCP server (FastMCP) — proxy over the REST API
+ops/postgres/data/                   # PostgreSQL data persisted on the host
+ops/postgres/backups/                # Backup files generated on the host
+ops/scripts/                         # PowerShell backup/restore scripts
+docker-compose.yml                   # Full stack definition
+```
 
-## Backup fora do Docker (host)
+---
 
-Com stack ativa, execute:
+## Features
 
-- Backup:
-   - `powershell -ExecutionPolicy Bypass -File .\ops\scripts\backup-postgres.ps1`
-- Restore:
-   - `powershell -ExecutionPolicy Bypass -File .\ops\scripts\restore-postgres.ps1 -FilePath .\ops\postgres\backups\NOME_ARQUIVO.sql`
+### Scrum Management
+- Full CRUD for projects
+- Per-project backlog with priorities and story points
+- Sprint creation with selected backlog items
+- Automatic conversion of backlog items to work items on sprint start
+- Work item status updates
+- Sprint reviews
 
-Observacao: se Docker Desktop nao estiver em execucao no Windows, o compose falhara ao conectar no engine.
+### Pandora Knowledge Hub
+- Per-project wiki pages
+- Knowledge checkpoints (context snapshot, decisions, risks, next actions)
+- Agentic run log with token tracking
+- Operational metrics dashboard
 
-## Endpoints REST
+---
 
-- `GET /health`
-- `GET /api/projects`
-- `DELETE /api/projects/{projectId}`
-- `POST /api/projects`
-- `GET /api/projects/{projectId}/dashboard`
-- `GET /api/projects/{projectId}/backlog`
-- `POST /api/projects/{projectId}/backlog`
-- `GET /api/projects/{projectId}/sprints`
-- `POST /api/projects/{projectId}/sprints`
-- `POST /api/work-items/{workItemId}/status`
-- `POST /api/sprints/{sprintId}/reviews`
-- `GET /api/projects/{projectId}/knowledge`
-- `POST /api/projects/{projectId}/wiki`
-- `POST /api/projects/{projectId}/checkpoints`
-- `POST /api/projects/{projectId}/agent-runs`
+## MCP Server — Agentic Integration
 
-## Testes
+The MCP server runs in Python using the official FastMCP SDK, exposed over HTTP via Docker Compose at `http://127.0.0.1:8481/mcp`.
 
-- `dotnet test AgenticTodoList.slnx`
-- `dotnet test AgenticTodoList.slnx --collect:"XPlat Code Coverage"`
+### Local setup (without Docker)
 
-Status atual:
-- Testes passando: 24/24
-- Cobertura medida (line): 97.66%
+```bash
+cd mcp-server-python
+python -m venv .venv
+.venv/Scripts/activate   # Windows
+pip install -r requirements.txt
+python server.py
+```
 
-## Sem fallback e sem mock
+### Available Tools
 
-- Runtime usa apenas persistencia real no PostgreSQL
-- Frontend consulta API real
-- MCP Python opera diretamente sobre API e dados reais
-- Nao ha camada de dados fake/mock no app em execucao
+| Tool | Description |
+|---|---|
+| `project_list` | List all projects |
+| `project_create` | Create a new project |
+| `project_delete` | Soft-delete a project |
+| `backlog_add` | Add a backlog item |
+| `backlog_list` | List backlog items |
+| `sprint_create` | Create a sprint |
+| `workitem_list` | List work items |
+| `workitem_update` | Update work item status |
+| `knowledge_checkpoint` | Save a knowledge checkpoint |
+
+### Available Prompts
+
+- `pandora_project_create` — guided project creation
+- `pandora_sprint_create` — guided sprint creation
+- `pandora_resources_guide` — full UI and MCP/API resource map
+
+### MCP Resources (read-only context for agents)
+
+**Direct:**
+- `pandora://about`
+- `pandora://projects/active`
+- `pandora://projects/all`
+
+**Templates:**
+- `pandora://projects/{project_id}/context`
+- `pandora://projects/{project_id}/dashboard`
+- `pandora://projects/{project_id}/backlog`
+- `pandora://projects/{project_id}/sprints`
+- `pandora://projects/{project_id}/workitems`
+- `pandora://projects/{project_id}/workitems/status/{status}`
+- `pandora://projects/{project_id}/sprints/{sprint_id}/workitems`
+- `pandora://projects/{project_id}/tasks/overview`
+- `pandora://projects/{project_id}/tasks/triage`
+- `pandora://projects/{project_id}/knowledge`
+
+---
+
+## REST API Reference
+
+| Method | Endpoint |
+|--------|----------|
+| GET | `/health` |
+| GET | `/api/projects` |
+| POST | `/api/projects` |
+| DELETE | `/api/projects/{projectId}` |
+| GET | `/api/projects/{projectId}/dashboard` |
+| GET | `/api/projects/{projectId}/backlog` |
+| POST | `/api/projects/{projectId}/backlog` |
+| GET | `/api/projects/{projectId}/sprints` |
+| POST | `/api/projects/{projectId}/sprints` |
+| POST | `/api/work-items/{workItemId}/status` |
+| POST | `/api/sprints/{sprintId}/reviews` |
+| GET | `/api/projects/{projectId}/knowledge` |
+| POST | `/api/projects/{projectId}/wiki` |
+| POST | `/api/projects/{projectId}/checkpoints` |
+| POST | `/api/projects/{projectId}/agent-runs` |
+
+---
+
+## Testing
+
+```bash
+dotnet test AgenticTodoList.slnx
+dotnet test AgenticTodoList.slnx --collect:"XPlat Code Coverage"
+```
+
+- Tests passing: **24/24**
+- Line coverage: **97.66%**
+
+> All tests run against a real PostgreSQL instance — no mocks, no in-memory fakes.
+
+---
+
+## Backup & Restore
+
+With the stack running:
+
+```powershell
+# Backup
+powershell -ExecutionPolicy Bypass -File .\ops\scripts\backup-postgres.ps1
+
+# Restore
+powershell -ExecutionPolicy Bypass -File .\ops\scripts\restore-postgres.ps1 -FilePath .\ops\postgres\backups\<filename>.sql
+```
+
+> On Windows, Docker Desktop must be running for the compose stack to connect to the engine.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request. For major changes, open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add your feature'`)
+4. Push to the branch (`git push origin feat/your-feature`)
+5. Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
+
+```
+Copyright 2026 Pandora Todo List Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
 
