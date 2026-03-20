@@ -1,6 +1,6 @@
 import type { BacklogItem, Dashboard, KnowledgeResponse, Project, Sprint } from '../types'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:58080'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8480'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {

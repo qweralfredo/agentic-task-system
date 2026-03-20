@@ -4,12 +4,17 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
+import { MarkdownField } from '../components/MarkdownField'
 import { useState } from 'react'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
@@ -21,6 +26,7 @@ export function BacklogPage() {
   const [description, setDescription] = useState('')
   const [storyPoints, setStoryPoints] = useState(3)
   const [priority, setPriority] = useState(1)
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false)
 
   async function handleCreateBacklogItem(event: React.FormEvent) {
     event.preventDefault()
@@ -39,6 +45,7 @@ export function BacklogPage() {
     setDescription('')
     setStoryPoints(3)
     setPriority(1)
+    setCreateModalOpen(false)
     await refreshProjectViews(selectedProjectId)
   }
 
@@ -61,45 +68,15 @@ export function BacklogPage() {
     <Stack spacing={2}>
       <Card>
         <CardContent>
-          <Typography variant="h6">Nova Story</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Estruture itens do backlog com prioridade e story points no estilo Jira.
-          </Typography>
-          <Stack component="form" spacing={1.5} onSubmit={handleCreateBacklogItem}>
-            <TextField label="Titulo" value={title} onChange={(event) => setTitle(event.target.value)} required fullWidth />
-            <TextField
-              label="Descricao"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              required
-              multiline
-              minRows={3}
-              fullWidth
-            />
-            <Grid container spacing={1.2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  type="number"
-                  label="Story points"
-                  value={storyPoints}
-                  onChange={(event) => setStoryPoints(Number(event.target.value))}
-                  inputProps={{ min: 1 }}
-                  fullWidth
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  type="number"
-                  label="Prioridade"
-                  value={priority}
-                  onChange={(event) => setPriority(Number(event.target.value))}
-                  inputProps={{ min: 1 }}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-            <Button type="submit" variant="contained" startIcon={<AddTaskOutlinedIcon />}>
-              Adicionar item
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.2} alignItems={{ md: 'center' }}>
+            <Stack>
+              <Typography variant="h6">Backlog de Stories</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Estruture itens com prioridade e story points em um fluxo objetivo de planejamento.
+              </Typography>
+            </Stack>
+            <Button variant="contained" startIcon={<AddTaskOutlinedIcon />} onClick={() => setCreateModalOpen(true)}>
+              Nova Story
             </Button>
           </Stack>
         </CardContent>
@@ -133,6 +110,44 @@ export function BacklogPage() {
           ))
         )}
       </Stack>
+
+      <Dialog open={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} fullWidth maxWidth="md">
+        <Stack component="form" onSubmit={handleCreateBacklogItem}>
+          <DialogTitle>Nova Story</DialogTitle>
+          <DialogContent>
+            <Stack spacing={1.5} sx={{ mt: 1 }}>
+              <TextField label="Titulo" value={title} onChange={(event) => setTitle(event.target.value)} required fullWidth />
+              <MarkdownField label="Descricao" value={description} onChange={setDescription} required />
+              <Grid container spacing={1.2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    type="number"
+                    label="Story points"
+                    value={storyPoints}
+                    onChange={(event) => setStoryPoints(Number(event.target.value))}
+                    inputProps={{ min: 1 }}
+                    fullWidth
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    type="number"
+                    label="Prioridade"
+                    value={priority}
+                    onChange={(event) => setPriority(Number(event.target.value))}
+                    inputProps={{ min: 1 }}
+                    fullWidth
+                  />
+                </Grid>
+              </Grid>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCreateModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" variant="contained">Adicionar item</Button>
+          </DialogActions>
+        </Stack>
+      </Dialog>
     </Stack>
   )
 }

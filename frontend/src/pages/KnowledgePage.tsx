@@ -1,102 +1,17 @@
 import {
-  Button,
   Card,
   CardContent,
-  Divider,
   Grid,
+  Link,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
-import { apiClient } from '../api/client'
+import { NavLink } from 'react-router-dom'
 import { useProjectContext } from '../context/useProjectContext'
-import { groupByCategory } from '../types'
+import { KnowledgeNav } from './KnowledgeNav'
 
 export function KnowledgePage() {
-  const { selectedProjectId, selectedProject, knowledge, refreshProjectViews } = useProjectContext()
-
-  const [wikiTitle, setWikiTitle] = useState('')
-  const [wikiCategory, setWikiCategory] = useState('How-To')
-  const [wikiTags, setWikiTags] = useState('')
-  const [wikiContent, setWikiContent] = useState('')
-
-  const [checkpointName, setCheckpointName] = useState('')
-  const [checkpointCategory, setCheckpointCategory] = useState('Release')
-  const [checkpointContext, setCheckpointContext] = useState('')
-  const [checkpointDecisions, setCheckpointDecisions] = useState('')
-  const [checkpointRisks, setCheckpointRisks] = useState('')
-  const [checkpointNextActions, setCheckpointNextActions] = useState('')
-
-  const [docTitle, setDocTitle] = useState('')
-  const [docCategory, setDocCategory] = useState('Architecture')
-  const [docTags, setDocTags] = useState('')
-  const [docContent, setDocContent] = useState('')
-
-  const wikiByCategory = useMemo(() => groupByCategory(knowledge?.wikiPages ?? []), [knowledge])
-  const checkpointByCategory = useMemo(() => groupByCategory(knowledge?.checkpoints ?? []), [knowledge])
-  const docsByCategory = useMemo(() => groupByCategory(knowledge?.documentationPages ?? []), [knowledge])
-
-  async function handleCreateWiki(event: React.FormEvent) {
-    event.preventDefault()
-    if (!selectedProjectId || !wikiTitle.trim() || !wikiContent.trim()) {
-      return
-    }
-
-    await apiClient.createWikiPage(selectedProjectId, {
-      title: wikiTitle,
-      contentMarkdown: wikiContent,
-      category: wikiCategory,
-      tags: wikiTags,
-    })
-
-    setWikiTitle('')
-    setWikiTags('')
-    setWikiContent('')
-    await refreshProjectViews(selectedProjectId)
-  }
-
-  async function handleCreateCheckpoint(event: React.FormEvent) {
-    event.preventDefault()
-    if (!selectedProjectId || !checkpointName.trim()) {
-      return
-    }
-
-    await apiClient.createCheckpoint(selectedProjectId, {
-      name: checkpointName,
-      category: checkpointCategory,
-      contextSnapshot: checkpointContext,
-      decisions: checkpointDecisions,
-      risks: checkpointRisks,
-      nextActions: checkpointNextActions,
-    })
-
-    setCheckpointName('')
-    setCheckpointContext('')
-    setCheckpointDecisions('')
-    setCheckpointRisks('')
-    setCheckpointNextActions('')
-    await refreshProjectViews(selectedProjectId)
-  }
-
-  async function handleCreateDocumentation(event: React.FormEvent) {
-    event.preventDefault()
-    if (!selectedProjectId || !docTitle.trim() || !docContent.trim()) {
-      return
-    }
-
-    await apiClient.createDocumentation(selectedProjectId, {
-      title: docTitle,
-      contentMarkdown: docContent,
-      category: docCategory,
-      tags: docTags,
-    })
-
-    setDocTitle('')
-    setDocTags('')
-    setDocContent('')
-    await refreshProjectViews(selectedProjectId)
-  }
+  const { selectedProject, knowledge } = useProjectContext()
 
   if (!selectedProject) {
     return (
@@ -115,25 +30,19 @@ export function KnowledgePage() {
 
   return (
     <Stack spacing={2}>
+      <KnowledgeNav />
+
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
             <CardContent>
               <Typography variant="h6">Wiki</Typography>
-              <Stack component="form" spacing={1.2} sx={{ mt: 1 }} onSubmit={handleCreateWiki}>
-                <TextField label="Titulo" value={wikiTitle} onChange={(event) => setWikiTitle(event.target.value)} required />
-                <TextField label="Categoria" value={wikiCategory} onChange={(event) => setWikiCategory(event.target.value)} required />
-                <TextField label="Tags" value={wikiTags} onChange={(event) => setWikiTags(event.target.value)} />
-                <TextField
-                  label="Conteudo"
-                  value={wikiContent}
-                  onChange={(event) => setWikiContent(event.target.value)}
-                  multiline
-                  minRows={4}
-                  required
-                />
-                <Button type="submit" variant="contained">Salvar wiki</Button>
-              </Stack>
+              <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+                Centralize guias, how-tos e acordos tecnicos da equipe.
+              </Typography>
+              <Link component={NavLink} to="/knowledge/wiki" underline="hover" sx={{ mt: 1.2, display: 'inline-flex' }}>
+                Abrir tela de Wiki
+              </Link>
             </CardContent>
           </Card>
         </Grid>
@@ -142,26 +51,12 @@ export function KnowledgePage() {
           <Card>
             <CardContent>
               <Typography variant="h6">Checkpoint</Typography>
-              <Stack component="form" spacing={1.2} sx={{ mt: 1 }} onSubmit={handleCreateCheckpoint}>
-                <TextField label="Nome" value={checkpointName} onChange={(event) => setCheckpointName(event.target.value)} required />
-                <TextField
-                  label="Categoria"
-                  value={checkpointCategory}
-                  onChange={(event) => setCheckpointCategory(event.target.value)}
-                  required
-                />
-                <TextField label="Contexto" value={checkpointContext} onChange={(event) => setCheckpointContext(event.target.value)} multiline minRows={2} />
-                <TextField label="Decisoes" value={checkpointDecisions} onChange={(event) => setCheckpointDecisions(event.target.value)} multiline minRows={2} />
-                <TextField label="Riscos" value={checkpointRisks} onChange={(event) => setCheckpointRisks(event.target.value)} multiline minRows={2} />
-                <TextField
-                  label="Proximas acoes"
-                  value={checkpointNextActions}
-                  onChange={(event) => setCheckpointNextActions(event.target.value)}
-                  multiline
-                  minRows={2}
-                />
-                <Button type="submit" variant="contained">Salvar checkpoint</Button>
-              </Stack>
+              <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+                Registre contexto, decisoes, riscos e proximos passos por marco.
+              </Typography>
+              <Link component={NavLink} to="/knowledge/checkpoints" underline="hover" sx={{ mt: 1.2, display: 'inline-flex' }}>
+                Abrir tela de Checkpoints
+              </Link>
             </CardContent>
           </Card>
         </Grid>
@@ -170,20 +65,12 @@ export function KnowledgePage() {
           <Card>
             <CardContent>
               <Typography variant="h6">Documentacao</Typography>
-              <Stack component="form" spacing={1.2} sx={{ mt: 1 }} onSubmit={handleCreateDocumentation}>
-                <TextField label="Titulo" value={docTitle} onChange={(event) => setDocTitle(event.target.value)} required />
-                <TextField label="Categoria" value={docCategory} onChange={(event) => setDocCategory(event.target.value)} required />
-                <TextField label="Tags" value={docTags} onChange={(event) => setDocTags(event.target.value)} />
-                <TextField
-                  label="Conteudo"
-                  value={docContent}
-                  onChange={(event) => setDocContent(event.target.value)}
-                  multiline
-                  minRows={4}
-                  required
-                />
-                <Button type="submit" variant="contained">Salvar documento</Button>
-              </Stack>
+              <Typography color="text.secondary" sx={{ mt: 0.8 }}>
+                Mantenha arquitetura, operacao e referencias tecnicas organizadas.
+              </Typography>
+              <Link component={NavLink} to="/knowledge/documentation" underline="hover" sx={{ mt: 1.2, display: 'inline-flex' }}>
+                Abrir tela de Documentacao
+              </Link>
             </CardContent>
           </Card>
         </Grid>
@@ -191,41 +78,28 @@ export function KnowledgePage() {
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 4 }}>
-          <CategoryCards title="Wiki por categoria" groupedData={wikiByCategory} />
+          <CategoryCountCard title="Wiki" total={knowledge?.wikiPages.length ?? 0} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <CategoryCards title="Checkpoints por categoria" groupedData={checkpointByCategory} />
+          <CategoryCountCard title="Checkpoints" total={knowledge?.checkpoints.length ?? 0} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <CategoryCards title="Documentacao por categoria" groupedData={docsByCategory} />
+          <CategoryCountCard title="Documentacao" total={knowledge?.documentationPages.length ?? 0} />
         </Grid>
       </Grid>
     </Stack>
   )
 }
 
-function CategoryCards({ title, groupedData }: { title: string; groupedData: Record<string, Array<{ id: string; title?: string; name?: string; tags?: string }>> }) {
+function CategoryCountCard({ title, total }: { title: string; total: number }) {
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent>
         <Typography variant="h6">{title}</Typography>
-        <Stack spacing={1.2} sx={{ mt: 1.1 }}>
-          {Object.entries(groupedData).map(([category, items]) => (
-            <Stack key={category} spacing={0.6}>
-              <Typography variant="overline" color="primary.main">{category}</Typography>
-              {items.map((item) => (
-                <Stack key={item.id} spacing={0.4}>
-                  <Typography variant="body2" fontWeight={700}>{item.title ?? item.name}</Typography>
-                  {item.tags ? <Typography variant="caption" color="text.secondary">{item.tags}</Typography> : null}
-                  <Divider />
-                </Stack>
-              ))}
-            </Stack>
-          ))}
-          {Object.keys(groupedData).length === 0 ? (
-            <Typography variant="body2" color="text.secondary">Sem registros nessa secao.</Typography>
-          ) : null}
-        </Stack>
+        <Typography variant="h3" sx={{ mt: 1.2 }}>{total}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8 }}>
+          itens cadastrados
+        </Typography>
       </CardContent>
     </Card>
   )

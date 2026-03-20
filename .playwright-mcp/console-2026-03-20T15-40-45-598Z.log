@@ -1,0 +1,2 @@
+[      73ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8400/knowledge:0
+[     133ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8400/favicon.ico:0

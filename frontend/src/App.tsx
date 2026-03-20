@@ -8,6 +8,9 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) =
 const BacklogPage = lazy(() => import('./pages/BacklogPage').then((module) => ({ default: module.BacklogPage })))
 const SprintsPage = lazy(() => import('./pages/SprintsPage').then((module) => ({ default: module.SprintsPage })))
 const KnowledgePage = lazy(() => import('./pages/KnowledgePage').then((module) => ({ default: module.KnowledgePage })))
+const WikiPage = lazy(() => import('./pages/WikiPage').then((module) => ({ default: module.WikiPage })))
+const CheckpointsPage = lazy(() => import('./pages/CheckpointsPage').then((module) => ({ default: module.CheckpointsPage })))
+const DocumentationPage = lazy(() => import('./pages/DocumentationPage').then((module) => ({ default: module.DocumentationPage })))
 
 function PageFallback() {
   return (
@@ -52,6 +55,30 @@ function App() {
             element={(
               <Suspense fallback={<PageFallback />}>
                 <KnowledgePage />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="knowledge/wiki"
+            element={(
+              <Suspense fallback={<PageFallback />}>
+                <WikiPage />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="knowledge/checkpoints"
+            element={(
+              <Suspense fallback={<PageFallback />}>
+                <CheckpointsPage />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="knowledge/documentation"
+            element={(
+              <Suspense fallback={<PageFallback />}>
+                <DocumentationPage />
               </Suspense>
             )}
           />

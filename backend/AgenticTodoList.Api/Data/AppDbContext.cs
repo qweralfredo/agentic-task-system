@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<BacklogItemEntity> BacklogItems => Set<BacklogItemEntity>();
     public DbSet<SprintEntity> Sprints => Set<SprintEntity>();
     public DbSet<WorkItemEntity> WorkItems => Set<WorkItemEntity>();
+    public DbSet<WorkItemFeedbackEntity> WorkItemFeedbacks => Set<WorkItemFeedbackEntity>();
     public DbSet<ReviewEntity> Reviews => Set<ReviewEntity>();
     public DbSet<WikiPageEntity> WikiPages => Set<WikiPageEntity>();
     public DbSet<DocumentationPageEntity> DocumentationPages => Set<DocumentationPageEntity>();
@@ -34,6 +35,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<WorkItemEntity>()
             .HasIndex(w => new { w.ProjectId, w.SprintId, w.Status });
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .Property(w => w.LastModelUsed)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .Property(w => w.LastIdeUsed)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<WorkItemFeedbackEntity>()
+            .Property(f => f.AgentName)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<WorkItemFeedbackEntity>()
+            .Property(f => f.ModelUsed)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<WorkItemFeedbackEntity>()
+            .Property(f => f.IdeUsed)
+            .HasMaxLength(120);
+
+        modelBuilder.Entity<WorkItemFeedbackEntity>()
+            .HasIndex(f => new { f.WorkItemId, f.CreatedAt });
 
         modelBuilder.Entity<ReviewEntity>()
             .Property(r => r.Type)

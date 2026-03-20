@@ -68,13 +68,55 @@ public class ScrumServiceTests
             CancellationToken.None);
 
         var item = await db.WorkItems.FirstAsync(w => w.SprintId == sprint.Id);
-        var updated = await service.UpdateWorkItemStatusAsync(item.Id, new UpdateWorkItemStatusRequest(WorkItemStatus.Done, "agent-1"), CancellationToken.None);
+        var updated = await service.UpdateWorkItemStatusAsync(
+            item.Id,
+            new UpdateWorkItemStatusRequest(WorkItemStatus.Done, "agent-1", 150, "copilot", "GPT-5.3-Codex", "VS Code", "Task finalizada", "{\"source\":\"mcp\"}"),
+            CancellationToken.None);
 
         Assert.Equal(WorkItemStatus.Done, updated.Status);
         Assert.Equal("agent-1", updated.Assignee);
+        Assert.Equal(150, updated.TotalTokensSpent);
+        Assert.Equal("GPT-5.3-Codex", updated.LastModelUsed);
+        Assert.Equal("VS Code", updated.LastIdeUsed);
 
         var backlogReloaded = await db.BacklogItems.FirstAsync(b => b.Id == backlog.Id);
         Assert.Equal(BacklogItemStatus.Done, backlogReloaded.Status);
+
+        var feedbacks = await db.WorkItemFeedbacks.Where(f => f.WorkItemId == item.Id).ToListAsync();
+        Assert.Single(feedbacks);
+        Assert.Equal(150, feedbacks[0].TokensUsed);
+        Assert.Equal("copilot", feedbacks[0].AgentName);
+    }
+
+    [Fact]
+    public async Task UpdateWorkItemStatus_MultipleUpdates_ShouldAccumulateTokensAndAppendFeedbacks()
+    {
+        await using var db = CreateDbContext();
+        var service = new ScrumService(db);
+
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Project", "Desc"), CancellationToken.None);
+        var backlog = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Story", "Desc", 5, 1), CancellationToken.None);
+        var sprint = await service.CreateSprintAsync(
+            project.Id,
+            new CreateSprintRequest("Sprint", "Goal", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)), [backlog.Id]),
+            CancellationToken.None);
+
+        var item = await db.WorkItems.FirstAsync(w => w.SprintId == sprint.Id);
+
+        await service.UpdateWorkItemStatusAsync(item.Id, new UpdateWorkItemStatusRequest(WorkItemStatus.InProgress, "dev-agent", 120, "copilot", "GPT-5.3-Codex", "VS Code", "Iniciando", "{}"), CancellationToken.None);
+        var updated = await service.UpdateWorkItemStatusAsync(item.Id, new UpdateWorkItemStatusRequest(WorkItemStatus.Review, "qa-agent", 80, "copilot", "GPT-5.3-Codex", "VS Code", "Pronto para QA", "{}"), CancellationToken.None);
+
+        Assert.Equal(200, updated.TotalTokensSpent);
+        Assert.Equal("GPT-5.3-Codex", updated.LastModelUsed);
+
+        var feedbacks = await db.WorkItemFeedbacks
+            .Where(f => f.WorkItemId == item.Id)
+            .OrderBy(f => f.CreatedAt)
+            .ToListAsync();
+
+        Assert.Equal(2, feedbacks.Count);
+        Assert.Equal(120, feedbacks[0].TokensUsed);
+        Assert.Equal(80, feedbacks[1].TokensUsed);
     }
 
     [Fact]

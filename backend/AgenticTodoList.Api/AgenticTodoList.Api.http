@@ -1,206 +1,37 @@
-﻿@PandoraTodoList.Api_HostAddress = http://localhost:5146
-@Mcp_HostAddress = http://127.0.0.1:58080
+﻿@ApiHostAddress = http://localhost:5146
 @projectId = 00000000-0000-0000-0000-000000000000
 
-GET {{PandoraTodoList.Api_HostAddress}}/weatherforecast/
+GET {{ApiHostAddress}}/health
 Accept: application/json
 
 ###
 
-# MCP - initialize (handshake)
-POST {{Mcp_HostAddress}}/mcp
+# API - listar projetos ativos
+GET {{ApiHostAddress}}/api/projects
+Accept: application/json
+
+###
+
+# API - listar projetos incluindo arquivados
+GET {{ApiHostAddress}}/api/projects?includeArchived=true
+Accept: application/json
+
+###
+
+# API - criar projeto
+POST {{ApiHostAddress}}/api/projects
 Content-Type: application/json
 
 {
-	"jsonrpc": "2.0",
-	"id": "init-1",
-	"method": "initialize",
-	"params": {
-		"protocolVersion": "2025-03-26",
-		"capabilities": {},
-		"clientInfo": {
-			"name": "vscode-http-client",
-			"version": "1.0.0"
-		}
-	}
+	"name": "Projeto via REST",
+	"description": "Criado pelo arquivo .http"
 }
 
 ###
 
-# MCP - initialized (notification sem id)
-POST {{Mcp_HostAddress}}/mcp
+# API - arquivar projeto (soft delete)
+DELETE {{ApiHostAddress}}/api/projects/{{projectId}}
 Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"method": "initialized"
-}
-
-###
-
-# MCP - listar tools
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "tools-list-1",
-	"method": "tools/list"
-}
-
-###
-
-# MCP - batch (tools/list + prompts/list)
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-[
-	{
-		"jsonrpc": "2.0",
-		"id": "batch-tools-1",
-		"method": "tools/list"
-	},
-	{
-		"jsonrpc": "2.0",
-		"id": "batch-prompts-1",
-		"method": "prompts/list"
-	}
-]
-
-###
-
-# MCP - criar projeto
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "project-create-1",
-	"method": "tools/call",
-	"params": {
-		"name": "project.create",
-		"arguments": {
-			"name": "Teste MCP VSCode",
-			"description": "Projeto criado via arquivo .http no VS Code"
-		}
-	}
-}
-
-###
-
-# MCP - listar projetos
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "project-list-1",
-	"method": "tools/call",
-	"params": {
-		"name": "project.list",
-		"arguments": {}
-	}
-}
-
-###
-
-# MCP - listar projetos (incluindo arquivados)
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "project-list-2",
-	"method": "tools/call",
-	"params": {
-		"name": "project.list",
-		"arguments": {
-			"includeArchived": true
-		}
-	}
-}
-
-###
-
-# MCP - arquivar projeto (soft delete)
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "project-delete-1",
-	"method": "tools/call",
-	"params": {
-		"name": "project.delete",
-		"arguments": {
-			"projectId": "{{projectId}}"
-		}
-	}
-}
-
-###
-
-# MCP - listar backlog por projeto
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "backlog-list-1",
-	"method": "tools/call",
-	"params": {
-		"name": "backlog.list",
-		"arguments": {
-			"projectId": "{{projectId}}"
-		}
-	}
-}
-
-###
-
-# MCP - listar work items por projeto (opcional sprintId)
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "workitem-list-1",
-	"method": "tools/call",
-	"params": {
-		"name": "workitem.list",
-		"arguments": {
-			"projectId": "{{projectId}}"
-		}
-	}
-}
-
-###
-
-# MCP - listar prompts
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "prompts-list-1",
-	"method": "prompts/list"
-}
-
-###
-
-# MCP - obter prompt (status de projeto)
-POST {{Mcp_HostAddress}}/mcp
-Content-Type: application/json
-
-{
-	"jsonrpc": "2.0",
-	"id": "prompts-get-1",
-	"method": "prompts/get",
-	"params": {
-		"name": "pandora.project.status",
-		"arguments": {}
-	}
-}
 
 ###
 

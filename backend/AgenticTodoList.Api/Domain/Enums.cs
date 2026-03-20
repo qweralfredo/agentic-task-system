@@ -1,5 +1,11 @@
 ﻿namespace PandoraTodoList.Api.Domain;
 
+public enum ProjectStatus
+{
+    Active = 0,
+    Archived = 1
+}
+
 public enum BacklogItemStatus
 {
     New = 0,

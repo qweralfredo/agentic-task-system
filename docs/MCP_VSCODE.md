@@ -1,227 +1,88 @@
-﻿# Integracao MCP com VS Code
+# MCP no VS Code (Python SDK oficial)
 
-Este projeto expoe um endpoint MCP HTTP/JSON-RPC em `POST /mcp`.
+Este projeto usa um servidor MCP em Python com FastMCP (SDK oficial).
 
-## Endpoint
+Nao existe mais endpoint MCP em .NET (/mcp).
 
-- Local (porta alta): `http://127.0.0.1:58080/mcp`
+## 1. Subir backend API
 
-## Configuracao do servidor no VS Code
+A API REST precisa estar ativa para o MCP operar:
 
-Instalacao simples por script (Windows, 1 comando):
+- Docker: docker compose up -d --build
+- API local: cd backend/AgenticTodoList.Api && dotnet run
 
-- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1`
+## 2. Preparar servidor MCP Python
 
-Opcional para abrir o deep link automaticamente:
+```bash
+cd mcp-server-python
+python -m venv .venv
+. .venv/Scripts/activate
+pip install -r requirements.txt
+```
 
-- `powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1 -OpenInstallLink`
+## 3. Configurar no VS Code
 
-Workspace config em `.vscode/mcp.json`:
+Script automatico (recomendado):
+
+- powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1
+
+Para configurar GLOBAL (todos os workspaces do VS Code):
+
+- powershell -ExecutionPolicy Bypass -File .\ops\scripts\install-pandora-mcp-vscode.ps1 -Global
+
+Arquivos de destino:
+
+- Workspace: .vscode/mcp.json
+- Global: %APPDATA%\Code\User\mcp.json
+
+Configuracao gerada em .vscode/mcp.json:
 
 ```json
 {
   "servers": {
     "pandora-todo-list-mcp": {
       "type": "http",
-      "url": "http://127.0.0.1:58080/mcp"
+      "url": "http://127.0.0.1:8481/mcp"
     }
   }
 }
 ```
 
-Deep link para adicionar no VS Code:
+## 4. Tools expostas
 
-`vscode:mcp/install?%7B%22name%22%3A%22pandora-todo-list-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A58080%2Fmcp%22%7D`
+- project_list
+- project_create
+- project_delete
+- backlog_add
+- backlog_list
+- sprint_create
+- workitem_list
+- workitem_update
+- knowledge_checkpoint
 
-## Metodos MCP suportados
+## 5. Prompts expostos
 
-- `initialize`
-- `initialized`
-- `tools/list`
-- `tools/call`
-- `prompts/list`
-- `prompts/get`
+- pandora_project_create
+- pandora_sprint_create
+- pandora_resources_guide
 
-## Catalogo de tools
+## 6. Resources expostos
 
-- `project.list`: lista projetos
-- `project.create`: cria projeto
-- `project.delete`: arquiva projeto (soft delete por status)
-- `backlog.add`: adiciona item de backlog
-- `backlog.list`: lista backlog por projeto
-- `sprint.create`: cria sprint com backlog items
-- `workitem.list`: lista tarefas (work items) por projeto e sprint opcional
-- `knowledge.checkpoint`: registra checkpoint de conhecimento
+Diretos:
 
-## Catalogo de prompts
+- pandora://about
+- pandora://projects/active
+- pandora://projects/all
 
-- `pandora.project.create`: orienta criacao de projeto
-- `pandora.backlog.add`: orienta criacao de backlog item
-- `pandora.sprint.create`: orienta criacao de sprint
-- `pandora.knowledge.checkpoint`: orienta registro de checkpoint
-- `pandora.project.status`: orienta consulta de status/lista de projetos
+Templates:
 
-## Handshake
-
-Request (`initialize`):
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "init-1",
-  "method": "initialize",
-  "params": {
-    "protocolVersion": "2025-03-26",
-    "capabilities": {},
-    "clientInfo": {
-      "name": "vscode",
-      "version": "1.0.0"
-    }
-  }
-}
-```
-
-Request de notificacao (`initialized`, sem id):
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "initialized"
-}
-```
-
-Request (`tools/list`):
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "1",
-  "method": "tools/list"
-}
-```
-
-Request (`prompts/list`):
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "2",
-  "method": "prompts/list"
-}
-```
-
-## Exemplo de chamada de tool
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "3",
-  "method": "tools/call",
-  "params": {
-    "name": "project.create",
-    "arguments": {
-      "name": "Pandora Todo List",
-      "description": "Projeto para orquestrar backlog e sprints"
-    }
-  }
-}
-```
-
-Exemplo de resposta de `tools/call`:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "3",
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "{\"id\":\"...\",\"name\":\"Pandora Todo List\"}"
-      }
-    ],
-    "structuredContent": {
-      "id": "...",
-      "name": "Pandora Todo List"
-    }
-  }
-}
-```
-
-Exemplo de arquivamento logico:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "5",
-  "method": "tools/call",
-  "params": {
-    "name": "project.delete",
-    "arguments": {
-      "projectId": "<project-id>"
-    }
-  }
-}
-```
-
-Para listar incluindo arquivados:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "6",
-  "method": "tools/call",
-  "params": {
-    "name": "project.list",
-    "arguments": {
-      "includeArchived": true
-    }
-  }
-}
-```
-
-## Exemplo de chamada de prompt
-
-Listagem de prompts (`prompts/list`):
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "4a",
-  "method": "prompts/list"
-}
-```
-
-Obter prompt (`prompts/get`):
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "4b",
-  "method": "prompts/get",
-  "params": {
-    "name": "pandora.project.status",
-    "arguments": {}
-  }
-}
-```
-
-## Teste rapido no VS Code
-
-Use o arquivo `backend/AgenticTodoList.Api/AgenticTodoList.Api.http` e execute requests:
-
-- MCP - listar tools
-- MCP - listar projetos
-- MCP - listar prompts
-- MCP - obter prompt (status de projeto)
-
-## Padrao operacional
-
-- Para automacao: prefira `tools/call`.
-- Para orientar conversa com o agente: use `prompts/get` e execute a tool sugerida no texto retornado.
-
-## Recomendacao de porta
-
-- Evite portas padrao de app (`3000`, `8080`) para MCP.
-- Mantenha o Pandora MCP em porta alta: `58080`.
-
+- pandora://projects/{project_id}/context
+- pandora://projects/{project_id}/dashboard
+- pandora://projects/{project_id}/backlog
+- pandora://projects/{project_id}/sprints
+- pandora://projects/{project_id}/workitems
+- pandora://projects/{project_id}/workitems/status/{status}
+- pandora://projects/{project_id}/sprints/{sprint_id}/workitems
+- pandora://projects/{project_id}/tasks/overview
+- pandora://projects/{project_id}/tasks/triage
+- pandora://projects/{project_id}/knowledge

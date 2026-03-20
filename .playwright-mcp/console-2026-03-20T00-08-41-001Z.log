@@ -1,0 +1,13 @@
+[    2461ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:58080/api/projects:0
+[    2486ms] TypeError: Failed to fetch
+    at _ (http://localhost:53000/assets/index-fitYKIkN.js:9:37249)
+    at at (http://localhost:53000/assets/index-fitYKIkN.js:9:38910)
+    at http://localhost:53000/assets/index-fitYKIkN.js:9:39288
+    at Wc (http://localhost:53000/assets/index-fitYKIkN.js:8:91679)
+    at Ol (http://localhost:53000/assets/index-fitYKIkN.js:8:106777)
+    at Dl (http://localhost:53000/assets/index-fitYKIkN.js:8:106661)
+    at Ol (http://localhost:53000/assets/index-fitYKIkN.js:8:107541)
+    at Dl (http://localhost:53000/assets/index-fitYKIkN.js:8:106661)
+    at Ol (http://localhost:53000/assets/index-fitYKIkN.js:8:106823)
+    at Uu (http://localhost:53000/assets/index-fitYKIkN.js:8:119575)
+[   14546ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:58080/api/projects:0

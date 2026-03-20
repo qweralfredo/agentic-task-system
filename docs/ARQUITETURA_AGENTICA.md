@@ -36,12 +36,13 @@ Esses artefatos permitem:
 5. Registrar review
 6. Atualizar wiki/checkpoints com aprendizados
 
-## Fluxo do Pandora Todo List via MCP
+## Fluxo do Pandora Todo List via MCP (Python SDK oficial)
 
-1. Agente conecta em `/mcp`
+1. Agente conecta no servidor `mcp-server-python/server.py` (stdio)
 2. Solicita `tools/list`
 3. Executa `tools/call` para operar no projeto
-4. Salva checkpoints para preservar contexto
+4. Servidor MCP chama a API REST do backend (`/api/...`)
+5. Salva checkpoints para preservar contexto
 
 ## Seguranca e confiabilidade
 

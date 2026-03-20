@@ -30,6 +30,6 @@ powershell -ExecutionPolicy Bypass -File .\ops\scripts\restore-postgres.ps1 -Fil
 1. Suba a stack
    - `docker compose up -d`
 2. Verifique API
-   - `curl http://localhost:58080/health`
+   - `curl http://localhost:8480/health`
 3. Acesse UI
-   - `http://localhost:53000`
+   - `http://localhost:8400`

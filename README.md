@@ -1,6 +1,6 @@
 ﻿# Pandora Todo List Scrum Platform
 
-[![Add MCP Server](https://img.shields.io/badge/Add%20MCP%20Server-VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](vscode:mcp/install?%7B%22name%22%3A%22pandora-todo-list-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A58080%2Fmcp%22%7D)
+[![MCP Python Server](https://img.shields.io/badge/MCP-Python%20FastMCP-3776AB?style=for-the-badge&logo=python&logoColor=white)](mcp-server-python/README.md)
 
 [Add SQL MCP Server](vscode:mcp/install?%7B%22name%22%3A%22sql-mcp-server%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22dab%22%2C%22args%22%3A%5B%22start%22%2C%22--mcp-stdio%22%2C%22role%3Aanonymous%22%2C%22--config%22%2C%22%24%7BworkspaceFolder%7D%2Fdab-config.json%22%5D%7D)
 
@@ -8,7 +8,7 @@ Plataforma completa para gestao de desenvolvimento de software com foco em uso h
 
 - Backend: .NET 10 Web API com PostgreSQL real (EF Core)
 - Frontend: React + TypeScript
-- Protocolo agentico: endpoint MCP (JSON-RPC) para integracao com apps agenticos, especialmente VS Code
+- Protocolo agentico: servidor MCP em Python (SDK oficial FastMCP) para integracao com apps agenticos, especialmente VS Code
 - Metodologia: estrutura Scrum (projeto, backlog, sprint, tasks, review)
 - Knowledge hub: wiki, checkpoints de contexto, historico de execucoes agenticas
 - Operacao: Docker Compose com persistencia e backup em disco local
@@ -25,7 +25,8 @@ Opcional para abrir automaticamente o deep link de instalacao no VS Code:
 
 ## Arquitetura
 
-- `backend/AgenticTodoList.Api`: API principal com dominio, servicos e MCP
+- `backend/AgenticTodoList.Api`: API principal com dominio e servicos REST
+- `mcp-server-python`: servidor MCP oficial em Python (FastMCP) conectado a API REST e executado via Docker
 - `backend/AgenticTodoList.Api.Tests`: testes xUnit
 - `frontend`: dashboard web React
 - `docker-compose.yml`: stack completa
@@ -51,37 +52,50 @@ Opcional para abrir automaticamente o deep link de instalacao no VS Code:
 - Dashboard com metricas operacionais
 
 ### MCP para VS Code e apps agenticos
-Endpoint:
-- `POST /mcp`
 
-Metodos:
-- `initialize`
-- `initialized`
-- `tools/list`
-- `tools/call`
-- `prompts/list`
-- `prompts/get`
+O servidor MCP roda em Python com SDK oficial FastMCP, publicado em HTTP pelo Docker Compose.
+
+Setup rapido:
+- `cd mcp-server-python`
+- `python -m venv .venv`
+- `. .venv/Scripts/activate`
+- `pip install -r requirements.txt`
+
+Endpoint MCP local:
+- `http://127.0.0.1:8481/mcp`
 
 Tools disponiveis:
-- `project.list`
-- `project.create`
-- `project.delete` (soft delete por status)
-- `backlog.add`
-- `backlog.list`
-- `sprint.create`
-- `workitem.list`
-- `knowledge.checkpoint`
+- `project_list`
+- `project_create`
+- `project_delete` (soft delete por status)
+- `backlog_add`
+- `backlog_list`
+- `sprint_create`
+- `workitem_list`
+- `workitem_update`
+- `knowledge_checkpoint`
 
 Prompts disponiveis:
-- `pandora.project.create`
-- `pandora.backlog.add`
-- `pandora.sprint.create`
-- `pandora.knowledge.checkpoint`
-- `pandora.project.status`
+- `pandora_project_create`
+- `pandora_sprint_create`
+- `pandora_resources_guide` (guia detalhado de todos os recursos da UI e mapeamento MCP/API)
 
-Formato de retorno de `tools/call`:
-- `result.content`: array de blocos texto MCP (ex.: `[{ "type": "text", "text": "..." }]`)
-- `result.structuredContent`: JSON estruturado para consumo por cliente
+Resources MCP (read-only para contexto de agentes):
+- Diretos:
+   - `pandora://about`
+   - `pandora://projects/active`
+   - `pandora://projects/all`
+- Templates:
+   - `pandora://projects/{project_id}/context`
+   - `pandora://projects/{project_id}/dashboard`
+   - `pandora://projects/{project_id}/backlog`
+   - `pandora://projects/{project_id}/sprints`
+   - `pandora://projects/{project_id}/workitems`
+   - `pandora://projects/{project_id}/workitems/status/{status}`
+   - `pandora://projects/{project_id}/sprints/{sprint_id}/workitems`
+   - `pandora://projects/{project_id}/tasks/overview`
+   - `pandora://projects/{project_id}/tasks/triage`
+   - `pandora://projects/{project_id}/knowledge`
 
 ## Subir local sem Docker
 
@@ -102,9 +116,10 @@ Formato de retorno de `tools/call`:
 - `docker compose up -d --build`
 
 Portas publicadas no host (portas altas):
-- PostgreSQL: `55432`
-- API: `58080`
-- Frontend: `53000`
+- PostgreSQL: `8432`
+- API: `8480`
+- Frontend: `8400`
+- MCP: `8481` (`/mcp`)
 
 ## Backup fora do Docker (host)
 
@@ -121,6 +136,7 @@ Observacao: se Docker Desktop nao estiver em execucao no Windows, o compose falh
 
 - `GET /health`
 - `GET /api/projects`
+- `DELETE /api/projects/{projectId}`
 - `POST /api/projects`
 - `GET /api/projects/{projectId}/dashboard`
 - `GET /api/projects/{projectId}/backlog`
@@ -147,6 +163,6 @@ Status atual:
 
 - Runtime usa apenas persistencia real no PostgreSQL
 - Frontend consulta API real
-- MCP opera diretamente sobre dados reais
+- MCP Python opera diretamente sobre API e dados reais
 - Nao ha camada de dados fake/mock no app em execucao
 

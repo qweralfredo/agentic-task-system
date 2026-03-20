@@ -1,4 +1,5 @@
 ﻿import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+import { MarkdownField } from '../components/MarkdownField'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import SprintOutlinedIcon from '@mui/icons-material/OnlinePredictionOutlined'
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
@@ -60,7 +61,7 @@ export function AppLayout() {
   const showErrorBanner = Boolean(error && selectedProjectId)
 
   const pageTitle = useMemo(
-    () => menu.find((item) => item.to === location.pathname)?.label ?? 'Project Space',
+    () => menu.find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))?.label ?? 'Project Space',
     [location.pathname],
   )
 
@@ -195,7 +196,7 @@ export function AppLayout() {
         </Container>
       </Box>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="md">
         <Box component="form" onSubmit={handleCreateProject}>
           <DialogTitle>Novo Projeto</DialogTitle>
           <DialogContent>
@@ -207,15 +208,7 @@ export function AppLayout() {
                 required
                 fullWidth
               />
-              <TextField
-                value={projectDescription}
-                onChange={(event) => setProjectDescription(event.target.value)}
-                label="Descricao"
-                required
-                multiline
-                minRows={3}
-                fullWidth
-              />
+              <MarkdownField label="Descricao" value={projectDescription} onChange={setProjectDescription} required />
             </Stack>
           </DialogContent>
           <DialogActions>

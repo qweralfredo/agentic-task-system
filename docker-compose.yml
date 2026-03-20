@@ -4,10 +4,10 @@
     container_name: pandora-postgres
     environment:
       POSTGRES_DB: pandora_todo_list
-      POSTGRES_USER: Pandora
-      POSTGRES_PASSWORD: Pandora
+      POSTGRES_USER: pandora
+      POSTGRES_PASSWORD: pandora
     ports:
-      - "55432:5432"
+      - "8432:5432"
     volumes:
       - ./ops/postgres/data:/var/lib/postgresql/data
     healthcheck:
@@ -25,18 +25,34 @@
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=pandora_todo_list;Username=Pandora;Password=Pandora
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=pandora_todo_list;Username=pandora;Password=pandora
     ports:
-      - "58080:8080"
+      - "8480:8080"
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: http://localhost:58080
+        VITE_API_BASE_URL: http://localhost:8480
     container_name: pandora-frontend
     depends_on:
       - api
     ports:
-      - "53000:80"
+      - "8400:80"
+
+  mcp:
+    build:
+      context: ./mcp-server-python
+    container_name: pandora-mcp
+    depends_on:
+      - api
+    environment:
+      PANDORA_API_BASE_URL: http://api:8080
+      PANDORA_API_TIMEOUT: 30
+      PANDORA_MCP_TRANSPORT: streamable-http
+      PANDORA_MCP_HOST: 0.0.0.0
+      PANDORA_MCP_PORT: 8000
+      PANDORA_MCP_MOUNT_PATH: /
+    ports:
+      - "8481:8000"
 

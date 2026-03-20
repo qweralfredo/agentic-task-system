@@ -1,6 +1,5 @@
 ﻿using PandoraTodoList.Api.Contracts;
 using PandoraTodoList.Api.Domain;
-using System.Text.Json;
 
 namespace PandoraTodoList.Api.Tests;
 
@@ -50,9 +49,6 @@ public class DomainContractsDefaultsTests
     [Fact]
     public void DtoRecords_ShouldBindValues()
     {
-        var requestId = JsonDocument.Parse("\"1\"").RootElement.Clone();
-        var responseId = JsonDocument.Parse("\"1\"").RootElement.Clone();
-
         var createProject = new CreateProjectRequest("N", "D");
         var backlog = new AddBacklogItemRequest("T", "D", 3, 1);
         var sprint = new CreateSprintRequest("S", "G", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)), []);
@@ -63,8 +59,6 @@ public class DomainContractsDefaultsTests
         var documentation = new AddDocumentationPageRequest("adr", "body", "Architecture", "tag");
         var run = new AddAgentRunLogRequest("a", "mcp", "in", "out", "ok", DateTimeOffset.UtcNow, null);
         var dashboard = new DashboardDto(Guid.NewGuid(), "Proj", 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-        var mcpReq = new McpRequest("2.0", "tools/list", null, requestId);
-        var mcpResp = new McpResponse("2.0", responseId, new { ok = true }, null);
 
         Assert.Equal("N", createProject.Name);
         Assert.Equal(3, backlog.StoryPoints);
@@ -79,9 +73,6 @@ public class DomainContractsDefaultsTests
         Assert.Equal("Architecture", documentation.Category);
         Assert.Equal("a", run.AgentName);
         Assert.Equal("Proj", dashboard.ProjectName);
-        Assert.Equal("tools/list", mcpReq.Method);
-        Assert.True(mcpResp.Id.HasValue);
-        Assert.Equal("1", mcpResp.Id.Value.GetString());
     }
 
     [Fact]

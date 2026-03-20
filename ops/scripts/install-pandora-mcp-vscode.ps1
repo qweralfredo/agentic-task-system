@@ -1,16 +1,24 @@
 param(
-    [switch]$OpenInstallLink
+    [switch]$OpenInstallLink,
+    [switch]$Global
 )
 
 $ErrorActionPreference = 'Stop'
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
-$vscodeDir = Join-Path $repoRoot ".vscode"
-$mcpFile = Join-Path $vscodeDir "mcp.json"
 
-if (-not (Test-Path $vscodeDir)) {
-    New-Item -ItemType Directory -Path $vscodeDir | Out-Null
+if ($Global) {
+    $targetDir = Join-Path $env:APPDATA "Code\User"
+}
+else {
+    $targetDir = Join-Path $repoRoot ".vscode"
+}
+
+$mcpFile = Join-Path $targetDir "mcp.json"
+
+if (-not (Test-Path $targetDir)) {
+    New-Item -ItemType Directory -Path $targetDir | Out-Null
 }
 
 $config = $null
@@ -36,7 +44,7 @@ if ($null -eq $config.servers) {
 
 $pandoraServer = [pscustomobject]@{
     type = "http"
-    url = "http://127.0.0.1:58080/mcp"
+    url = "http://127.0.0.1:8481/mcp"
 }
 
 $servers = $config.servers
@@ -53,34 +61,13 @@ Set-Content -Path $mcpFile -Value $json -Encoding UTF8
 Write-Host "MCP do Pandora configurado com sucesso em: $mcpFile"
 Write-Host "Reabra o VS Code ou execute o comando 'Developer: Reload Window'."
 
+if ($Global) {
+    Write-Host "Escopo aplicado: GLOBAL (todos os workspaces do VS Code)."
+}
+else {
+    Write-Host "Escopo aplicado: WORKSPACE (apenas este repositorio)."
+}
+
 if ($OpenInstallLink) {
-    $deepLink = "vscode:mcp/install?%7B%22name%22%3A%22pandora-todo-list-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22http%3A%2F%2F127.0.0.1%3A58080%2Fmcp%22%7D"
-
-    $opened = $false
-    $codeCmd = Get-Command code -ErrorAction SilentlyContinue
-    if ($null -ne $codeCmd) {
-        try {
-            code --open-url $deepLink | Out-Null
-            $opened = $true
-            Write-Host "Deep link enviado via 'code --open-url'."
-        }
-        catch {
-            Write-Host "Falha ao abrir via code CLI, tentando fallback do sistema..."
-        }
-    }
-
-    if (-not $opened) {
-        try {
-            Start-Process $deepLink | Out-Null
-            $opened = $true
-            Write-Host "Deep link enviado via Start-Process."
-        }
-        catch {
-            Write-Host "Nao foi possivel abrir automaticamente o deep link."
-        }
-    }
-
-    if (-not $opened) {
-        Write-Host "Abra manualmente no terminal: code --open-url $deepLink"
-    }
+    Write-Host "OpenInstallLink ignorado para configuracao HTTP local."
 }

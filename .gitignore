@@ -8,3 +8,8 @@ frontend/dist/
 backend/**/TestResults/
 ops/postgres/data/
 ops/postgres/backups/
+
+# Python MCP local environment artifacts
+mcp-server-python/.venv/
+mcp-server-python/__pycache__/
+mcp-server-python/*.pyc
