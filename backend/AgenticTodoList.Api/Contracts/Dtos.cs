@@ -1,6 +1,6 @@
-using AgenticTodoList.Api.Domain;
+﻿using PandoraTodoList.Api.Domain;
 
-namespace AgenticTodoList.Api.Contracts;
+namespace PandoraTodoList.Api.Contracts;
 
 public record CreateProjectRequest(string Name, string Description);
 public record AddBacklogItemRequest(string Title, string Description, int StoryPoints, int Priority);
@@ -25,3 +25,4 @@ public record DashboardDto(
     int KnowledgeCheckpoints,
     int WikiPages,
     int AgentRuns);
+

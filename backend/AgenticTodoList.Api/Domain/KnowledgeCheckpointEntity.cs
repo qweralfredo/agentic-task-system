@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public class KnowledgeCheckpointEntity
 {
@@ -14,3 +14,4 @@ public class KnowledgeCheckpointEntity
     public string NextActions { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
+

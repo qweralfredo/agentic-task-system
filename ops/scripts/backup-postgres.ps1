@@ -1,7 +1,7 @@
-param(
-    [string]$ContainerName = "agentic-postgres",
-    [string]$Database = "agentic_todolist",
-    [string]$User = "agentic"
+﻿param(
+    [string]$ContainerName = "pandora-postgres",
+    [string]$Database = "pandora_todo_list",
+    [string]$User = "Pandora"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +13,7 @@ if (-not (Test-Path $backupDir)) {
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$backupFile = Join-Path $backupDir ("agentic_todolist-" + $timestamp + ".sql")
+$backupFile = Join-Path $backupDir ("pandora_todo_list-" + $timestamp + ".sql")
 
 $dump = docker exec $ContainerName pg_dump -U $User -d $Database
 if ($LASTEXITCODE -ne 0) {
@@ -22,3 +22,4 @@ if ($LASTEXITCODE -ne 0) {
 
 $dump | Set-Content -Path $backupFile -Encoding UTF8
 Write-Host "Backup created at $backupFile"
+

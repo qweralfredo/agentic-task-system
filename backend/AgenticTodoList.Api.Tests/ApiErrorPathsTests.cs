@@ -1,10 +1,10 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using AgenticTodoList.Api.Contracts;
-using AgenticTodoList.Api.Domain;
+using PandoraTodoList.Api.Contracts;
+using PandoraTodoList.Api.Domain;
 
-namespace AgenticTodoList.Api.Tests;
+namespace PandoraTodoList.Api.Tests;
 
 public class ApiErrorPathsTests : IClassFixture<TestAppFactory>
 {
@@ -130,3 +130,4 @@ public class ApiErrorPathsTests : IClassFixture<TestAppFactory>
         Assert.Equal(HttpStatusCode.Created, reviewResponse.StatusCode);
     }
 }
+

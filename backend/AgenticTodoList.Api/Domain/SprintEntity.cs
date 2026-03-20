@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public class SprintEntity
 {
@@ -16,3 +16,4 @@ public class SprintEntity
     public List<WorkItemEntity> WorkItems { get; set; } = [];
     public List<ReviewEntity> Reviews { get; set; } = [];
 }
+

@@ -1,10 +1,10 @@
-using AgenticTodoList.Api.Contracts;
-using AgenticTodoList.Api.Data;
-using AgenticTodoList.Api.Domain;
-using AgenticTodoList.Api.Services;
+﻿using PandoraTodoList.Api.Contracts;
+using PandoraTodoList.Api.Data;
+using PandoraTodoList.Api.Domain;
+using PandoraTodoList.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace AgenticTodoList.Api.Tests;
+namespace PandoraTodoList.Api.Tests;
 
 public class ScrumServiceTests
 {
@@ -23,7 +23,7 @@ public class ScrumServiceTests
         await using var db = CreateDbContext();
         var service = new ScrumService(db);
 
-        var project = await service.CreateProjectAsync(new CreateProjectRequest("Agentic Core", "Plataforma scrum"), CancellationToken.None);
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Pandora Core", "Plataforma scrum"), CancellationToken.None);
         var backlog = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Story A", "Descricao", 5, 1), CancellationToken.None);
 
         Assert.NotEqual(Guid.Empty, project.Id);
@@ -37,7 +37,7 @@ public class ScrumServiceTests
         await using var db = CreateDbContext();
         var service = new ScrumService(db);
 
-        var project = await service.CreateProjectAsync(new CreateProjectRequest("Agentic", "Descricao"), CancellationToken.None);
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Pandora", "Descricao"), CancellationToken.None);
         var b1 = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Task 1", "Desc", 3, 1), CancellationToken.None);
         var b2 = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Task 2", "Desc", 2, 2), CancellationToken.None);
 
@@ -100,3 +100,4 @@ public class ScrumServiceTests
         Assert.Equal("Arquitetura", docs[0].Category);
     }
 }
+

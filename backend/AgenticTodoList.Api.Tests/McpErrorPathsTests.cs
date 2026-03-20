@@ -1,9 +1,9 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using AgenticTodoList.Api.Contracts;
+using PandoraTodoList.Api.Contracts;
 
-namespace AgenticTodoList.Api.Tests;
+namespace PandoraTodoList.Api.Tests;
 
 public class McpErrorPathsTests : IClassFixture<TestAppFactory>
 {
@@ -132,3 +132,4 @@ public class McpErrorPathsTests : IClassFixture<TestAppFactory>
         Assert.Equal(HttpStatusCode.OK, checkpointResponse.StatusCode);
     }
 }
+

@@ -1,4 +1,4 @@
-# Agentic TodoList Scrum Platform
+﻿# Pandora Todo List Scrum Platform
 
 Plataforma completa para gestao de desenvolvimento de software com foco em uso humano + IA:
 
@@ -30,7 +30,7 @@ Plataforma completa para gestao de desenvolvimento de software com foco em uso h
 - Atualizacao de status de task
 - Reviews por sprint
 
-### Agentic Knowledge
+### Pandora Knowledge
 - Wiki por projeto
 - Knowledge checkpoints (snapshot de contexto, decisoes, riscos, proximos passos)
 - Log de execucoes de agentes
@@ -54,9 +54,9 @@ Tools disponiveis:
 ## Subir local sem Docker
 
 1. Inicie um PostgreSQL local na porta 5432 com:
-   - database: `agentic_todolist`
-   - user: `agentic`
-   - password: `agentic`
+   - database: `pandora_todo_list`
+   - user: `Pandora`
+   - password: `Pandora`
 2. Backend:
    - `cd backend/AgenticTodoList.Api`
    - `dotnet run`
@@ -117,3 +117,4 @@ Status atual:
 - Frontend consulta API real
 - MCP opera diretamente sobre dados reais
 - Nao ha camada de dados fake/mock no app em execucao
+

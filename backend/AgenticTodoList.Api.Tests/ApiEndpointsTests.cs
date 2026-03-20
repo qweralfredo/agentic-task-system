@@ -1,9 +1,9 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using AgenticTodoList.Api.Contracts;
+using PandoraTodoList.Api.Contracts;
 
-namespace AgenticTodoList.Api.Tests;
+namespace PandoraTodoList.Api.Tests;
 
 public class ApiEndpointsTests : IClassFixture<TestAppFactory>
 {
@@ -150,3 +150,4 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
         Assert.False(string.IsNullOrWhiteSpace(content));
     }
 }
+

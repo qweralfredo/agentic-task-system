@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AgenticTodoList.Api.Migrations
+namespace PandoraTodoList.Api.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -286,3 +286,4 @@ namespace AgenticTodoList.Api.Migrations
         }
     }
 }
+

@@ -1,4 +1,4 @@
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+﻿import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import SprintOutlinedIcon from '@mui/icons-material/OnlinePredictionOutlined'
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
@@ -85,7 +85,7 @@ export function AppLayout() {
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, minHeight: 68 }}>
           <Box>
-            <Typography variant="h6">Agentic Jira Flow</Typography>
+            <Typography variant="h6">Pandora Todo List</Typography>
             <Typography variant="caption" sx={{ opacity: 0.88 }}>
               Projeto &gt; Backlog &gt; Sprint &gt; Tasks &gt; Knowledge
             </Typography>
@@ -136,7 +136,7 @@ export function AppLayout() {
             {selectedProject?.name ?? 'Sem projeto'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {selectedProject?.description ?? 'Crie ou selecione um projeto para começar.'}
+            {selectedProject?.description ?? 'Crie ou selecione um projeto para comeÃ§ar.'}
           </Typography>
           <Divider sx={{ mt: 1.6 }} />
         </Box>
@@ -227,3 +227,4 @@ export function AppLayout() {
     </Box>
   )
 }
+

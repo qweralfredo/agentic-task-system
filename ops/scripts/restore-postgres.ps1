@@ -1,9 +1,9 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [string]$FilePath,
-    [string]$ContainerName = "agentic-postgres",
-    [string]$Database = "agentic_todolist",
-    [string]$User = "agentic"
+    [string]$ContainerName = "pandora-postgres",
+    [string]$Database = "pandora_todo_list",
+    [string]$User = "Pandora"
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,3 +18,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Restore completed from $FilePath"
+

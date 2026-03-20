@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public enum BacklogItemStatus
 {
@@ -24,3 +24,4 @@ public enum SprintStatus
     Active = 1,
     Closed = 2
 }
+

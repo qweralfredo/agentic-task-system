@@ -1,7 +1,7 @@
-using AgenticTodoList.Api.Domain;
+﻿using PandoraTodoList.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace AgenticTodoList.Api.Data;
+namespace PandoraTodoList.Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
@@ -66,3 +66,4 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(a => new { a.ProjectId, a.AgentName, a.StartedAt });
     }
 }
+

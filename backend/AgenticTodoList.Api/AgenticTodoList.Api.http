@@ -1,6 +1,55 @@
-@AgenticTodoList.Api_HostAddress = http://localhost:5146
+﻿@PandoraTodoList.Api_HostAddress = http://localhost:5146
+@Mcp_HostAddress = http://127.0.0.1:58080
 
-GET {{AgenticTodoList.Api_HostAddress}}/weatherforecast/
+GET {{PandoraTodoList.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# MCP - listar tools
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "tools-list-1",
+	"method": "tools/list"
+}
+
+###
+
+# MCP - criar projeto
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "project-create-1",
+	"method": "tools/call",
+	"params": {
+		"name": "project.create",
+		"arguments": {
+			"name": "Teste MCP VSCode",
+			"description": "Projeto criado via arquivo .http no VS Code"
+		}
+	}
+}
+
+###
+
+# MCP - listar projetos
+POST {{Mcp_HostAddress}}/mcp
+Content-Type: application/json
+
+{
+	"jsonrpc": "2.0",
+	"id": "project-list-1",
+	"method": "tools/call",
+	"params": {
+		"name": "project.list",
+		"arguments": {}
+	}
+}
+
+###
+

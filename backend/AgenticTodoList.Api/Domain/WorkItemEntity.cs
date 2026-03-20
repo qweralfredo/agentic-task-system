@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public class WorkItemEntity
 {
@@ -20,3 +20,4 @@ public class WorkItemEntity
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
 }
+

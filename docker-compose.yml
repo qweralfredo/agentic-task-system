@@ -1,17 +1,17 @@
-services:
+﻿services:
   postgres:
     image: postgres:17-alpine
-    container_name: agentic-postgres
+    container_name: pandora-postgres
     environment:
-      POSTGRES_DB: agentic_todolist
-      POSTGRES_USER: agentic
-      POSTGRES_PASSWORD: agentic
+      POSTGRES_DB: pandora_todo_list
+      POSTGRES_USER: Pandora
+      POSTGRES_PASSWORD: Pandora
     ports:
       - "55432:5432"
     volumes:
       - ./ops/postgres/data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agentic -d agentic_todolist"]
+      test: ["CMD-SHELL", "pg_isready -U Pandora -d pandora_todo_list"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,13 +19,13 @@ services:
   api:
     build:
       context: ./backend/AgenticTodoList.Api
-    container_name: agentic-api
+    container_name: pandora-api
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=agentic_todolist;Username=agentic;Password=agentic
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=pandora_todo_list;Username=Pandora;Password=Pandora
     ports:
       - "58080:8080"
 
@@ -34,8 +34,9 @@ services:
       context: ./frontend
       args:
         VITE_API_BASE_URL: http://localhost:58080
-    container_name: agentic-frontend
+    container_name: pandora-frontend
     depends_on:
       - api
     ports:
       - "53000:80"
+

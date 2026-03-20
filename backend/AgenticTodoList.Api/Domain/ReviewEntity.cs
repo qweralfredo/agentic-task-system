@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public class ReviewEntity
 {
@@ -11,3 +11,4 @@ public class ReviewEntity
     public string Notes { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
+

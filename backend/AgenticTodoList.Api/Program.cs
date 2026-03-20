@@ -1,7 +1,7 @@
-using AgenticTodoList.Api.Contracts;
-using AgenticTodoList.Api.Data;
-using AgenticTodoList.Api.Domain;
-using AgenticTodoList.Api.Services;
+﻿using PandoraTodoList.Api.Contracts;
+using PandoraTodoList.Api.Data;
+using PandoraTodoList.Api.Domain;
+using PandoraTodoList.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -304,3 +304,4 @@ app.MapPost("/mcp", async (McpRequest mcpRequest, ScrumService service, AppDbCon
 app.Run();
 
 public partial class Program;
+

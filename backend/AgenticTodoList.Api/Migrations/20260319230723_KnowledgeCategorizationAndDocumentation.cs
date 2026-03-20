@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AgenticTodoList.Api.Migrations
+namespace PandoraTodoList.Api.Migrations
 {
     /// <inheritdoc />
     public partial class KnowledgeCategorizationAndDocumentation : Migration
@@ -73,3 +73,4 @@ namespace AgenticTodoList.Api.Migrations
         }
     }
 }
+

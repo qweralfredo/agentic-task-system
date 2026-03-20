@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public class BacklogItemEntity
 {
@@ -15,3 +15,4 @@ public class BacklogItemEntity
 
     public List<WorkItemEntity> WorkItems { get; set; } = [];
 }
+

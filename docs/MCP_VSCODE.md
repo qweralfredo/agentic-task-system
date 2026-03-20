@@ -1,4 +1,4 @@
-# Integracao MCP com VS Code
+﻿# Integracao MCP com VS Code
 
 Este projeto expoe um endpoint MCP via HTTP em `POST /mcp`.
 
@@ -46,7 +46,7 @@ Response (resumo):
   "params": {
     "name": "project.create",
     "arguments": {
-      "name": "Plataforma Agentica",
+      "name": "Pandora Todo List",
       "description": "Projeto para orquestrar backlog e sprints"
     }
   }
@@ -68,3 +68,4 @@ Campos tipicos esperados no cliente:
 - Mantenha configurado em porta alta: `58080`.
 
 Ajuste o formato exato conforme a versao/extensao MCP instalada no VS Code.
+

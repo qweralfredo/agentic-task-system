@@ -1,9 +1,9 @@
-using AgenticTodoList.Api.Contracts;
-using AgenticTodoList.Api.Data;
-using AgenticTodoList.Api.Domain;
+﻿using PandoraTodoList.Api.Contracts;
+using PandoraTodoList.Api.Data;
+using PandoraTodoList.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace AgenticTodoList.Api.Services;
+namespace PandoraTodoList.Api.Services;
 
 public class ScrumService(AppDbContext db)
 {
@@ -247,3 +247,4 @@ public class ScrumService(AppDbContext db)
             await db.AgentRunLogs.CountAsync(a => a.ProjectId == projectId, cancellationToken));
     }
 }
+

@@ -1,4 +1,4 @@
-using AgenticTodoList.Api.Data;
+﻿using PandoraTodoList.Api.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace AgenticTodoList.Api.Tests;
+namespace PandoraTodoList.Api.Tests;
 
 public class TestAppFactory : WebApplicationFactory<Program>
 {
@@ -24,7 +24,8 @@ public class TestAppFactory : WebApplicationFactory<Program>
             services.RemoveAll(typeof(IDbContextOptionsConfiguration<AppDbContext>));
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseInMemoryDatabase("agentic-tests", SharedDatabaseRoot));
+                options.UseInMemoryDatabase("pandora-tests", SharedDatabaseRoot));
         });
     }
 }
+

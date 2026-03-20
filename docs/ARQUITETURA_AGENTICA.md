@@ -1,4 +1,4 @@
-# Arquitetura Agentica da Solucao
+# Arquitetura do Pandora Todo List
 
 ## Objetivo
 
@@ -36,7 +36,7 @@ Esses artefatos permitem:
 5. Registrar review
 6. Atualizar wiki/checkpoints com aprendizados
 
-## Fluxo Agentico via MCP
+## Fluxo do Pandora Todo List via MCP
 
 1. Agente conecta em `/mcp`
 2. Solicita `tools/list`

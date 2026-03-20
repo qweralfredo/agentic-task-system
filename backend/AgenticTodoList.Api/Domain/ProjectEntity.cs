@@ -1,4 +1,4 @@
-namespace AgenticTodoList.Api.Domain;
+﻿namespace PandoraTodoList.Api.Domain;
 
 public class ProjectEntity
 {
@@ -14,3 +14,4 @@ public class ProjectEntity
     public List<KnowledgeCheckpointEntity> KnowledgeCheckpoints { get; set; } = [];
     public List<AgentRunLogEntity> AgentRuns { get; set; } = [];
 }
+
