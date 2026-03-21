@@ -426,7 +426,7 @@ export function SprintsPage() {
                         variant="contained"
                         onClick={() => setSearchParams({ backlogId: backlogItem.id })}
                       >
-                      >View Kanban
+                        View Kanban
                       </Button>
                     </Stack>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
