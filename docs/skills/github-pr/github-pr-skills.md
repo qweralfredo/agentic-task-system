@@ -1,131 +1,131 @@
 ﻿# Skills: GitHub Pull Request & Issues
 
-> **Type:** Skills from the `github.vscode-pull-request-github` extension  
-> **Agent:** GitHub Copilot Chat (with GitHub Pull Requests extension)  
-> **When to use:** Work with GitHub issues, PRs, and notifications directly in VS Code
+> **Tipo:** Skills da extensão `github.vscode-pull-request-github`  
+> **Agente:** GitHub Copilot Chat (com a extensão GitHub Pull Requests)  
+> **Quando usar:** Trabalhar com issues, PRs e notificações do GitHub diretamente no VS Code
 
 ---
 
-## What They Are
+## O Que São
 
-A set of 4 skills provided by the **GitHub Pull Requests and Issues** extension for Copilot Chat:
+Um conjunto de 4 skills fornecidas pela extensão **GitHub Pull Requests and Issues** para o Copilot Chat:
 
-| Skill | When to use |
+| Skill | Quando usar |
 |---|---|
-| `summarize-github-issue-pr-notification` | Summarize an issue, PR, or notification |
-| `suggest-fix-issue` | Suggest a structured fix for an issue |
-| `form-github-search-query` | Build a search query for issues/PRs |
-| `show-github-search-result` | Display search results as a table |
+| `summarize-github-issue-pr-notification` | Resumir uma issue, PR ou notificação |
+| `suggest-fix-issue` | Sugerir uma correção estruturada para uma issue |
+| `form-github-search-query` | Montar uma query de busca para issues/PRs |
+| `show-github-search-result` | Exibir resultados de busca em tabela |
 
 ---
 
-## How to Install
+## Como Instalar
 
-### 1. Install the extension
+### 1. Instalar a extensão
 
 ```bash
 # Via terminal
 code --install-extension GitHub.vscode-pull-request-github
 
-# Or via UI: Extensions (Ctrl+Shift+X) -> search "GitHub Pull Requests"
+# Ou via UI: Extensões (Ctrl+Shift+X) -> pesquisar "GitHub Pull Requests"
 ```
 
-### 2. Authenticate with GitHub
+### 2. Autenticar com o GitHub
 
-1. Open the command palette: `Ctrl+Shift+P`
-2. Run: `GitHub Pull Requests: Sign In`
-3. Follow the OAuth flow in the browser
-4. Confirm authentication: GitHub icon in the sidebar
+1. Abrir a paleta de comandos: `Ctrl+Shift+P`
+2. Executar: `GitHub Pull Requests: Sign In`
+3. Seguir o fluxo OAuth no navegador
+4. Confirmar autenticao: ícone do GitHub na barra lateral
 
-### 3. Verify the skills are available
+### 3. Verificar se as skills estão disponíveis
 
-In Copilot Chat, skills are loaded automatically after authentication. To confirm, ask:
+No Copilot Chat, as skills são carregadas automaticamente após a autenticação. Para confirmar, pergunte:
 
 ```
-@copilot What skills do you have available?
+@copilot Quais skills você tem disponíveis?
 ```
 
 ---
 
-## How to Use Each Skill
+## Como Usar Cada Skill
 
 ### summarize-github-issue-pr-notification
 
-Automatic summary of an issue, PR, or notification. **Always use when mentioning an issue/PR.**
+Resumo automático de uma issue, PR ou notificação. **Sempre use ao mencionar uma issue/PR.**
 
 ```
-Summarize issue #42 from the current repository.
+Resuma a issue #42 do repositório atual.
 
-Summarize PR #15 — what changed?
+Resuma o PR #15 — o que mudou?
 
-What's in the latest GitHub notification?
+Qual é a última notificação do GitHub?
 ```
 
 ### suggest-fix-issue
 
-Generates a structured fix suggestion for an issue.
+Gera uma sugestão de correção estruturada para uma issue.
 
 ```
-Suggest a fix for issue #88.
+Sugira uma correção para a issue #88.
 
-Based on issue #42, how should I fix the problem?
+Com base na issue #42, como devo corrigir o problema?
 ```
 
 ### form-github-search-query
 
-Creates optimized search queries for GitHub.
+Cria queries de busca otimizadas para o GitHub.
 
 ```
-Create a query to find open issues about "login"
-labeled as bug in this repository.
+Crie uma query para encontrar issues abertas sobre "login"
+rotuladas como bug neste repositório.
 
-I want to find PRs merged in the last 7 days by me.
+Quero encontrar PRs mergeados nos últimos 7 dias por mim.
 ```
 
 ### show-github-search-result
 
-Formats and displays search results as a readable Markdown table.
+Formata e exibe resultados de busca como uma tabela Markdown legível.
 
 ```
-Show the results of searching open issues with label "enhancement".
-```
-
----
-
-## Recommended Workflow
-
-```
-issue mentioned
-    |
-summarize-github-issue-pr-notification   (understand the context)
-    |
-suggest-fix-issue                        (get structured suggestion)
-    |
-Implement via TDD                        (Red -> Green -> Refactor)
-    |
-Commit + close issue via PR
+Mostre os resultados da busca de issues abertas com a label "enhancement".
 ```
 
 ---
 
-## Repository Permission Configuration
+## Fluxo Recomendado
 
-For skills to access private repositories, ensure:
+```
+issue mencionada
+    |
+summarize-github-issue-pr-notification   (entender o contexto)
+    |
+suggest-fix-issue                        (obter sugestão estruturada)
+    |
+Implementar via TDD                      (Red -> Green -> Refactor)
+    |
+Commit + fechar issue via PR
+```
 
-1. You are authenticated in the GitHub Pull Requests extension
-2. You have at least `read` permission on the repository
-3. The repository is configured as `remote origin` in the workspace
+---
+
+## Configuração de Permissões do Repositório
+
+Para que as skills acessem repositórios privados, garanta:
+
+1. Você está autenticado na extensão GitHub Pull Requests
+2. Você tem ao menos permissão `read` no repositório
+3. O repositório está configurado como `remote origin` no workspace
 
 ```bash
-# Verify remote
+# Verificar remote
 git remote -v
-# Should show: origin  https://github.com/<owner>/<repo>.git
+# Deve exibir: origin  https://github.com/<owner>/<repo>.git
 ```
 
 ---
 
-## References
+## Referências
 
-- [GitHub Pull Requests Extension](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github)
-- [GitHub Issues in VS Code](https://code.visualstudio.com/docs/sourcecontrol/github)
-- [Copilot Chat Skills](https://docs.github.com/en/copilot/using-github-copilot/copilot-chat/using-copilot-chat-in-visual-studio-code)
+- [Extensão GitHub Pull Requests](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github)
+- [GitHub Issues no VS Code](https://code.visualstudio.com/docs/sourcecontrol/github)
+- [Skills do Copilot Chat](https://docs.github.com/en/copilot/using-github-copilot/copilot-chat/using-copilot-chat-in-visual-studio-code)

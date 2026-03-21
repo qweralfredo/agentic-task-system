@@ -1,134 +1,134 @@
 ﻿# Skill: agent-customization
 
-> **Type:** VS Code Copilot Built-in Skill  
-> **Agent:** GitHub Copilot (Chat)  
-> **When to use:** Create, edit, review, or debug Copilot customization files
+> **Tipo:** Skill nativa do VS Code Copilot  
+> **Agente:** GitHub Copilot (Chat)  
+> **Quando usar:** Criar, editar, revisar ou depurar arquivos de customização do Copilot
 
 ---
 
-## What It Is
+## O Que É
 
-The `agent-customization` skill is a native GitHub Copilot skill with specialized knowledge for working with the VS Code Copilot customization system. It knows how to create and edit:
+A skill `agent-customization` é uma skill nativa do GitHub Copilot com conhecimento especializado para trabalhar com o sistema de customização do VS Code Copilot. Ela sabe criar e editar:
 
-- `.github/copilot-instructions.md` — global workspace instructions
-- `.instructions.md` — instructions with `applyTo` for specific file types
-- `.prompt.md` — reusable prompts invokable by the user
-- `.agent.md` / `AGENTS.md` — custom agent definitions
-- `SKILL.md` — skill / domain knowledge definitions
-- YAML frontmatter rules for all customization files above
-
----
-
-## When NOT to Use
-
-- General programming questions → use the default agent
-- Runtime error diagnosis → use the default agent
-- MCP server configuration → consult MCP docs directly
-- VS Code extension development
+- `.github/copilot-instructions.md` — instruções globais do workspace
+- `.instructions.md` — instruções com `applyTo` para tipos específicos de arquivo
+- `.prompt.md` — prompts reutilizáveis invocáveis pelo usuário
+- `.agent.md` / `AGENTS.md` — definições de agentes customizados
+- `SKILL.md` — definições de skills / conhecimento de domínio
+- Regras de YAML frontmatter para todos os arquivos de customização acima
 
 ---
 
-## How to Install / Activate
+## Quando NÃO Usar
 
-The `agent-customization` skill is built into GitHub Copilot — **no separate installation required**.
+- Perguntas gerais de programação → usar o agente padrão
+- Diagnóstico de erros em runtime → usar o agente padrão
+- Configuração de servidor MCP → consultar a documentação do MCP diretamente
+- Desenvolvimento de extensões do VS Code
 
-### Prerequisites
+---
 
-1. **GitHub Copilot** extension installed in VS Code  
-2. **GitHub Copilot Chat** extension installed  
-3. GitHub account with Copilot access (Individual, Business, or Enterprise plan)
+## Como Instalar / Ativar
+
+A skill `agent-customization` está embutida no GitHub Copilot — **não requer instalação separada**.
+
+### Pré-requisitos
+
+1. Extensão **GitHub Copilot** instalada no VS Code  
+2. Extensão **GitHub Copilot Chat** instalada  
+3. Conta GitHub com acesso ao Copilot (plano Individual, Business ou Enterprise)
 
 ```bash
-# Verify extensions are installed
+# Verificar se as extensões estão instaladas
 code --list-extensions | findstr copilot
-# Expected output:
+# Saída esperada:
 # GitHub.copilot
 # GitHub.copilot-chat
 ```
 
-### Activate the Skill in Chat
+### Ativar a Skill no Chat
 
-The skill is invoked automatically when you ask something customization-related. To invoke it directly:
+A skill é invocada automaticamente quando você faz uma pergunta relacionada a customizações. Para invocá-la diretamente:
 
 ```
-@copilot /agent-customization <your question>
+@copilot /agent-customization <sua pergunta>
 ```
 
-Or just describe what you want and Copilot will select the skill automatically.
+Ou apenas descreva o que deseja e o Copilot selecionará a skill automaticamente.
 
 ---
 
-## How to Use
+## Como Usar
 
-### Example 1 — Create an instruction file
-
-```
-Create a .instructions.md file for TypeScript files
-with project conventions: use 2-space tabs,
-prefer arrow functions, avoid any.
-```
-
-### Example 2 — Create a reusable prompt
+### Exemplo 1 — Criar um arquivo de instruções
 
 ```
-Create a .prompt.md prompt called "create-controller" that
-automatically generates a .NET controller with basic CRUD
-for a given entity.
+Crie um arquivo .instructions.md para arquivos TypeScript
+com as convenções do projeto: usar 2 espaços de indentação,
+preferir arrow functions, evitar any.
 ```
 
-### Example 3 — Debug why an instruction is not being applied
+### Exemplo 2 — Criar um prompt reutilizável
 
 ```
-My instructions in .github/copilot-instructions.md
-are not being followed. Why?
+Crie um prompt .prompt.md chamado "create-controller" que
+automaticamente gere um controller .NET com CRUD básico
+para uma entidade fornecida.
 ```
 
-### Example 4 — Create a custom agent
+### Exemplo 3 — Depurar por que uma instrução não está sendo aplicada
 
 ```
-Create a custom agent for security code review
-following OWASP Top 10.
+Minhas instruções em .github/copilot-instructions.md
+não estão sendo seguidas. Por quê?
+```
+
+### Exemplo 4 — Criar um agente customizado
+
+```
+Crie um agente customizado para revisão de segurança de código
+seguindo o OWASP Top 10.
 ```
 
 ---
 
-## Customization File Structure
+## Estrutura de Arquivos de Customização
 
 ```
 .github/
-  copilot-instructions.md       # global workspace instructions
+  copilot-instructions.md       # instruções globais do workspace
 .copilot/
   instructions/
-    *.instructions.md           # instructions with applyTo
+    *.instructions.md           # instruções com applyTo
   prompts/
-    *.prompt.md                 # reusable prompts
+    *.prompt.md                 # prompts reutilizáveis
   agents/
-    *.agent.md                  # custom agents
+    *.agent.md                  # agentes customizados
   skills/
-    */SKILL.md                  # domain knowledge skills
+    */SKILL.md                  # skills de conhecimento de domínio
 ```
 
 ---
 
-## Configuring applyTo (YAML frontmatter)
+## Configurando applyTo (YAML frontmatter)
 
-Instructions can be selectively applied to specific file types:
+Instruções podem ser aplicadas seletivamente a tipos específicos de arquivo:
 
 ```yaml
 ---
 applyTo: "**/*.ts,**/*.tsx"
 ---
-# Instructions for TypeScript/React
+# Instruções para TypeScript/React
 ```
 
-Supported patterns:
-- `**/*.ts` — all TypeScript files
-- `src/**` — all files under src/
-- `**` — all files (default)
+Padrões suportados:
+- `**/*.ts` — todos os arquivos TypeScript
+- `src/**` — todos os arquivos dentro de src/
+- `**` — todos os arquivos (padrão)
 
 ---
 
-## References
+## Referências
 
-- [Official Docs — Copilot Customization](https://docs.github.com/en/copilot/customizing-copilot)
-- [VS Code Copilot Settings](https://code.visualstudio.com/docs/copilot/copilot-settings)
+- [Documentação Oficial — Copilot Customization](https://docs.github.com/en/copilot/customizing-copilot)
+- [Configurações do VS Code Copilot](https://code.visualstudio.com/docs/copilot/copilot-settings)
