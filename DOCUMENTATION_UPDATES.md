@@ -118,3 +118,30 @@ Data: 21/03/2026
 ---
 
 **Documentação completa e sincronizada! 🎉**
+
+---
+
+## Atualização Incremental — Frontend Commit IDs + UX de Navegação
+
+Data: 21/03/2026
+
+### Escopo aplicado
+- Listagem de `commitIds` nas três entidades visíveis no frontend:
+  - Backlog: chips de commit no card e edição no modal de contexto
+  - Sprint: exibição de quantidade de commits nos chips de agrupamento e no cabeçalho do kanban filtrado
+  - Task (work item): chips de commit no card e edição no modal `Edit task`
+- Menu lateral desktop retrátil (expandido/recolhido)
+- Correção do vão lateral entre menu e conteúdo principal (remoção de offset duplicado)
+- Reestruturação do modal `Edit task` para preencher dados atuais da task:
+  - status/assignee/branch/commitIds vindos do work item
+  - agent/model/ide/tokens/feedback/metadata vindos do último feedback salvo
+
+### Arquivos frontend alterados
+- `frontend/src/types.ts`
+- `frontend/src/api/client.ts`
+- `frontend/src/layout/AppLayout.tsx`
+- `frontend/src/pages/SprintsPage.tsx`
+- `frontend/src/pages/BacklogPage.tsx`
+
+### Validação
+- Build frontend executado com sucesso: `npm run build`

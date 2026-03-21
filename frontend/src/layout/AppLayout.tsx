@@ -1,4 +1,6 @@
 ﻿import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { MarkdownField } from '../components/MarkdownField'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -39,7 +41,8 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useProjectContext } from '../context/useProjectContext'
 
-const drawerWidth = 244
+const drawerWidthExpanded = 244
+const drawerWidthCollapsed = 76
 
 const menu = [
   { label: 'Dashboard', to: '/', icon: <DashboardOutlinedIcon /> },
@@ -65,9 +68,12 @@ export function AppLayout() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
+  const [desktopMenuCollapsed, setDesktopMenuCollapsed] = useState(false)
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
   const showErrorBanner = Boolean(error && selectedProjectId)
+  const desktopDrawerWidth = desktopMenuCollapsed ? drawerWidthCollapsed : drawerWidthExpanded
+  const showMenuLabels = isMobile || !desktopMenuCollapsed
 
   const pageTitle = useMemo(
     () => menu.find((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))?.label ?? 'Project Space',
@@ -78,15 +84,19 @@ export function AppLayout() {
     <>
       <Toolbar />
       <Box sx={{ p: 2.2 }}>
-        <Typography variant="subtitle2" color="text.secondary">
-          Current panel
-        </Typography>
-        <Typography variant="h6" sx={{ mt: 0.4 }}>
-          {selectedProject?.name ?? 'No project'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {selectedProject?.description ?? 'Create or select a project to get started.'}
-        </Typography>
+        {showMenuLabels && (
+          <>
+            <Typography variant="subtitle2" color="text.secondary">
+              Current panel
+            </Typography>
+            <Typography variant="h6" sx={{ mt: 0.4 }}>
+              {selectedProject?.name ?? 'No project'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {selectedProject?.description ?? 'Create or select a project to get started.'}
+            </Typography>
+          </>
+        )}
         <Divider sx={{ mt: 1.6 }} />
       </Box>
 
@@ -112,7 +122,7 @@ export function AppLayout() {
               <ListItemIcon sx={{ color: 'primary.main', minWidth: 36 }}>
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.label} />
+              {showMenuLabels && <ListItemText primary={item.label} />}
             </ListItemButton>
           )
         })}
@@ -150,7 +160,16 @@ export function AppLayout() {
               >
                 <MenuIcon />
               </IconButton>
-            ) : null}
+            ) : (
+              <IconButton
+                color="inherit"
+                aria-label="toggle navigation"
+                onClick={() => setDesktopMenuCollapsed((prev) => !prev)}
+                edge="start"
+              >
+                {desktopMenuCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+              </IconButton>
+            )}
             <Typography variant="h6">Pandora Todo List</Typography>
             <Typography variant="caption" sx={{ opacity: 0.88 }}>
               Project &gt; Backlog &gt; Sprint &gt; Tasks &gt; Knowledge
@@ -191,10 +210,10 @@ export function AppLayout() {
         onClose={() => setMobileDrawerOpen(false)}
         ModalProps={{ keepMounted: true }}
         sx={{
-          width: drawerWidth,
+          width: { md: desktopDrawerWidth },
           flexShrink: 0,
           ['& .MuiDrawer-paper']: {
-            width: drawerWidth,
+            width: { xs: drawerWidthExpanded, md: desktopDrawerWidth },
             boxSizing: 'border-box',
             borderRight: '1px solid #d8e2ed',
             backgroundColor: '#f7f9fc',
@@ -211,8 +230,6 @@ export function AppLayout() {
           flexGrow: 1,
           mt: { xs: 15, sm: 12, md: 8 },
           pb: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
         }}
       >
         <Container maxWidth="xl" sx={{ pt: { xs: 2, md: 3 }, px: { xs: 1.25, sm: 2, md: 3 } }}>

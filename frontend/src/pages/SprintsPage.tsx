@@ -29,6 +29,17 @@ import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
 import { backlogStatusLabels, toNumberStatus, workItemStatusLabels } from '../types'
 
+function parseCommitIds(value: string): string[] {
+  return value
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function stringifyCommitIds(commitIds?: string[]): string {
+  return (commitIds ?? []).join(', ')
+}
+
 export function SprintsPage() {
   const { selectedProjectId, selectedProject, backlog, sprints, refreshProjectViews } = useProjectContext()
 
@@ -58,6 +69,7 @@ export function SprintsPage() {
   const [editingFeedback, setEditingFeedback] = useState('')
   const [editingMetadataJson, setEditingMetadataJson] = useState('')
   const [editingBranch, setEditingBranch] = useState('')
+  const [editingCommitIds, setEditingCommitIds] = useState('')
   const [expandedFeedbackIds, setExpandedFeedbackIds] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grouped' | 'race'>('grouped')
 
@@ -270,17 +282,19 @@ export function SprintsPage() {
     await refreshProjectViews(selectedProjectId)
   }
 
-  function handleOpenTaskModal(workItemId: string, currentStatus: number | string, currentAssignee: string, currentBranch?: string) {
-    setEditingWorkItemId(workItemId)
-    setEditingWorkItemStatus(taskDraftStatus[workItemId] ?? toNumberStatus(currentStatus))
-    setEditingWorkItemAssignee(taskDraftAssignee[workItemId] ?? currentAssignee ?? '')
-    setEditingAgentName('')
-    setEditingModelUsed('')
-    setEditingIdeUsed('')
-    setEditingTokensUsed(0)
-    setEditingFeedback('')
-    setEditingMetadataJson('')
-    setEditingBranch(currentBranch ?? '')
+  function handleOpenTaskModal(item: { id: string; status: number | string; assignee: string; branch?: string; feedbacks?: Array<{ agentName: string; modelUsed: string; ideUsed: string; tokensUsed: number; feedback: string; metadataJson: string }>; commitIds?: string[] }) {
+    const latestFeedback = item.feedbacks?.[0]
+    setEditingWorkItemId(item.id)
+    setEditingWorkItemStatus(taskDraftStatus[item.id] ?? toNumberStatus(item.status))
+    setEditingWorkItemAssignee(taskDraftAssignee[item.id] ?? item.assignee ?? '')
+    setEditingAgentName(latestFeedback?.agentName ?? '')
+    setEditingModelUsed(latestFeedback?.modelUsed ?? '')
+    setEditingIdeUsed(latestFeedback?.ideUsed ?? '')
+    setEditingTokensUsed(latestFeedback?.tokensUsed ?? 0)
+    setEditingFeedback(latestFeedback?.feedback ?? '')
+    setEditingMetadataJson(latestFeedback?.metadataJson ?? '')
+    setEditingBranch(item.branch ?? '')
+    setEditingCommitIds(stringifyCommitIds(item.commitIds))
   }
 
   async function handleSaveTaskFromModal() {
@@ -299,6 +313,7 @@ export function SprintsPage() {
       tokensUsed: editingTokensUsed,
       feedback: editingFeedback.trim(),
       metadataJson: editingMetadataJson.trim(),
+      commitIds: parseCommitIds(editingCommitIds),
     })
 
     setTaskDraftStatus((prev) => ({ ...prev, [editingWorkItemId]: editingWorkItemStatus }))
@@ -550,6 +565,7 @@ export function SprintsPage() {
                         const sprintWorkItems = sprint.workItems.filter((w) => w.backlogItemId === backlogItem.id)
                         const totalTokens = sprintWorkItems.reduce((acc, w) => acc + (w.totalTokensSpent ?? 0), 0)
                         const totalFeedbacks = sprintWorkItems.reduce((acc, w) => acc + (w.feedbacks?.length ?? 0), 0)
+                        const sprintCommitCount = sprint.commitIds?.length ?? 0
                         const sprintActive = toNumberStatus(sprint.status) === 1
                         const dateRange = sprint.startDate && sprint.endDate
                           ? `${new Date(sprint.startDate).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })} – ${new Date(sprint.endDate).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })}`
@@ -568,6 +584,7 @@ export function SprintsPage() {
                               dateRange,
                               totalTokens > 0 ? `${totalTokens} tk` : '',
                               totalFeedbacks > 0 ? `${totalFeedbacks} fb` : '',
+                              sprintCommitCount > 0 ? `${sprintCommitCount} commits` : '',
                             ].filter(Boolean).join(' • ')}
                             onClick={() => {
                               setSearchParams({ backlogId: backlogItem.id })
@@ -630,7 +647,7 @@ export function SprintsPage() {
                     onToggleFeedbacks={() => toggleFeedbacks(item.id)}
                     onDragStart={() => {}}
                     onDragEnd={() => {}}
-                    onEdit={() => handleOpenTaskModal(item.id, item.status, item.assignee, item.branch)}
+                    onEdit={() => handleOpenTaskModal(item)}
                     contextChips={(
                       <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
                         <Chip size="small" label={`Sprint: ${item.sprintName}`} variant="outlined" />
@@ -656,6 +673,14 @@ export function SprintsPage() {
               ? `Kanban — ${backlog.find((b) => b.id === backlogIdFilter)?.title ?? 'Backlog'}`
               : `Kanban da Sprint: ${boardSprint?.name ?? ''}`}
           </Typography>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+            {(backlog.find((b) => b.id === backlogIdFilter)?.commitIds ?? []).slice(0, 4).map((commitId) => (
+              <Chip key={`backlog-${commitId}`} size="small" variant="outlined" label={`BL: ${commitId}`} sx={{ fontFamily: 'monospace', fontSize: 11 }} />
+            ))}
+            {(boardSprint?.commitIds ?? []).slice(0, 4).map((commitId) => (
+              <Chip key={`sprint-${commitId}`} size="small" variant="outlined" label={`SP: ${commitId}`} sx={{ fontFamily: 'monospace', fontSize: 11 }} />
+            ))}
+          </Stack>
           <Grid container spacing={1.2}>
             {[0, 1, 2, 3].map((columnStatus) => (
               <Grid key={columnStatus} size={{ xs: 12, md: 6, lg: 3 }}>
@@ -696,7 +721,7 @@ export function SprintsPage() {
                           onToggleFeedbacks={() => toggleFeedbacks(item.id)}
                           onDragStart={(event) => handleTaskDragStart(event, item.id)}
                           onDragEnd={handleTaskDragEnd}
-                          onEdit={() => handleOpenTaskModal(item.id, item.status, item.assignee, item.branch)}
+                          onEdit={() => handleOpenTaskModal(item)}
                         />
                       ))}
                       {(sprintBoard[columnStatus] ?? []).length === 0 ? (
@@ -879,6 +904,18 @@ export function SprintsPage() {
               onChange={(event) => setEditingBranch(event.target.value)}
             />
 
+            <Typography variant="overline" color="text.secondary">Commit IDs</Typography>
+            <TextField
+              size="small"
+              label="Commits (comma or line separated)"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder="abc123, def456"
+              value={editingCommitIds}
+              onChange={(event) => setEditingCommitIds(event.target.value)}
+            />
+
             <Typography variant="overline" color="text.secondary">Work Log</Typography>
             <TextField
               size="small"
@@ -1058,6 +1095,23 @@ function WorkItemCard({
             <Typography variant="caption" sx={{ color: '#1565c0', fontFamily: 'monospace' }}>
               ⎇ {item.branch}
             </Typography>
+          )}
+
+          {item.commitIds && item.commitIds.length > 0 && (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+              {item.commitIds.slice(0, 3).map((commitId) => (
+                <Chip
+                  key={commitId}
+                  size="small"
+                  label={commitId}
+                  variant="outlined"
+                  sx={{ fontSize: 11, fontFamily: 'monospace' }}
+                />
+              ))}
+              {item.commitIds.length > 3 && (
+                <Chip size="small" label={`+${item.commitIds.length - 3} commits`} variant="outlined" sx={{ fontSize: 11 }} />
+              )}
+            </Stack>
           )}
 
           {/* Agent context row */}

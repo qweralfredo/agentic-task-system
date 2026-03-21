@@ -22,6 +22,13 @@ import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
 import { backlogStatusLabels, toNumberStatus } from '../types'
 
+function parseCommitIds(value: string): string[] {
+  return value
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 export function BacklogPage() {
   const { selectedProjectId, selectedProject, backlog, refreshProjectViews } = useProjectContext()
   const navigate = useNavigate()
@@ -34,12 +41,14 @@ export function BacklogPage() {
   const [contextTags, setContextTags] = useState('')
   const [contextWikiRefs, setContextWikiRefs] = useState('')
   const [contextConstraints, setContextConstraints] = useState('')
+  const [contextCommitIds, setContextCommitIds] = useState('')
 
-  function handleOpenContextModal(id: string, tags = '', wikiRefs = '', constraints = '') {
+  function handleOpenContextModal(id: string, tags = '', wikiRefs = '', constraints = '', commitIds: string[] = []) {
     setContextItemId(id)
     setContextTags(tags)
     setContextWikiRefs(wikiRefs)
     setContextConstraints(constraints)
+    setContextCommitIds(commitIds.join(', '))
   }
 
   async function handleSaveContext() {
@@ -48,6 +57,7 @@ export function BacklogPage() {
       tags: contextTags,
       wikiRefs: contextWikiRefs,
       constraints: contextConstraints,
+      commitIds: parseCommitIds(contextCommitIds),
     })
     setContextItemId('')
     await refreshProjectViews(selectedProjectId)
@@ -136,14 +146,14 @@ export function BacklogPage() {
                         size="small"
                         variant="outlined"
                         color="secondary"
-                        onClick={() => handleOpenContextModal(item.id, item.tags, item.wikiRefs, item.constraints)}
+                        onClick={() => handleOpenContextModal(item.id, item.tags, item.wikiRefs, item.constraints, item.commitIds ?? [])}
                       >
                         Context
                       </Button>
                     </Tooltip>
                   </Stack>
                 </Stack>
-                {(item.tags || item.wikiRefs || item.constraints) && (
+                {(item.tags || item.wikiRefs || item.constraints || (item.commitIds && item.commitIds.length > 0)) && (
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
                     {item.tags && item.tags.trim() && item.tags.split(',').map((t) => t.trim()).filter(Boolean).map((tag) => (
                       <Chip key={tag} size="small" label={tag} variant="outlined" color="default" sx={{ fontSize: 11 }} />
@@ -154,6 +164,9 @@ export function BacklogPage() {
                     {item.constraints && item.constraints.trim() && (
                       <Chip size="small" label={`constraints: ${item.constraints}`} variant="outlined" color="warning" sx={{ fontSize: 11 }} />
                     )}
+                    {item.commitIds && item.commitIds.length > 0 && item.commitIds.map((commitId) => (
+                      <Chip key={commitId} size="small" label={commitId} variant="outlined" sx={{ fontSize: 11, fontFamily: 'monospace' }} />
+                    ))}
                   </Stack>
                 )}
                 <Divider sx={{ my: 1.2 }} />
@@ -232,6 +245,16 @@ export function BacklogPage() {
               placeholder="ex: must not break existing API, max 200ms latency"
               value={contextConstraints}
               onChange={(event) => setContextConstraints(event.target.value)}
+            />
+            <TextField
+              size="small"
+              label="Commit IDs"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder="abc123, def456"
+              value={contextCommitIds}
+              onChange={(event) => setContextCommitIds(event.target.value)}
             />
           </Stack>
         </DialogContent>

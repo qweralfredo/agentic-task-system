@@ -19,6 +19,7 @@ export type BacklogItem = {
   tags?: string
   wikiRefs?: string
   constraints?: string
+  commitIds?: string[]
 }
 
 export type WorkItemFeedback = {
@@ -48,6 +49,7 @@ export type SprintWorkItem = {
   branch?: string
   tags?: string
   parentWorkItemId?: string
+  commitIds?: string[]
 }
 
 export type Sprint = {
@@ -58,6 +60,7 @@ export type Sprint = {
   startDate: string
   endDate: string
   workItems: SprintWorkItem[]
+  commitIds?: string[]
 }
 
 export type KnowledgeWikiPage = {

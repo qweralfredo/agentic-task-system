@@ -34,7 +34,7 @@ export const apiClient = {
   getBacklog: (projectId: string) => request<BacklogItem[]>(`/api/projects/${projectId}/backlog`),
   createBacklogItem: (
     projectId: string,
-    payload: { title: string; description: string; storyPoints: number; priority: number },
+    payload: { title: string; description: string; storyPoints: number; priority: number; commitIds?: string[] },
   ) =>
     request<BacklogItem>(`/api/projects/${projectId}/backlog`, {
       method: 'POST',
@@ -43,7 +43,7 @@ export const apiClient = {
   getSprints: (projectId: string) => request<Sprint[]>(`/api/projects/${projectId}/sprints`),
   createSprint: (
     projectId: string,
-    payload: { name: string; goal: string; startDate: string; endDate: string; backlogItemIds: string[] },
+    payload: { name: string; goal: string; startDate: string; endDate: string; backlogItemIds: string[]; commitIds?: string[] },
   ) =>
     request(`/api/projects/${projectId}/sprints`, {
       method: 'POST',
@@ -60,6 +60,7 @@ export const apiClient = {
     tokensUsed?: number
     feedback?: string
     metadataJson?: string
+    commitIds?: string[]
   }) =>
     request(`/api/work-items/${payload.workItemId}/status`, {
       method: 'POST',
@@ -73,7 +74,13 @@ export const apiClient = {
         tokensUsed: payload.tokensUsed ?? 0,
         feedback: payload.feedback ?? '',
         metadataJson: payload.metadataJson ?? '',
+        commitIds: payload.commitIds ?? [],
       }),
+    }),
+  updateSprintCommitIds: (sprintId: string, payload: { commitIds: string[] }) =>
+    request(`/api/sprints/${sprintId}/commits`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     }),
   getKnowledge: (projectId: string) => request<KnowledgeResponse>(`/api/projects/${projectId}/knowledge`),
   createWikiPage: (
@@ -125,7 +132,7 @@ export const apiClient = {
     }),
   updateBacklogContext: (
     backlogItemId: string,
-    payload: { tags?: string; wikiRefs?: string; constraints?: string },
+    payload: { tags?: string; wikiRefs?: string; constraints?: string; commitIds?: string[] },
   ) =>
     request(`/api/backlog-items/${backlogItemId}/context`, {
       method: 'PATCH',

@@ -95,6 +95,7 @@ docker-compose.yml                   # Full stack definition
 ### Advanced Task Management (NEW)
 - **Recursive Sub-Tasks** — unlimited task hierarchy with parent auto-completion when all children are Done
 - **Branch Tracking** — associate git branches with individual work items for traceability
+- **Commit IDs Tracking** — backlog items, sprints, and work items can store multiple commit IDs (`commitIds`)
 - **Context-First Backlog Enrichment** — annotate backlog items with tags, wiki references, and constraints
 - Sub-task visibility and status badges on kanban board
 - Parent-child relationship preservation across sprints
@@ -102,9 +103,11 @@ docker-compose.yml                   # Full stack definition
 ### Frontend UX Improvements
 - **Responsive App Shell** — main layout now adapts for mobile/tablet/desktop
 - On small screens, the sidebar switches to a temporary drawer with a menu button in the top bar
+- On desktop, the sidebar supports collapsed mode (retratil)
 - Header controls (active project selector and new project action) stack safely on narrow widths
-- Main content area recalculates spacing and offsets per breakpoint to avoid overlap and clipping
+- Main content area recalculates spacing and offsets per breakpoint to avoid overlap, clipping, and side gaps
 - **Sprints Race Mode** — `/sprints` now includes a `Race (all cards live)` view that lists cards from all project sprints together, with live refresh, assignee/priority filters, sprint/backlog context chips, activity date+time, and descending ordering by latest activity
+- **Task Edit Modal (current data)** — modal pre-fills current work item and latest feedback data (agent/model/ide/tokens/feedback/metadata/branch/commitIds)
 
 ### Pandora Knowledge Hub
 - Per-project wiki pages
@@ -191,6 +194,7 @@ python server.py
 | PATCH | `/api/backlog-items/{backlogItemId}/context` | **NEW:** Update tags, wiki refs, constraints |
 | GET | `/api/projects/{projectId}/sprints` |
 | POST | `/api/projects/{projectId}/sprints` |
+| PATCH | `/api/sprints/{sprintId}/commits` | **NEW:** Append sprint commit IDs |
 | POST | `/api/work-items/{workItemId}/status` |
 | POST | `/api/work-items/{workItemId}/sub-tasks` | **NEW:** Create sub-task |
 | POST | `/api/sprints/{sprintId}/reviews` |
