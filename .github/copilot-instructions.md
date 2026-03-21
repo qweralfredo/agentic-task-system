@@ -16,7 +16,7 @@ Toda tarefa executada neste workspace **deve** ser refletida no Pandora Todo Lis
 
 1. **Antes de codificar** — Criar backlog item + sprint + work item no Pandora. Perguntar ao usuário se é necessário atualizar as bases de conhecimento (wiki, docs, checkpoint, README).
 2. **Durante** — Atualizar status do work item (InProgress = 1)
-3. **Ao concluir** — Marcar work item como Done (status = 2) + fazer commit. Perguntar ao usuário se é necessário atualizar as bases de conhecimento do projeto (wiki, docs, checkpoint, README).
+3. **Ao concluir** — Marcar work item como Done (status = 3) + fazer commit. Perguntar ao usuário se é necessário atualizar as bases de conhecimento do projeto (wiki, docs, checkpoint, README).
 
 Nunca execute uma tarefa sem registrá-la antes no Pandora.
 
@@ -26,8 +26,8 @@ Nunca execute uma tarefa sem registrá-la antes no Pandora.
 |---|---|---|
 | Task criada no plano | `backlog_add` + `workitem_update` | Todo = 0 |
 | Iniciando trabalho | `workitem_update` | InProgress = 1 |
-| Task concluída | `workitem_update` + commit | Done = 2 |
-| Task em revisão | `workitem_update` | Review = 3 |
+| Task concluída | `workitem_update` + commit | Done = 3 |
+| Task em revisão | `workitem_update` | Review = 2 |
 
 Evite criar itens duplicados — verifique com `backlog_list` e `workitem_list` antes de criar.
 
@@ -58,7 +58,7 @@ Sempre preencha os campos de contexto do agente em **toda** chamada `workitem_up
 ### Enums
 
 - `BacklogItemPriority`: Low=0, Medium=1, High=2, Critical=3
-- `WorkItemStatus`: Todo=0, InProgress=1, Done=2, Review=3
+- `WorkItemStatus`: Todo=0, InProgress=1, Review=2, Done=3, Blocked=4
 
 ---
 
