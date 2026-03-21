@@ -16,6 +16,7 @@ public class BacklogItemEntity
     public string Tags { get; set; } = string.Empty;
     public string WikiRefs { get; set; } = string.Empty;
     public string Constraints { get; set; } = string.Empty;
+    public List<string> CommitIds { get; set; } = [];
 
     public List<WorkItemEntity> WorkItems { get; set; } = [];
 }

@@ -29,9 +29,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(p => p.Title)
             .HasMaxLength(250);
 
+        modelBuilder.Entity<BacklogItemEntity>()
+            .Property(b => b.CommitIds)
+            .HasColumnType("text[]");
+
+        modelBuilder.Entity<SprintEntity>()
+            .Property(s => s.CommitIds)
+            .HasColumnType("text[]");
+
         modelBuilder.Entity<WorkItemEntity>()
             .Property(p => p.Title)
             .HasMaxLength(250);
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .Property(w => w.CommitIds)
+            .HasColumnType("text[]");
 
         modelBuilder.Entity<WorkItemEntity>()
             .HasIndex(w => new { w.ProjectId, w.SprintId, w.Status });

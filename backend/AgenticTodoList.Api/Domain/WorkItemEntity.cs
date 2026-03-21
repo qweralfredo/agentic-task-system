@@ -25,6 +25,7 @@ public class WorkItemEntity
 
     public string Branch { get; set; } = string.Empty;
     public string Tags { get; set; } = string.Empty;
+    public List<string> CommitIds { get; set; } = [];
 
     public Guid? ParentWorkItemId { get; set; }
     public WorkItemEntity? ParentWorkItem { get; set; }

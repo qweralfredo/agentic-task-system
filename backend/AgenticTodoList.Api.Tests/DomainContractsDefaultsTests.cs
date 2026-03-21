@@ -40,6 +40,9 @@ public class DomainContractsDefaultsTests
         Assert.Equal(string.Empty, doc.Title);
         Assert.Equal(string.Empty, checkpoint.Name);
         Assert.Equal(string.Empty, run.AgentName);
+        Assert.Empty(backlog.CommitIds);
+        Assert.Empty(sprint.CommitIds);
+        Assert.Empty(workItem.CommitIds);
 
         Assert.Equal(BacklogItemStatus.New, backlog.Status);
         Assert.Equal(WorkItemStatus.Todo, workItem.Status);
@@ -50,9 +53,10 @@ public class DomainContractsDefaultsTests
     public void DtoRecords_ShouldBindValues()
     {
         var createProject = new CreateProjectRequest("N", "D");
-        var backlog = new AddBacklogItemRequest("T", "D", 3, 1);
-        var sprint = new CreateSprintRequest("S", "G", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)), []);
-        var update = new UpdateWorkItemStatusRequest(WorkItemStatus.Done, "agent", 123, "copilot", "GPT-5.3-Codex", "VS Code", "ok", "{}");
+        var backlog = new AddBacklogItemRequest("T", "D", 3, 1, ["abc123", "def456"]);
+        var sprint = new CreateSprintRequest("S", "G", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)), [], ["fedcba"]);
+        var update = new UpdateWorkItemStatusRequest(WorkItemStatus.Done, "agent", 123, "copilot", "GPT-5.3-Codex", "VS Code", "ok", "{}", CommitIds: ["abc123"]);
+        var sprintCommits = new UpdateSprintCommitIdsRequest(["123abcd", "456efgh"]);
         var review = new AddReviewRequest("review", "sum", "notes");
         var wiki = new AddWikiPageRequest("wiki", "body", "tag");
         var checkpoint = new AddCheckpointRequest("cp", "ctx", "dec", "risk", "next");
@@ -67,6 +71,10 @@ public class DomainContractsDefaultsTests
         Assert.Equal(123, update.TokensUsed);
         Assert.Equal("GPT-5.3-Codex", update.ModelUsed);
         Assert.Equal("VS Code", update.IdeUsed);
+        Assert.Equal(2, backlog.CommitIds!.Length);
+        Assert.Equal("fedcba", sprint.CommitIds![0]);
+        Assert.Equal("abc123", update.CommitIds![0]);
+        Assert.Equal(2, sprintCommits.CommitIds.Length);
         Assert.Equal("review", review.Type);
         Assert.Equal("wiki", wiki.Title);
         Assert.Equal("cp", checkpoint.Name);

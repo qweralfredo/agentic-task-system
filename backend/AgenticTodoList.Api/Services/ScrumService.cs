@@ -7,6 +7,36 @@ namespace PandoraTodoList.Api.Services;
 
 public class ScrumService(AppDbContext db)
 {
+    private static List<string> NormalizeCommitIds(IEnumerable<string>? commitIds)
+    {
+        if (commitIds is null)
+        {
+            return [];
+        }
+
+        return commitIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AppendCommitIds(List<string> target, IEnumerable<string>? commitIds)
+    {
+        if (commitIds is null)
+        {
+            return;
+        }
+
+        foreach (var commitId in NormalizeCommitIds(commitIds))
+        {
+            if (!target.Contains(commitId, StringComparer.OrdinalIgnoreCase))
+            {
+                target.Add(commitId);
+            }
+        }
+    }
+
     public async Task<ProjectEntity> CreateProjectAsync(CreateProjectRequest request, CancellationToken cancellationToken)
     {
         var project = new ProjectEntity
@@ -40,7 +70,8 @@ public class ScrumService(AppDbContext db)
             Description = request.Description.Trim(),
             StoryPoints = request.StoryPoints,
             Priority = request.Priority,
-            Status = BacklogItemStatus.Planned
+            Status = BacklogItemStatus.Planned,
+            CommitIds = NormalizeCommitIds(request.CommitIds)
         };
 
         db.BacklogItems.Add(item);
@@ -60,7 +91,8 @@ public class ScrumService(AppDbContext db)
             Goal = request.Goal.Trim(),
             StartDate = request.StartDate,
             EndDate = request.EndDate,
-            Status = SprintStatus.Active
+            Status = SprintStatus.Active,
+            CommitIds = NormalizeCommitIds(request.CommitIds)
         };
 
         db.Sprints.Add(sprint);
@@ -84,6 +116,7 @@ public class ScrumService(AppDbContext db)
                 Title = backlog.Title,
                 Description = backlog.Description,
                 Tags = backlog.Tags,
+                CommitIds = [.. backlog.CommitIds],
                 Status = WorkItemStatus.Todo
             });
         }
@@ -120,7 +153,21 @@ public class ScrumService(AppDbContext db)
             workItem.Branch = request.Branch.Trim();
         }
 
+        AppendCommitIds(workItem.CommitIds, request.CommitIds);
+
         workItem.UpdatedAt = DateTimeOffset.UtcNow;
+
+        var sprint = await db.Sprints.FirstOrDefaultAsync(s => s.Id == workItem.SprintId, cancellationToken);
+        if (sprint is not null)
+        {
+            AppendCommitIds(sprint.CommitIds, request.CommitIds);
+        }
+
+        var backlogForCommit = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == workItem.BacklogItemId, cancellationToken);
+        if (backlogForCommit is not null)
+        {
+            AppendCommitIds(backlogForCommit.CommitIds, request.CommitIds);
+        }
 
         var feedback = new WorkItemFeedbackEntity
         {
@@ -137,7 +184,7 @@ public class ScrumService(AppDbContext db)
 
         if (request.Status == WorkItemStatus.Done)
         {
-            var backlog = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == workItem.BacklogItemId, cancellationToken);
+            var backlog = backlogForCommit ?? await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == workItem.BacklogItemId, cancellationToken);
             if (backlog is not null)
             {
                 backlog.Status = BacklogItemStatus.Done;
@@ -199,9 +246,21 @@ public class ScrumService(AppDbContext db)
         if (request.Tags is not null) item.Tags = request.Tags.Trim();
         if (request.WikiRefs is not null) item.WikiRefs = request.WikiRefs.Trim();
         if (request.Constraints is not null) item.Constraints = request.Constraints.Trim();
+        AppendCommitIds(item.CommitIds, request.CommitIds);
 
         await db.SaveChangesAsync(cancellationToken);
         return item;
+    }
+
+    public async Task<SprintEntity> UpdateSprintCommitIdsAsync(Guid sprintId, UpdateSprintCommitIdsRequest request, CancellationToken cancellationToken)
+    {
+        var sprint = await db.Sprints.FirstOrDefaultAsync(s => s.Id == sprintId, cancellationToken)
+            ?? throw new InvalidOperationException("Sprint not found.");
+
+        AppendCommitIds(sprint.CommitIds, request.CommitIds);
+
+        await db.SaveChangesAsync(cancellationToken);
+        return sprint;
     }
 
     public async Task<ReviewEntity> AddReviewAsync(Guid sprintId, AddReviewRequest request, CancellationToken cancellationToken)

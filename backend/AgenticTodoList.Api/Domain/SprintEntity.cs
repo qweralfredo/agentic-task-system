@@ -12,6 +12,7 @@ public class SprintEntity
     public DateOnly EndDate { get; set; }
     public SprintStatus Status { get; set; } = SprintStatus.Planned;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public List<string> CommitIds { get; set; } = [];
 
     public List<WorkItemEntity> WorkItems { get; set; } = [];
     public List<ReviewEntity> Reviews { get; set; } = [];
