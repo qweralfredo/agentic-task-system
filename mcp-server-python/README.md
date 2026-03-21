@@ -2,6 +2,19 @@
 
 Servidor MCP implementado em Python usando o SDK oficial (`mcp.server.fastmcp`).
 
+---
+
+## Novidades (v2.1)
+
+- **Sub-tasks recursivas**: nova ferramenta `workitem_add_subtask` para criar tarefas filhas  
+- **Branch tracking**: campo `branch` adicionado a `workitem_update`  
+- **Context-first backlog**: nova ferramenta `backlog_context_update` para enriquecer metadados  
+- **Prompt de execução**: `pandora_context_first_execute` com fluxo 5-passos estruturado
+
+Ver [docs/skills/copilot/context-first-execution.md](../docs/skills/copilot/context-first-execution.md) para detalhes.
+
+---
+
 ## Requisitos
 
 - Python 3.11+

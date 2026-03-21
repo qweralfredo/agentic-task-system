@@ -19,33 +19,65 @@ Esses artefatos permitem:
 ## Entidades principais
 
 - Project
-- BacklogItem
+- BacklogItem (com Tags, WikiRefs, Constraints para context-first)
 - Sprint
-- WorkItem
+- WorkItem (com Branch tracking e ParentWorkItemId para sub-tasks)
 - Review
 - WikiPage
 - KnowledgeCheckpoint
 - AgentRunLog
 
+## Recursos Avançados
+
+### Recursive Sub-Tasks
+- WorkItem pode ter ParentWorkItemId para criar hierarquia recursiva
+- Auto-completamento: quando todos os sub-tasks estão Done, parent é auto-marcado como Done
+- Usado para decomposição de tarefas complexas e rastreamento fino de progresso
+- Sem limite de profundidade (n-níveis de nesting)
+
+### Branch Tracking
+- Cada WorkItem pode ter um campo Branch associado
+- Permite rastreabilidade entre tarefas de código e branches git
+- Preenchido durante execução do `workitem_update`
+- Exibido no kanban para contexto de implementação
+
+### Context-First Backlog Enrichment
+- BacklogItem enriquecida com Tags, WikiRefs, Constraints
+- Tags: métricas/características da tarefa (ex: "auth", "performance")
+- WikiRefs: referências para páginas de conhecimento relevantes
+- Constraints: limitações não-funcionais e restrições de design
+- Alimenta o prompt `pandora_context_first_execute`
+
 ## Fluxo Scrum operacional
 
 1. Criar projeto
 2. Alimentar backlog com story points/prioridade
-3. Criar sprint com backlog selecionado
-4. Atualizar status de tarefas durante execucao
-5. Registrar review
-6. Atualizar wiki/checkpoints com aprendizados
+3. **[NEW]** Enriquecer backlog items com tags, wiki refs e constraints
+4. Criar sprint com backlog selecionado
+5. Atualizar status de tarefas durante execucao
+6. **[NEW]** Criar sub-tasks se tarefas forem complexas
+7. **[NEW]** Rastrear branch de trabalho em workitem_update
+8. Registrar review
+9. Atualizar wiki/checkpoints com aprendizados
 
 ## Fluxo do Pandora Todo List via MCP (Python SDK oficial)
 
 1. Agente conecta no servidor `mcp-server-python/server.py` (stdio)
-2. Solicita `tools/list`
-3. Executa `tools/call` para operar no projeto
-4. Servidor MCP chama a API REST do backend (`/api/...`)
-5. Salva checkpoints para preservar contexto
+2. Invoca prompt `pandora_context_first_execute` para workflow estruturado
+3. Solicita `tools/list` para descobrir funcionalidades
+4. Executa `tools/call` para operar no projeto em 5 etapas:
+   - **Scan:** lê dashboard e work items ativos via recursos MCP
+   - **Warm-up:** carrega wiki pages e checkpoints relevantes
+   - **Inject:** enriquece com tags/wiki_refs/constraints do backlog
+   - **Execute:** implementa com sub-tasks se necessário, rastreando branch
+   - **Review:** valida completamento e registra checkpoint
+5. Servidor MCP chama a API REST do backend (`/api/...`)
+6. Salva checkpoints para preservar contexto entre sessoes
 
 ## Seguranca e confiabilidade
 
 - Persistencia real via PostgreSQL
 - Sem fallback e sem mock de runtime
 - Backup em disco local (dumps diarios)
+- Auto-completamento de pais previne orfanatos de tarefas
+- Constraints de FK com OnDelete(Restrict) evita cascata acidental

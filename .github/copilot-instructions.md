@@ -39,8 +39,10 @@ Ao concluir uma epic ou sprint, chamar `knowledge_checkpoint` para salvar contex
 | Tool | Campos obrigatórios |
 |---|---|
 | `backlog_add` | `project_id`, `title`, `description`, `priority` (int), `story_points` |
+| `backlog_context_update` | **NEW:** `backlog_item_id`, opcionais: `tags`, `wikiRefs`, `constraints` |
 | `sprint_create` | `project_id`, `name`, `goal`, `start_date` (YYYY-MM-DD), `end_date`, `backlog_item_ids` |
-| `workitem_update` | `work_item_id`, `status` (**string label** preferido: `"done"`, `"review"`, `"todo"`, `"in_progress"`, `"blocked"`), `assignee`, `agent_name`, `model_used`, `ide_used`, `tokens_used`, `feedback` |
+| `workitem_update` | `work_item_id`, `status` (**string label** preferido: `"done"`, `"review"`, `"todo"`, `"in_progress"`, `"blocked"`), `assignee`, `branch`, `agent_name`, `model_used`, `ide_used`, `tokens_used`, `feedback` |
+| `workitem_add_subtask` | **NEW:** `parent_work_item_id`, `title`, `description`, `assignee`, opcionais: `branch`, `tags` |
 | `knowledge_checkpoint` | `project_id`, `name`, `context_snapshot`, `decisions`, `risks`, `next_actions` |
 
 ### Valores fixos para workitem_update (contexto do agente)
@@ -52,9 +54,52 @@ Sempre preencha os campos de contexto do agente em **toda** chamada `workitem_up
 | `agent_name` | `GitHub Copilot` |
 | `model_used` | `Claude Sonnet 4.6` |
 | `ide_used` | `VS Code` |
+| `branch` | **NEW:** branch de trabalho (ex: `develop`, `feat/xyz`) |
 | `tokens_used` | estimativa de tokens usados na sessão (inteiro) |
 | `feedback` | resumo do que foi feito nesta task |
 | `metadata_json` | JSON opcional com detalhes extras (pode ser `{}`) |
+
+---
+
+## Context-First Execution Flow (NEW)
+
+**Obrigatório para qualquer work item complexo:**
+
+Antes de implementar qualquer tarefa, execute o prompt `pandora_context_first_execute` em 5 etapas:
+
+### 1. **Discovery (Scan do Contexto)**
+Ler o estado atual do projeto sem pressupostos:
+- Dashboard: `GET /api/projects/{projectId}/dashboard`
+- Work items ativos: filtrar por status InProgress
+- Visão geral: `pandora://projects/{projectId}/context`
+
+### 2. **Knowledge Warm-up (Aquecimento)**
+Carregar base de conhecimento relevante:
+- Wiki pages do projeto
+- Checkpoints recentes
+- Decisões técnicas anteriores
+- Constraints mapeados no backlog
+
+### 3. **Context Injection (Injeção)**
+Enriquecer o backlog item e work item:
+- Ler tags, wikiRefs, constraints do backlog_context
+- Confirmar branch de trabalho (mainBranch ou branch específica)
+- Se faltarem dados: `backlog_context_update` para enriquecer
+- Para tarefas grandes: planejar sub-tasks com `workitem_add_subtask`
+
+### 4. **Execution (Implementação)**
+Executar com manutenção cognitiva:
+- `workitem_update(status='in_progress', branch='...')`
+- Criar sub-tasks conforme necessário
+- Atualizar constraints/wiki ao descobrir novos aprendizados
+- Ao concluir: `workitem_update(status='done', feedback='...')`
+
+### 5. **Validation Review (Validação)**
+Verificar estado final:
+- Todos sub-tasks Done? (pai é auto-completado)
+- Dashboard reflete mudanças?
+- Checkpoints/wiki atualizados com decisões?
+- Nenhum item bloqueado orfão
 
 ### Enums
 
