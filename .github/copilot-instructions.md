@@ -99,11 +99,9 @@ ops/scripts/                         # PowerShell backup/restore
 ## Links úteis
 
 - [README do projeto](../README.md)
-- [Arquitetura agêntica](../docs/ARQUITETURA_AGENTICA.md)
-- [Backlog e sprints](../docs/BACKLOG_SPRINT.md)
-- [MCP no VS Code](../docs/MCP_VSCODE.md)
-- [Backup e restore](../docs/OPERACAO_BACKUP_RESTORE.md)
-- [Top 10 Agentes de Código](../docs/TOP10-AGENTS.md)
+- [Agentic Architecture](../docs/ARCHITECTURE.md)
+- [Backup e Restore](../docs/BACKUP-RESTORE.md)
+- [Top 10 Coding Agents](../docs/TOP10-AGENTS.md)
 - [Skill: agent-customization](../docs/skills/copilot/agent-customization.md)
 - [Skills: GitHub PR & Issues](../docs/skills/github-pr/github-pr-skills.md)
 - [MCP: Pandora Todo List](../docs/mcps/pandora-mcp.md)

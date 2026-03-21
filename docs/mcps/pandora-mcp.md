@@ -183,6 +183,5 @@ powershell -ExecutionPolicy Bypass -File .\ops\scripts\validate-pandora-mcp-afte
 ## References
 
 - [MCP Server README](../../mcp-server-python/README.md)
-- [MCP in VS Code — Configuration](../MCP_VSCODE.md)
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [FastMCP SDK](https://github.com/jlowin/fastmcp)
