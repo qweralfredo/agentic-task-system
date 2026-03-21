@@ -410,7 +410,7 @@ def workitem_update(
     work_item_id: str,
     status: Union[str, int],
     assignee: str,
-    tokens_used: int = 0,
+    tokens_used: int | None = None,
     agent_name: str = "",
     model_used: str = "",
     ide_used: str = "",
@@ -426,16 +426,23 @@ def workitem_update(
       done / 3       → Done
       blocked / 4    → Blocked
 
-    The response includes 'statusLabel' confirming the resolved status.
+    tokens_used — only pass this when you have the ACTUAL token count from
+      observability tooling. Do NOT estimate or fabricate a value.
+      Omit (or pass None/0) when the real count is unavailable.
+
+    The response includes:
+      - 'statusLabel'   confirming the resolved status
+      - 'tokensTracked' True if a positive token count was recorded, False if not
     """
     status_int = _normalize_workitem_status(str(status))
+    actual_tokens = tokens_used if tokens_used is not None else 0
     result = _request(
         "POST",
         f"/api/work-items/{work_item_id}/status",
         payload={
             "status": status_int,
             "assignee": assignee,
-            "tokensUsed": tokens_used,
+            "tokensUsed": actual_tokens,
             "agentName": agent_name,
             "modelUsed": model_used,
             "ideUsed": ide_used,
@@ -446,6 +453,7 @@ def workitem_update(
     # Echo status label back so agents can verify what was actually set
     if isinstance(result, dict):
         result["statusLabel"] = _STATUS_LABELS.get(status_int, str(status_int))
+        result["tokensTracked"] = tokens_used is not None and tokens_used > 0
     return result
 
 
