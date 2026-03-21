@@ -14,6 +14,7 @@ Este workspace é o projeto **Pandora Todo List** — um **Agentic Task System**
 
 Toda tarefa executada neste workspace **deve** ser refletida no Pandora Todo List via MCP:
 
+0. **Ao iniciar qualquer sessão** — Chamar `project_config_update` (ou ler o projeto via `project_list`) para obter `mainBranch`, `gitHubUrl`, `localPath` e `techStack`. Usar essas informações em todas as decisões da sessão (branch de trabalho, caminhos, stack).
 1. **Antes de codificar** — Criar backlog item + sprint + work item no Pandora. Perguntar ao usuário se é necessário atualizar as bases de conhecimento (wiki, docs, checkpoint, README).
 2. **Durante** — Atualizar status do work item (InProgress = 1)
 3. **Ao concluir** — Marcar work item como Done (status = 3) + fazer commit. Perguntar ao usuário se é necessário atualizar as bases de conhecimento do projeto (wiki, docs, checkpoint, README).
