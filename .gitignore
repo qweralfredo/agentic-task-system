@@ -12,4 +12,7 @@ ops/postgres/backups/
 # Python MCP local environment artifacts
 mcp-server-python/.venv/
 mcp-server-python/__pycache__/
+mcp-server-python/.coverage
+mcp-server-python/htmlcov/
+mcp-server-python/tests/__pycache__/
 mcp-server-python/*.pyc
