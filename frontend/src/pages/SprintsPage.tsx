@@ -58,6 +58,7 @@ export function SprintsPage() {
   const [selectedBoardSprintId, setSelectedBoardSprintId] = useState('')
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isSprintModalOpen, setSprintModalOpen] = useState(false)
   const [editingWorkItemId, setEditingWorkItemId] = useState('')
   const [editingWorkItemStatus, setEditingWorkItemStatus] = useState(0)
@@ -207,13 +208,15 @@ export function SprintsPage() {
     return raceItems.filter((item) => {
       const assignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
       const priority = getWorkItemPriority(item)
+      const status = String(toNumberStatus(taskDraftStatus[item.id] ?? item.status))
       const matchesAssignee = assigneeFilter === 'all' || assignee === assigneeFilter
       const matchesPriority =
         priorityFilter === 'all' ||
         (typeof priority === 'number' && String(priority) === priorityFilter)
-      return matchesAssignee && matchesPriority
+      const matchesStatus = statusFilter === 'all' || status === statusFilter
+      return matchesAssignee && matchesPriority && matchesStatus
     })
-  }, [assigneeFilter, backlogIdFilter, priorityFilter, raceItems, taskDraftAssignee, viewMode])
+  }, [assigneeFilter, backlogIdFilter, priorityFilter, raceItems, statusFilter, taskDraftAssignee, taskDraftStatus, viewMode])
 
   // For the grouped view: organize sprints by backlog item when no filter is active
   const sprintsGroupedByBacklog = useMemo(() => {
@@ -454,6 +457,23 @@ export function SprintsPage() {
                         P{priority}
                       </MenuItem>
                     ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                  <InputLabel id="race-status-label">Column</InputLabel>
+                  <Select
+                    labelId="race-status-label"
+                    label="Column"
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value)}
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="0">To Do</MenuItem>
+                    <MenuItem value="1">In Progress</MenuItem>
+                    <MenuItem value="2">Review</MenuItem>
+                    <MenuItem value="3">Done</MenuItem>
+                    <MenuItem value="4">Blocked</MenuItem>
                   </Select>
                 </FormControl>
               </>
