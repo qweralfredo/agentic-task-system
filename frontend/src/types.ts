@@ -16,6 +16,9 @@ export type BacklogItem = {
   storyPoints: number
   priority: number
   status: number | string
+  tags?: string
+  wikiRefs?: string
+  constraints?: string
 }
 
 export type WorkItemFeedback = {
@@ -42,6 +45,9 @@ export type SprintWorkItem = {
   createdAt: string
   updatedAt?: string
   feedbacks: WorkItemFeedback[]
+  branch?: string
+  tags?: string
+  parentWorkItemId?: string
 }
 
 export type Sprint = {

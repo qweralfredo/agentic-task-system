@@ -57,6 +57,7 @@ export function SprintsPage() {
   const [editingTokensUsed, setEditingTokensUsed] = useState(0)
   const [editingFeedback, setEditingFeedback] = useState('')
   const [editingMetadataJson, setEditingMetadataJson] = useState('')
+  const [editingBranch, setEditingBranch] = useState('')
   const [expandedFeedbackIds, setExpandedFeedbackIds] = useState<Set<string>>(new Set())
 
   function toggleFeedbacks(workItemId: string) {
@@ -209,7 +210,7 @@ export function SprintsPage() {
     await refreshProjectViews(selectedProjectId)
   }
 
-  function handleOpenTaskModal(workItemId: string, currentStatus: number | string, currentAssignee: string) {
+  function handleOpenTaskModal(workItemId: string, currentStatus: number | string, currentAssignee: string, currentBranch?: string) {
     setEditingWorkItemId(workItemId)
     setEditingWorkItemStatus(taskDraftStatus[workItemId] ?? toNumberStatus(currentStatus))
     setEditingWorkItemAssignee(taskDraftAssignee[workItemId] ?? currentAssignee ?? '')
@@ -219,6 +220,7 @@ export function SprintsPage() {
     setEditingTokensUsed(0)
     setEditingFeedback('')
     setEditingMetadataJson('')
+    setEditingBranch(currentBranch ?? '')
   }
 
   async function handleSaveTaskFromModal() {
@@ -230,6 +232,7 @@ export function SprintsPage() {
       workItemId: editingWorkItemId,
       status: editingWorkItemStatus,
       assignee: editingWorkItemAssignee.trim(),
+      branch: editingBranch.trim(),
       agentName: editingAgentName.trim(),
       modelUsed: editingModelUsed.trim(),
       ideUsed: editingIdeUsed.trim(),
@@ -542,7 +545,7 @@ export function SprintsPage() {
                           onToggleFeedbacks={() => toggleFeedbacks(item.id)}
                           onDragStart={(event) => handleTaskDragStart(event, item.id)}
                           onDragEnd={handleTaskDragEnd}
-                          onEdit={() => handleOpenTaskModal(item.id, item.status, item.assignee)}
+                          onEdit={() => handleOpenTaskModal(item.id, item.status, item.assignee, item.branch)}
                         />
                       ))}
                       {(sprintBoard[columnStatus] ?? []).length === 0 ? (
@@ -715,6 +718,16 @@ export function SprintsPage() {
               </Grid>
             </Grid>
 
+            <Typography variant="overline" color="text.secondary">Branch</Typography>
+            <TextField
+              size="small"
+              label="Branch"
+              fullWidth
+              placeholder="ex: feat/my-feature"
+              value={editingBranch}
+              onChange={(event) => setEditingBranch(event.target.value)}
+            />
+
             <Typography variant="overline" color="text.secondary">Work Log</Typography>
             <TextField
               size="small"
@@ -857,6 +870,25 @@ function WorkItemCard({
               }}
             >
               {item.description}
+            </Typography>
+          )}
+
+          {/* Sub-task indicator + Tags */}
+          {(item.parentWorkItemId ?? item.tags) && (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+              {item.parentWorkItemId && (
+                <Chip size="small" label="↳ sub-task" sx={{ bgcolor: '#fff3e0', color: '#e65100', fontSize: 11 }} />
+              )}
+              {item.tags && item.tags.trim() && item.tags.split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => (
+                <Chip key={tag} size="small" label={tag} variant="outlined" sx={{ fontSize: 11 }} />
+              ))}
+            </Stack>
+          )}
+
+          {/* Branch */}
+          {item.branch && (
+            <Typography variant="caption" sx={{ color: '#1565c0', fontFamily: 'monospace' }}>
+              ⎇ {item.branch}
             </Typography>
           )}
 

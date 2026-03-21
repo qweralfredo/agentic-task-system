@@ -53,6 +53,7 @@ export const apiClient = {
     workItemId: string
     status: number
     assignee: string
+    branch?: string
     agentName?: string
     modelUsed?: string
     ideUsed?: string
@@ -65,6 +66,7 @@ export const apiClient = {
       body: JSON.stringify({
         status: payload.status,
         assignee: payload.assignee,
+        branch: payload.branch ?? '',
         agentName: payload.agentName ?? '',
         modelUsed: payload.modelUsed ?? '',
         ideUsed: payload.ideUsed ?? '',
@@ -110,6 +112,22 @@ export const apiClient = {
     payload: { gitHubUrl?: string; localPath?: string; techStack?: string; mainBranch?: string },
   ) =>
     request<Project>(`/api/projects/${projectId}/config`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  addSubTask: (
+    parentWorkItemId: string,
+    payload: { title: string; description: string; assignee?: string; branch?: string; tags?: string },
+  ) =>
+    request(`/api/work-items/${parentWorkItemId}/sub-tasks`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateBacklogContext: (
+    backlogItemId: string,
+    payload: { tags?: string; wikiRefs?: string; constraints?: string },
+  ) =>
+    request(`/api/backlog-items/${backlogItemId}/context`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
