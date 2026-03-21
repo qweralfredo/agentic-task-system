@@ -59,6 +59,7 @@ export function SprintsPage() {
   const [editingMetadataJson, setEditingMetadataJson] = useState('')
   const [editingBranch, setEditingBranch] = useState('')
   const [expandedFeedbackIds, setExpandedFeedbackIds] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<'grouped' | 'race'>('grouped')
 
   function toggleFeedbacks(workItemId: string) {
     setExpandedFeedbackIds((prev) => {
@@ -96,39 +97,75 @@ export function SprintsPage() {
     [backlog],
   )
 
+  const workItemPriorityByBacklogId = useMemo(
+    () =>
+      backlog.reduce<Record<string, number>>((acc, item) => {
+        acc[item.id] = item.priority
+        return acc
+      }, {}),
+    [backlog],
+  )
+
+  function getWorkItemPriority(item: { backlogItemId: string; title: string }) {
+    return workItemPriorityByBacklogId[item.backlogItemId] ?? workItemPriorityByTitle[item.title.trim().toLowerCase()]
+  }
+
   const boardItems = useMemo(
     () => (boardSprintId === 'all' ? sprints.flatMap((s) => s.workItems) : (boardSprint?.workItems ?? [])),
     [boardSprintId, boardSprint, sprints],
   )
 
+  const raceItems = useMemo(() => {
+    const backlogById = new Map(backlog.map((item) => [item.id, item]))
+    return sprints
+      .flatMap((sprint) =>
+        sprint.workItems.map((item) => ({
+          ...item,
+          sprintId: sprint.id,
+          sprintName: sprint.name,
+          backlogTitle: backlogById.get(item.backlogItemId)?.title ?? 'Unlinked backlog',
+        })),
+      )
+      .sort((a, b) => {
+        const bDate = new Date(b.updatedAt ?? b.createdAt).getTime()
+        const aDate = new Date(a.updatedAt ?? a.createdAt).getTime()
+        return bDate - aDate
+      })
+  }, [backlog, sprints])
+
+  const itemsForFilters = useMemo(
+    () => (!backlogIdFilter && viewMode === 'race' ? raceItems : boardItems),
+    [backlogIdFilter, boardItems, raceItems, viewMode],
+  )
+
   const availableAssignees = useMemo(() => {
     const assignees = new Set<string>()
-    for (const item of boardItems) {
+    for (const item of itemsForFilters) {
       const currentAssignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
       if (currentAssignee) {
         assignees.add(currentAssignee)
       }
     }
     return Array.from(assignees).sort((a, b) => a.localeCompare(b))
-  }, [boardItems, taskDraftAssignee])
+  }, [itemsForFilters, taskDraftAssignee])
 
   const availablePriorities = useMemo(() => {
     const priorities = new Set<number>()
-    for (const item of boardItems) {
-      const priority = workItemPriorityByTitle[item.title.trim().toLowerCase()]
+    for (const item of itemsForFilters) {
+      const priority = getWorkItemPriority(item)
       if (typeof priority === 'number') {
         priorities.add(priority)
       }
     }
     return Array.from(priorities).sort((a, b) => a - b)
-  }, [boardItems, workItemPriorityByTitle])
+  }, [itemsForFilters])
 
   const sprintBoard = useMemo(() => {
     const columns: Record<number, typeof boardItems> = { 0: [], 1: [], 2: [], 3: [] }
     for (const item of boardItems) {
       const status = toNumberStatus(item.status)
       const assignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
-      const priority = workItemPriorityByTitle[item.title.trim().toLowerCase()]
+      const priority = getWorkItemPriority(item)
 
       const matchesAssignee = assigneeFilter === 'all' || assignee === assigneeFilter
       const matchesPriority =
@@ -141,7 +178,23 @@ export function SprintsPage() {
       }
     }
     return columns
-  }, [assigneeFilter, backlogIdFilter, boardItems, priorityFilter, taskDraftAssignee, workItemPriorityByTitle])
+  }, [assigneeFilter, backlogIdFilter, boardItems, priorityFilter, taskDraftAssignee])
+
+  const raceList = useMemo(() => {
+    if (backlogIdFilter || viewMode !== 'race') {
+      return []
+    }
+
+    return raceItems.filter((item) => {
+      const assignee = (taskDraftAssignee[item.id] ?? item.assignee ?? '').trim()
+      const priority = getWorkItemPriority(item)
+      const matchesAssignee = assigneeFilter === 'all' || assignee === assigneeFilter
+      const matchesPriority =
+        priorityFilter === 'all' ||
+        (typeof priority === 'number' && String(priority) === priorityFilter)
+      return matchesAssignee && matchesPriority
+    })
+  }, [assigneeFilter, backlogIdFilter, priorityFilter, raceItems, taskDraftAssignee, viewMode])
 
   // For the grouped view: organize sprints by backlog item when no filter is active
   const sprintsGroupedByBacklog = useMemo(() => {
@@ -331,6 +384,59 @@ export function SprintsPage() {
               </Select>
             </FormControl>
 
+            {!backlogIdFilter && (
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <InputLabel id="view-mode-label">View mode</InputLabel>
+                <Select
+                  labelId="view-mode-label"
+                  label="View mode"
+                  value={viewMode}
+                  onChange={(event) => setViewMode(event.target.value as 'grouped' | 'race')}
+                >
+                  <MenuItem value="grouped">Grouped by backlog</MenuItem>
+                  <MenuItem value="race">Race (all cards live)</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+
+            {!backlogIdFilter && viewMode === 'race' && (
+              <>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel id="race-assignee-label">Assignee</InputLabel>
+                  <Select
+                    labelId="race-assignee-label"
+                    label="Assignee"
+                    value={assigneeFilter}
+                    onChange={(event) => setAssigneeFilter(event.target.value)}
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    {availableAssignees.map((assignee) => (
+                      <MenuItem key={assignee} value={assignee}>
+                        {assignee}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 130 }}>
+                  <InputLabel id="race-priority-label">Priority</InputLabel>
+                  <Select
+                    labelId="race-priority-label"
+                    label="Priority"
+                    value={priorityFilter}
+                    onChange={(event) => setPriorityFilter(event.target.value)}
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    {availablePriorities.map((priority) => (
+                      <MenuItem key={priority} value={String(priority)}>
+                        P{priority}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </>
+            )}
+
             {backlogIdFilter && (
               <>
                 <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -401,7 +507,7 @@ export function SprintsPage() {
       </Card>
 
       {/* Grouped view: no backlog filter active */}
-      {!backlogIdFilter && (
+      {!backlogIdFilter && viewMode === 'grouped' && (
         <Stack spacing={1.2}>
           <Typography variant="h6">Sprints grouped by Backlog</Typography>
           {sprints.length === 0 ? (
@@ -494,6 +600,43 @@ export function SprintsPage() {
         </Stack>
       )}
 
+      {!backlogIdFilter && viewMode === 'race' && (
+        <Stack spacing={1.2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} justifyContent="space-between">
+            <Typography variant="h6">Race Mode</Typography>
+            <Chip size="small" color="success" variant="outlined" label={`Live refresh every 5s • ${raceList.length} cards`} />
+          </Stack>
+
+          {raceList.length === 0 ? (
+            <Alert severity="info">No cards found for the selected project filters.</Alert>
+          ) : (
+            <Grid container spacing={1.2}>
+              {raceList.map((item) => (
+                <Grid key={item.id} size={{ xs: 12, md: 6, xl: 4 }}>
+                  <WorkItemCard
+                    item={item}
+                    priority={getWorkItemPriority(item)}
+                    isDragging={false}
+                    showDragHandle={false}
+                    feedbackExpanded={expandedFeedbackIds.has(item.id)}
+                    onToggleFeedbacks={() => toggleFeedbacks(item.id)}
+                    onDragStart={() => {}}
+                    onDragEnd={() => {}}
+                    onEdit={() => handleOpenTaskModal(item.id, item.status, item.assignee, item.branch)}
+                    contextChips={(
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                        <Chip size="small" label={`Sprint: ${item.sprintName}`} variant="outlined" />
+                        <Chip size="small" label={`Backlog: ${item.backlogTitle}`} variant="outlined" />
+                      </Stack>
+                    )}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Stack>
+      )}
+
       {backlogIdFilter && (
         <>
       {sprints.length === 0 ? (
@@ -539,7 +682,7 @@ export function SprintsPage() {
                         <WorkItemCard
                           key={item.id}
                           item={item}
-                          priority={workItemPriorityByTitle[item.title.trim().toLowerCase()]}
+                          priority={getWorkItemPriority(item)}
                           isDragging={draggedWorkItemId === item.id}
                           feedbackExpanded={expandedFeedbackIds.has(item.id)}
                           onToggleFeedbacks={() => toggleFeedbacks(item.id)}
@@ -804,20 +947,24 @@ function WorkItemCard({
   item,
   priority,
   isDragging,
+  showDragHandle = true,
   feedbackExpanded,
   onToggleFeedbacks,
   onDragStart,
   onDragEnd,
   onEdit,
+  contextChips,
 }: {
   item: SprintWorkItem
   priority: number | undefined
   isDragging: boolean
+  showDragHandle?: boolean
   feedbackExpanded: boolean
   onToggleFeedbacks: () => void
   onDragStart: (event: ReactDragEvent<HTMLDivElement>) => void
   onDragEnd: () => void
   onEdit: () => void
+  contextChips?: React.ReactNode
 }) {
   const statusNum = typeof item.status === 'number' ? item.status : Number(item.status)
   const borderColor = statusBorderColor[statusNum] ?? '#2f78c5'
@@ -840,7 +987,9 @@ function WorkItemCard({
       <CardContent sx={{ p: 1.1, '&:last-child': { pb: 1.1 } }}>
         <Stack spacing={0.75}>
           {/* Drag handle */}
-          <BoxDragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
+          {showDragHandle && <BoxDragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />}
+
+          {contextChips}
 
           {/* Title + Priority chip + Tokens chip */}
           <Stack direction="row" spacing={0.75} alignItems="flex-start" flexWrap="wrap" useFlexGap>
