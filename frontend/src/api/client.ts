@@ -105,4 +105,12 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  updateProjectConfig: (
+    projectId: string,
+    payload: { gitHubUrl?: string; localPath?: string; techStack?: string; mainBranch?: string },
+  ) =>
+    request<Project>(`/api/projects/${projectId}/config`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
 }

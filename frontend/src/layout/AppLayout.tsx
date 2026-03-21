@@ -3,6 +3,7 @@ import { MarkdownField } from '../components/MarkdownField'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import SprintOutlinedIcon from '@mui/icons-material/OnlinePredictionOutlined'
 import ViewKanbanOutlinedIcon from '@mui/icons-material/ViewKanbanOutlined'
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import {
   Alert,
   AppBar,
@@ -41,6 +42,7 @@ const menu = [
   { label: 'Backlog', to: '/backlog', icon: <ViewKanbanOutlinedIcon /> },
   { label: 'Sprints', to: '/sprints', icon: <SprintOutlinedIcon /> },
   { label: 'Knowledge', to: '/knowledge', icon: <DescriptionOutlinedIcon /> },
+  { label: 'Settings', to: '/settings', icon: <SettingsOutlinedIcon /> },
 ]
 
 export function AppLayout() {

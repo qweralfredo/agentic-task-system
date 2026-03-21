@@ -73,6 +73,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     [refreshProjects],
   )
 
+  const updateProjectConfig = useCallback(
+    async (payload: { gitHubUrl?: string; localPath?: string; techStack?: string; mainBranch?: string }) => {
+      if (!selectedProjectId) return
+      setError('')
+      try {
+        await apiClient.updateProjectConfig(selectedProjectId, payload)
+        await refreshProjects()
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : 'Erro ao salvar configurações')
+      }
+    },
+    [selectedProjectId, refreshProjects],
+  )
+
   useEffect(() => {
     void refreshProjects()
   }, [refreshProjects])
@@ -98,10 +112,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       refreshProjects,
       refreshProjectViews,
       createProject,
+      updateProjectConfig,
     }),
     [
       backlog,
       createProject,
+      updateProjectConfig,
       dashboard,
       error,
       knowledge,

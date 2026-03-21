@@ -3,6 +3,10 @@ export type Project = {
   name: string
   description: string
   createdAt: string
+  gitHubUrl?: string
+  localPath?: string
+  techStack?: string
+  mainBranch?: string
 }
 
 export type BacklogItem = {

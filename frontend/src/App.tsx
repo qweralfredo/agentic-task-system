@@ -11,6 +11,7 @@ const KnowledgePage = lazy(() => import('./pages/KnowledgePage').then((module) =
 const WikiPage = lazy(() => import('./pages/WikiPage').then((module) => ({ default: module.WikiPage })))
 const CheckpointsPage = lazy(() => import('./pages/CheckpointsPage').then((module) => ({ default: module.CheckpointsPage })))
 const DocumentationPage = lazy(() => import('./pages/DocumentationPage').then((module) => ({ default: module.DocumentationPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 
 function PageFallback() {
   return (
@@ -79,6 +80,14 @@ function App() {
             element={(
               <Suspense fallback={<PageFallback />}>
                 <DocumentationPage />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="settings"
+            element={(
+              <Suspense fallback={<PageFallback />}>
+                <SettingsPage />
               </Suspense>
             )}
           />
