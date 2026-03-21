@@ -13,7 +13,7 @@ export type ProjectContextValue = {
   error: string
   setSelectedProjectId: (projectId: string) => void
   refreshProjects: () => Promise<void>
-  refreshProjectViews: (projectId: string) => Promise<void>
+  refreshProjectViews: (projectId: string, options?: { silent?: boolean }) => Promise<void>
   createProject: (payload: { name: string; description: string }) => Promise<void>
   updateProjectConfig: (payload: { gitHubUrl?: string; localPath?: string; techStack?: string; mainBranch?: string }) => Promise<void>
 }
