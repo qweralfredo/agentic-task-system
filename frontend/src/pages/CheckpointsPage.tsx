@@ -2,20 +2,25 @@ import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRou
 import {
   Button,
   Card,
+  CardActionArea,
   CardContent,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Grid,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
+import MDEditor from '@uiw/react-md-editor'
 import { MarkdownField } from '../components/MarkdownField'
 import { useMemo, useState } from 'react'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
+import type { KnowledgeCheckpoint } from '../types'
 import { groupByCategory } from '../types'
 import { KnowledgeNav } from './KnowledgeNav'
 
@@ -28,6 +33,8 @@ export function CheckpointsPage() {
   const [checkpointDecisions, setCheckpointDecisions] = useState('')
   const [checkpointRisks, setCheckpointRisks] = useState('')
   const [checkpointNextActions, setCheckpointNextActions] = useState('')
+
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState<KnowledgeCheckpoint | null>(null)
 
   const checkpointByCategory = useMemo(() => groupByCategory(knowledge?.checkpoints ?? []), [knowledge])
 
@@ -99,9 +106,12 @@ export function CheckpointsPage() {
                 <Typography variant="overline" color="primary.main">{category}</Typography>
                 <Stack spacing={0.7} sx={{ mt: 0.8 }}>
                   {items.map((item) => (
-                    <Typography key={item.id} variant="body2" fontWeight={700}>
-                      {item.name}
-                    </Typography>
+                    <CardActionArea key={item.id} onClick={() => setSelectedCheckpoint(item)} sx={{ borderRadius: 1, px: 0.5, py: 0.3 }}>
+                      <Typography variant="body2" fontWeight={700}>
+                        {item.name}
+                      </Typography>
+                      <Divider sx={{ mt: 0.5 }} />
+                    </CardActionArea>
                   ))}
                 </Stack>
               </CardContent>
@@ -113,6 +123,57 @@ export function CheckpointsPage() {
       {Object.keys(checkpointByCategory).length === 0 ? (
         <Typography color="text.secondary">No checkpoints in this project.</Typography>
       ) : null}
+
+      <Dialog open={selectedCheckpoint !== null} onClose={() => setSelectedCheckpoint(null)} fullWidth maxWidth="xl">
+        <DialogTitle>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="h6" sx={{ flex: 1 }}>{selectedCheckpoint?.name}</Typography>
+            {selectedCheckpoint?.category ? <Chip label={selectedCheckpoint.category} size="small" color="primary" variant="outlined" /> : null}
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            {selectedCheckpoint?.contextSnapshot ? (
+              <Stack spacing={0.5}>
+                <Typography variant="overline" color="text.secondary">Context</Typography>
+                <div data-color-mode="light">
+                  <MDEditor.Markdown source={selectedCheckpoint.contextSnapshot} style={{ padding: '10px', minHeight: 60 }} />
+                </div>
+              </Stack>
+            ) : null}
+            {selectedCheckpoint?.decisions ? (
+              <Stack spacing={0.5}>
+                <Divider />
+                <Typography variant="overline" color="text.secondary">Decisions</Typography>
+                <div data-color-mode="light">
+                  <MDEditor.Markdown source={selectedCheckpoint.decisions} style={{ padding: '10px', minHeight: 60 }} />
+                </div>
+              </Stack>
+            ) : null}
+            {selectedCheckpoint?.risks ? (
+              <Stack spacing={0.5}>
+                <Divider />
+                <Typography variant="overline" color="text.secondary">Risks</Typography>
+                <div data-color-mode="light">
+                  <MDEditor.Markdown source={selectedCheckpoint.risks} style={{ padding: '10px', minHeight: 60 }} />
+                </div>
+              </Stack>
+            ) : null}
+            {selectedCheckpoint?.nextActions ? (
+              <Stack spacing={0.5}>
+                <Divider />
+                <Typography variant="overline" color="text.secondary">Next Actions</Typography>
+                <div data-color-mode="light">
+                  <MDEditor.Markdown source={selectedCheckpoint.nextActions} style={{ padding: '10px', minHeight: 60 }} />
+                </div>
+              </Stack>
+            ) : null}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedCheckpoint(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={isModalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="xl">
         <Stack component="form" onSubmit={handleCreateCheckpoint}>

@@ -2,7 +2,9 @@ import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRou
 import {
   Button,
   Card,
+  CardActionArea,
   CardContent,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,10 +15,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import MDEditor from '@uiw/react-md-editor'
 import { MarkdownField } from '../components/MarkdownField'
 import { useMemo, useState } from 'react'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
+import type { KnowledgeDocumentation } from '../types'
 import { groupByCategory } from '../types'
 import { KnowledgeNav } from './KnowledgeNav'
 
@@ -27,6 +31,8 @@ export function DocumentationPage() {
   const [docCategory, setDocCategory] = useState('Architecture')
   const [docTags, setDocTags] = useState('')
   const [docContent, setDocContent] = useState('')
+
+  const [selectedDoc, setSelectedDoc] = useState<KnowledgeDocumentation | null>(null)
 
   const docsByCategory = useMemo(() => groupByCategory(knowledge?.documentationPages ?? []), [knowledge])
 
@@ -94,11 +100,13 @@ export function DocumentationPage() {
                 <Typography variant="overline" color="primary.main">{category}</Typography>
                 <Stack spacing={0.8} sx={{ mt: 0.8 }}>
                   {items.map((item) => (
-                    <Stack key={item.id} spacing={0.4}>
-                      <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
-                      {item.tags ? <Typography variant="caption" color="text.secondary">{item.tags}</Typography> : null}
-                      <Divider />
-                    </Stack>
+                    <CardActionArea key={item.id} onClick={() => setSelectedDoc(item)} sx={{ borderRadius: 1, p: 0.5 }}>
+                      <Stack spacing={0.4}>
+                        <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
+                        {item.tags ? <Typography variant="caption" color="text.secondary">{item.tags}</Typography> : null}
+                        <Divider />
+                      </Stack>
+                    </CardActionArea>
                   ))}
                 </Stack>
               </CardContent>
@@ -110,6 +118,24 @@ export function DocumentationPage() {
       {Object.keys(docsByCategory).length === 0 ? (
         <Typography color="text.secondary">No documents in this project.</Typography>
       ) : null}
+
+      <Dialog open={selectedDoc !== null} onClose={() => setSelectedDoc(null)} fullWidth maxWidth="lg">
+        <DialogTitle>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="h6" sx={{ flex: 1 }}>{selectedDoc?.title}</Typography>
+            {selectedDoc?.category ? <Chip label={selectedDoc.category} size="small" color="primary" variant="outlined" /> : null}
+            {selectedDoc?.tags ? <Chip label={selectedDoc.tags} size="small" variant="outlined" /> : null}
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <div data-color-mode="light">
+            <MDEditor.Markdown source={selectedDoc?.contentMarkdown ?? ''} style={{ padding: '12px', minHeight: 120 }} />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedDoc(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={isModalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="lg">
         <Stack component="form" onSubmit={handleCreateDocumentation}>

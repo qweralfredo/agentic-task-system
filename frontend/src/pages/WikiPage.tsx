@@ -2,7 +2,9 @@ import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRou
 import {
   Button,
   Card,
+  CardActionArea,
   CardContent,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,10 +15,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import MDEditor from '@uiw/react-md-editor'
 import { MarkdownField } from '../components/MarkdownField'
 import { useMemo, useState } from 'react'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
+import type { KnowledgeWikiPage } from '../types'
 import { groupByCategory } from '../types'
 import { KnowledgeNav } from './KnowledgeNav'
 
@@ -27,6 +31,8 @@ export function WikiPage() {
   const [wikiCategory, setWikiCategory] = useState('How-To')
   const [wikiTags, setWikiTags] = useState('')
   const [wikiContent, setWikiContent] = useState('')
+
+  const [selectedWiki, setSelectedWiki] = useState<KnowledgeWikiPage | null>(null)
 
   const wikiByCategory = useMemo(() => groupByCategory(knowledge?.wikiPages ?? []), [knowledge])
 
@@ -94,11 +100,13 @@ export function WikiPage() {
                 <Typography variant="overline" color="primary.main">{category}</Typography>
                 <Stack spacing={0.8} sx={{ mt: 0.8 }}>
                   {items.map((item) => (
-                    <Stack key={item.id} spacing={0.4}>
-                      <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
-                      {item.tags ? <Typography variant="caption" color="text.secondary">{item.tags}</Typography> : null}
-                      <Divider />
-                    </Stack>
+                    <CardActionArea key={item.id} onClick={() => setSelectedWiki(item)} sx={{ borderRadius: 1, p: 0.5 }}>
+                      <Stack spacing={0.4}>
+                        <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
+                        {item.tags ? <Typography variant="caption" color="text.secondary">{item.tags}</Typography> : null}
+                        <Divider />
+                      </Stack>
+                    </CardActionArea>
                   ))}
                 </Stack>
               </CardContent>
@@ -110,6 +118,24 @@ export function WikiPage() {
       {Object.keys(wikiByCategory).length === 0 ? (
         <Typography color="text.secondary">No wiki entries in this project.</Typography>
       ) : null}
+
+      <Dialog open={selectedWiki !== null} onClose={() => setSelectedWiki(null)} fullWidth maxWidth="lg">
+        <DialogTitle>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="h6" sx={{ flex: 1 }}>{selectedWiki?.title}</Typography>
+            {selectedWiki?.category ? <Chip label={selectedWiki.category} size="small" color="primary" variant="outlined" /> : null}
+            {selectedWiki?.tags ? <Chip label={selectedWiki.tags} size="small" variant="outlined" /> : null}
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <div data-color-mode="light">
+            <MDEditor.Markdown source={selectedWiki?.contentMarkdown ?? ''} style={{ padding: '12px', minHeight: 120 }} />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedWiki(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={isModalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="lg">
         <Stack component="form" onSubmit={handleCreateWiki}>

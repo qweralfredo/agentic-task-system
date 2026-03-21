@@ -55,6 +55,7 @@ export type KnowledgeWikiPage = {
   title: string
   tags: string
   category: string
+  contentMarkdown: string
   updatedAt: string
 }
 
@@ -62,6 +63,10 @@ export type KnowledgeCheckpoint = {
   id: string
   name: string
   category: string
+  contextSnapshot: string
+  decisions: string
+  risks: string
+  nextActions: string
   createdAt: string
 }
 
@@ -70,6 +75,7 @@ export type KnowledgeDocumentation = {
   title: string
   tags: string
   category: string
+  contentMarkdown: string
   updatedAt: string
 }
 
