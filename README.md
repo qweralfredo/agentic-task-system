@@ -99,6 +99,12 @@ docker-compose.yml                   # Full stack definition
 - Sub-task visibility and status badges on kanban board
 - Parent-child relationship preservation across sprints
 
+### Frontend UX Improvements
+- **Responsive App Shell** — main layout now adapts for mobile/tablet/desktop
+- On small screens, the sidebar switches to a temporary drawer with a menu button in the top bar
+- Header controls (active project selector and new project action) stack safely on narrow widths
+- Main content area recalculates spacing and offsets per breakpoint to avoid overlap and clipping
+
 ### Pandora Knowledge Hub
 - Per-project wiki pages
 - Knowledge checkpoints (context snapshot, decisions, risks, next actions)
