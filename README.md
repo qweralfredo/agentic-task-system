@@ -1,11 +1,11 @@
-﻿# Pandora Todo List — Agentic Scrum Platform
+﻿# Pandora Todo List — Agentic Task System
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![MCP Python Server](https://img.shields.io/badge/MCP-Python%20FastMCP-3776AB?style=for-the-badge&logo=python&logoColor=white)](mcp-server-python/README.md)
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](backend/AgenticTodoList.Api)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](frontend)
 
-An open-source, full-stack Scrum project management platform designed for **human + AI collaboration**. Built around the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), it integrates natively with agentic environments such as VS Code Copilot, enabling AI agents to create sprints, manage backlogs, and track work items — all in real time.
+An open-source, full-stack **Agentic Task System** designed for **human + AI collaboration**. Built around the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), it integrates natively with agentic environments such as VS Code Copilot, enabling AI agents to create sprints, manage backlogs, and track work items — all in real time.
 
 - **Backend:** .NET 10 Web API with PostgreSQL (EF Core)
 - **Frontend:** React 19 + TypeScript (Vite + MUI)

@@ -1,6 +1,6 @@
 # GitHub Copilot — Instruções do Workspace: Todolist
 
-Este workspace é o projeto **Pandora Todo List** — uma plataforma agêntica de gestão de tarefas com Scrum, MCP e IA.
+Este workspace é o projeto **Pandora Todo List** — um **Agentic Task System**: plataforma agêntica de gestão de tarefas com Scrum, MCP e IA.
 
 ---
 
@@ -14,11 +14,24 @@ Este workspace é o projeto **Pandora Todo List** — uma plataforma agêntica d
 
 Toda tarefa executada neste workspace **deve** ser refletida no Pandora Todo List via MCP:
 
-1. **Antes de codificar** — Criar backlog item + sprint + work item no Pandora
+1. **Antes de codificar** — Criar backlog item + sprint + work item no Pandora. Perguntar ao usuário se é necessário atualizar as bases de conhecimento (wiki, docs, checkpoint, README).
 2. **Durante** — Atualizar status do work item (InProgress = 1)
-3. **Ao concluir** — Marcar work item como Done (status = 2) + fazer commit
+3. **Ao concluir** — Marcar work item como Done (status = 2) + fazer commit. Perguntar ao usuário se é necessário atualizar as bases de conhecimento do projeto (wiki, docs, checkpoint, README).
 
 Nunca execute uma tarefa sem registrá-la antes no Pandora.
+
+### Sincronização obrigatória: checklist → work items
+
+| Evento | Tool MCP | Status |
+|---|---|---|
+| Task criada no plano | `backlog_add` + `workitem_update` | Todo = 0 |
+| Iniciando trabalho | `workitem_update` | InProgress = 1 |
+| Task concluída | `workitem_update` + commit | Done = 2 |
+| Task em revisão | `workitem_update` | Review = 3 |
+
+Evite criar itens duplicados — verifique com `backlog_list` e `workitem_list` antes de criar.
+
+Ao concluir uma epic ou sprint, chamar `knowledge_checkpoint` para salvar contexto, decisões e próximos passos.
 
 ### Campos obrigatórios nas chamadas MCP
 
@@ -26,8 +39,21 @@ Nunca execute uma tarefa sem registrá-la antes no Pandora.
 |---|---|
 | `backlog_add` | `project_id`, `title`, `description`, `priority` (int), `story_points` |
 | `sprint_create` | `project_id`, `name`, `goal`, `start_date` (YYYY-MM-DD), `end_date`, `backlog_item_ids` |
-| `workitem_update` | `work_item_id`, `status` (int), `assignee` |
+| `workitem_update` | `work_item_id`, `status` (int), `assignee`, `agent_name`, `model_used`, `ide_used`, `tokens_used`, `feedback` |
 | `knowledge_checkpoint` | `project_id`, `name`, `context_snapshot`, `decisions`, `risks`, `next_actions` |
+
+### Valores fixos para workitem_update (contexto do agente)
+
+Sempre preencha os campos de contexto do agente em **toda** chamada `workitem_update`:
+
+| Campo | Valor |
+|---|---|
+| `agent_name` | `GitHub Copilot` |
+| `model_used` | `Claude Sonnet 4.6` |
+| `ide_used` | `VS Code` |
+| `tokens_used` | estimativa de tokens usados na sessão (inteiro) |
+| `feedback` | resumo do que foi feito nesta task |
+| `metadata_json` | JSON opcional com detalhes extras (pode ser `{}`) |
 
 ### Enums
 
@@ -77,3 +103,8 @@ ops/scripts/                         # PowerShell backup/restore
 - [Backlog e sprints](../docs/BACKLOG_SPRINT.md)
 - [MCP no VS Code](../docs/MCP_VSCODE.md)
 - [Backup e restore](../docs/OPERACAO_BACKUP_RESTORE.md)
+- [Top 10 Agentes de Código](../docs/TOP10-AGENTS.md)
+- [Skill: agent-customization](../docs/skills/copilot/agent-customization.md)
+- [Skills: GitHub PR & Issues](../docs/skills/github-pr/github-pr-skills.md)
+- [MCP: Pandora Todo List](../docs/mcps/pandora-mcp.md)
+- [MCP: Playwright](../docs/mcps/playwright-mcp.md)
