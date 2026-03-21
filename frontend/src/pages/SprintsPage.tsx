@@ -110,6 +110,11 @@ export function SprintsPage() {
     return workItemPriorityByBacklogId[item.backlogItemId] ?? workItemPriorityByTitle[item.title.trim().toLowerCase()]
   }
 
+  function getActivityTimestamp(item: { updatedAt?: string; createdAt: string }) {
+    const timestamp = new Date(item.updatedAt ?? item.createdAt).getTime()
+    return Number.isFinite(timestamp) ? timestamp : 0
+  }
+
   const boardItems = useMemo(
     () => (boardSprintId === 'all' ? sprints.flatMap((s) => s.workItems) : (boardSprint?.workItems ?? [])),
     [boardSprintId, boardSprint, sprints],
@@ -127,9 +132,11 @@ export function SprintsPage() {
         })),
       )
       .sort((a, b) => {
-        const bDate = new Date(b.updatedAt ?? b.createdAt).getTime()
-        const aDate = new Date(a.updatedAt ?? a.createdAt).getTime()
-        return bDate - aDate
+        const byDateTimeDesc = getActivityTimestamp(b) - getActivityTimestamp(a)
+        if (byDateTimeDesc !== 0) {
+          return byDateTimeDesc
+        }
+        return b.id.localeCompare(a.id)
       })
   }, [backlog, sprints])
 
@@ -618,6 +625,7 @@ export function SprintsPage() {
                     priority={getWorkItemPriority(item)}
                     isDragging={false}
                     showDragHandle={false}
+                    showActivityTime
                     feedbackExpanded={expandedFeedbackIds.has(item.id)}
                     onToggleFeedbacks={() => toggleFeedbacks(item.id)}
                     onDragStart={() => {}}
@@ -948,6 +956,7 @@ function WorkItemCard({
   priority,
   isDragging,
   showDragHandle = true,
+  showActivityTime = false,
   feedbackExpanded,
   onToggleFeedbacks,
   onDragStart,
@@ -959,6 +968,7 @@ function WorkItemCard({
   priority: number | undefined
   isDragging: boolean
   showDragHandle?: boolean
+  showActivityTime?: boolean
   feedbackExpanded: boolean
   onToggleFeedbacks: () => void
   onDragStart: (event: ReactDragEvent<HTMLDivElement>) => void
@@ -969,6 +979,15 @@ function WorkItemCard({
   const statusNum = typeof item.status === 'number' ? item.status : Number(item.status)
   const borderColor = statusBorderColor[statusNum] ?? '#2f78c5'
   const lastActivity = item.updatedAt ?? item.createdAt
+  const formattedDateTime = lastActivity
+    ? new Date(lastActivity).toLocaleString('en-US', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null
   const formattedDate = lastActivity
     ? new Date(lastActivity).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : null
@@ -1064,9 +1083,9 @@ function WorkItemCard({
             <Typography variant="caption" color="text.secondary">
               {item.assignee ? `@${item.assignee}` : 'no assignee'}
             </Typography>
-            {formattedDate && (
+            {(showActivityTime ? formattedDateTime : formattedDate) && (
               <Typography variant="caption" color="text.disabled">
-                {item.updatedAt ? 'Updated' : 'Created'} {formattedDate}
+                {item.updatedAt ? 'Updated' : 'Created'} {showActivityTime ? formattedDateTime : formattedDate}
               </Typography>
             )}
           </Stack>
