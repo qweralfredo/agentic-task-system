@@ -80,7 +80,6 @@ body {
   align-items: center;
   gap: 8px;
 }
-.nav-icon { color: var(--accent); font-size: 1.2rem; }
 .nav-links {
   display: flex;
   align-items: center;
@@ -194,6 +193,14 @@ body {
   line-height: 1.75;
 }
 .hero-sub strong { color: var(--text); }
+.hero-sub code {
+  font-family: var(--mono);
+  font-size: 0.88rem;
+  color: var(--accent2);
+  background: rgba(124, 110, 247, 0.14);
+  padding: 1px 7px;
+  border-radius: 5px;
+}
 .hero-actions {
   display: flex;
   gap: 12px;
