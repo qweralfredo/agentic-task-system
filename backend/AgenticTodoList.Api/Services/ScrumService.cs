@@ -83,6 +83,7 @@ public class ScrumService(AppDbContext db)
                 BacklogItemId = backlog.Id,
                 Title = backlog.Title,
                 Description = backlog.Description,
+                Tags = backlog.Tags,
                 Status = WorkItemStatus.Todo
             });
         }
@@ -113,6 +114,12 @@ public class ScrumService(AppDbContext db)
         {
             workItem.LastIdeUsed = request.IdeUsed.Trim();
         }
+
+        if (!string.IsNullOrWhiteSpace(request.Branch))
+        {
+            workItem.Branch = request.Branch.Trim();
+        }
+
         workItem.UpdatedAt = DateTimeOffset.UtcNow;
 
         var feedback = new WorkItemFeedbackEntity
@@ -135,10 +142,66 @@ public class ScrumService(AppDbContext db)
             {
                 backlog.Status = BacklogItemStatus.Done;
             }
+
+            // Auto-complete parent if all siblings are done
+            if (workItem.ParentWorkItemId.HasValue)
+            {
+                var siblings = await db.WorkItems
+                    .Where(w => w.ParentWorkItemId == workItem.ParentWorkItemId && w.Id != workItem.Id)
+                    .Select(w => w.Status)
+                    .ToListAsync(cancellationToken);
+
+                if (siblings.All(s => s == WorkItemStatus.Done))
+                {
+                    var parent = await db.WorkItems.FirstOrDefaultAsync(w => w.Id == workItem.ParentWorkItemId, cancellationToken);
+                    if (parent is not null && parent.Status != WorkItemStatus.Done)
+                    {
+                        parent.Status = WorkItemStatus.Done;
+                        parent.UpdatedAt = DateTimeOffset.UtcNow;
+                    }
+                }
+            }
         }
 
         await db.SaveChangesAsync(cancellationToken);
         return workItem;
+    }
+
+    public async Task<WorkItemEntity> AddSubTaskAsync(Guid parentWorkItemId, AddSubTaskRequest request, CancellationToken cancellationToken)
+    {
+        var parent = await db.WorkItems.FirstOrDefaultAsync(w => w.Id == parentWorkItemId, cancellationToken)
+            ?? throw new InvalidOperationException("Parent work item not found.");
+
+        var subTask = new WorkItemEntity
+        {
+            ProjectId = parent.ProjectId,
+            SprintId = parent.SprintId,
+            BacklogItemId = parent.BacklogItemId,
+            ParentWorkItemId = parent.Id,
+            Title = request.Title.Trim(),
+            Description = request.Description.Trim(),
+            Assignee = request.Assignee.Trim(),
+            Branch = request.Branch.Trim(),
+            Tags = request.Tags.Trim(),
+            Status = WorkItemStatus.Todo
+        };
+
+        db.WorkItems.Add(subTask);
+        await db.SaveChangesAsync(cancellationToken);
+        return subTask;
+    }
+
+    public async Task<BacklogItemEntity> UpdateBacklogItemContextAsync(Guid backlogItemId, UpdateBacklogItemContextRequest request, CancellationToken cancellationToken)
+    {
+        var item = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogItemId, cancellationToken)
+            ?? throw new InvalidOperationException("Backlog item not found.");
+
+        if (request.Tags is not null) item.Tags = request.Tags.Trim();
+        if (request.WikiRefs is not null) item.WikiRefs = request.WikiRefs.Trim();
+        if (request.Constraints is not null) item.Constraints = request.Constraints.Trim();
+
+        await db.SaveChangesAsync(cancellationToken);
+        return item;
     }
 
     public async Task<ReviewEntity> AddReviewAsync(Guid sprintId, AddReviewRequest request, CancellationToken cancellationToken)

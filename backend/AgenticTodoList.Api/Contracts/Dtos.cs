@@ -25,7 +25,10 @@ public record UpdateWorkItemStatusRequest(
     string ModelUsed = "",
     string IdeUsed = "",
     string Feedback = "",
-    string MetadataJson = "");
+    string MetadataJson = "",
+    string Branch = "");
+public record AddSubTaskRequest(string Title, string Description, string Assignee = "", string Branch = "", string Tags = "");
+public record UpdateBacklogItemContextRequest(string? Tags, string? WikiRefs, string? Constraints);
 public record AddReviewRequest(string Type, string Summary, string Notes);
 public record AddWikiPageRequest(string Title, string ContentMarkdown, string Tags, string Category = "General");
 public record AddCheckpointRequest(string Name, string ContextSnapshot, string Decisions, string Risks, string NextActions, string Category = "General");

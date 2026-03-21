@@ -129,6 +129,7 @@ app.MapGet("/api/projects/{projectId:guid}/sprints", async (Guid projectId, AppD
                 {
                     w.Id,
                     w.BacklogItemId,
+                    w.ParentWorkItemId,
                     w.Title,
                     w.Description,
                     w.Assignee,
@@ -136,6 +137,8 @@ app.MapGet("/api/projects/{projectId:guid}/sprints", async (Guid projectId, AppD
                     w.LastModelUsed,
                     w.LastIdeUsed,
                     w.Status,
+                    w.Branch,
+                    w.Tags,
                     w.CreatedAt,
                     w.UpdatedAt,
                     Feedbacks = db.WorkItemFeedbacks
@@ -197,16 +200,58 @@ app.MapPost("/api/work-items/{workItemId:guid}/status", async (Guid workItemId, 
             workItem.ProjectId,
             workItem.SprintId,
             workItem.BacklogItemId,
+            workItem.ParentWorkItemId,
             workItem.Title,
             workItem.Description,
             workItem.Assignee,
             workItem.Status,
+            workItem.Branch,
+            workItem.Tags,
             workItem.TotalTokensSpent,
             workItem.LastModelUsed,
             workItem.LastIdeUsed,
             workItem.CreatedAt,
             workItem.UpdatedAt
         });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.NotFound(new { error = ex.Message });
+    }
+});
+
+app.MapPost("/api/work-items/{workItemId:guid}/sub-tasks", async (Guid workItemId, AddSubTaskRequest request, ScrumService service, CancellationToken ct) =>
+{
+    try
+    {
+        var subTask = await service.AddSubTaskAsync(workItemId, request, ct);
+        return Results.Created($"/api/work-items/{workItemId}/sub-tasks/{subTask.Id}", new
+        {
+            subTask.Id,
+            subTask.ProjectId,
+            subTask.SprintId,
+            subTask.BacklogItemId,
+            subTask.ParentWorkItemId,
+            subTask.Title,
+            subTask.Description,
+            subTask.Assignee,
+            subTask.Status,
+            subTask.Branch,
+            subTask.Tags,
+            subTask.CreatedAt
+        });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.NotFound(new { error = ex.Message });
+    }
+});
+
+app.MapPatch("/api/backlog-items/{backlogItemId:guid}/context", async (Guid backlogItemId, UpdateBacklogItemContextRequest request, ScrumService service, CancellationToken ct) =>
+{
+    try
+    {
+        return Results.Ok(await service.UpdateBacklogItemContextAsync(backlogItemId, request, ct));
     }
     catch (InvalidOperationException ex)
     {

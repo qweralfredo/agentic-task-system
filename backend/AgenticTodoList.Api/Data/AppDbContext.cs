@@ -37,6 +37,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(w => new { w.ProjectId, w.SprintId, w.Status });
 
         modelBuilder.Entity<WorkItemEntity>()
+            .HasMany(w => w.SubTasks)
+            .WithOne(w => w.ParentWorkItem)
+            .HasForeignKey(w => w.ParentWorkItemId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .HasIndex(w => w.ParentWorkItemId);
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .Property(w => w.Branch)
+            .HasMaxLength(250);
+
+        modelBuilder.Entity<WorkItemEntity>()
             .Property(w => w.LastModelUsed)
             .HasMaxLength(120);
 

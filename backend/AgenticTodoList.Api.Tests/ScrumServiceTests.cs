@@ -141,5 +141,97 @@ public class ScrumServiceTests
         Assert.Single(docs);
         Assert.Equal("Arquitetura", docs[0].Category);
     }
+
+    [Fact]
+    public async Task AddSubTask_ShouldCreateWithParentWorkItemId()
+    {
+        await using var db = CreateDbContext();
+        var service = new ScrumService(db);
+
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Project", "Desc"), CancellationToken.None);
+        var backlog = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Story", "Desc", 5, 1), CancellationToken.None);
+        var sprint = await service.CreateSprintAsync(
+            project.Id,
+            new CreateSprintRequest("S1", "Goal", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)), [backlog.Id]),
+            CancellationToken.None);
+
+        var parent = await db.WorkItems.FirstAsync(w => w.SprintId == sprint.Id);
+        var subTask = await service.AddSubTaskAsync(
+            parent.Id,
+            new AddSubTaskRequest("Sub-task A", "Sub desc", "dev-1", "feature/sub-a", "sub,alpha"),
+            CancellationToken.None);
+
+        Assert.Equal(parent.Id, subTask.ParentWorkItemId);
+        Assert.Equal(parent.SprintId, subTask.SprintId);
+        Assert.Equal(parent.BacklogItemId, subTask.BacklogItemId);
+        Assert.Equal("feature/sub-a", subTask.Branch);
+        Assert.Equal("sub,alpha", subTask.Tags);
+        Assert.Equal(WorkItemStatus.Todo, subTask.Status);
+    }
+
+    [Fact]
+    public async Task AddSubTask_AllDone_ShouldAutoCompleteParent()
+    {
+        await using var db = CreateDbContext();
+        var service = new ScrumService(db);
+
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Project", "Desc"), CancellationToken.None);
+        var backlog = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Story", "Desc", 5, 1), CancellationToken.None);
+        var sprint = await service.CreateSprintAsync(
+            project.Id,
+            new CreateSprintRequest("S1", "Goal", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)), [backlog.Id]),
+            CancellationToken.None);
+
+        var parent = await db.WorkItems.FirstAsync(w => w.SprintId == sprint.Id);
+        var sub1 = await service.AddSubTaskAsync(parent.Id, new AddSubTaskRequest("Sub 1", "Desc"), CancellationToken.None);
+        var sub2 = await service.AddSubTaskAsync(parent.Id, new AddSubTaskRequest("Sub 2", "Desc"), CancellationToken.None);
+
+        await service.UpdateWorkItemStatusAsync(sub1.Id, new UpdateWorkItemStatusRequest(WorkItemStatus.Done, "a"), CancellationToken.None);
+        await service.UpdateWorkItemStatusAsync(sub2.Id, new UpdateWorkItemStatusRequest(WorkItemStatus.Done, "a"), CancellationToken.None);
+
+        var parentReloaded = await db.WorkItems.FindAsync(parent.Id);
+        Assert.Equal(WorkItemStatus.Done, parentReloaded!.Status);
+    }
+
+    [Fact]
+    public async Task UpdateWorkItemStatus_ShouldPersistBranch()
+    {
+        await using var db = CreateDbContext();
+        var service = new ScrumService(db);
+
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Project", "Desc"), CancellationToken.None);
+        var backlog = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Story", "Desc", 5, 1), CancellationToken.None);
+        var sprint = await service.CreateSprintAsync(
+            project.Id,
+            new CreateSprintRequest("S1", "Goal", DateOnly.FromDateTime(DateTime.UtcNow), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)), [backlog.Id]),
+            CancellationToken.None);
+
+        var item = await db.WorkItems.FirstAsync(w => w.SprintId == sprint.Id);
+        var updated = await service.UpdateWorkItemStatusAsync(
+            item.Id,
+            new UpdateWorkItemStatusRequest(WorkItemStatus.InProgress, "dev", Branch: "feature/context-first"),
+            CancellationToken.None);
+
+        Assert.Equal("feature/context-first", updated.Branch);
+    }
+
+    [Fact]
+    public async Task UpdateBacklogItemContext_ShouldUpdateTagsWikiRefsConstraints()
+    {
+        await using var db = CreateDbContext();
+        var service = new ScrumService(db);
+
+        var project = await service.CreateProjectAsync(new CreateProjectRequest("Project", "Desc"), CancellationToken.None);
+        var backlog = await service.AddBacklogItemAsync(project.Id, new AddBacklogItemRequest("Story", "Desc", 5, 1), CancellationToken.None);
+
+        var updated = await service.UpdateBacklogItemContextAsync(
+            backlog.Id,
+            new UpdateBacklogItemContextRequest("tag1,tag2", "wiki:Onboarding", "Must be done before release"),
+            CancellationToken.None);
+
+        Assert.Equal("tag1,tag2", updated.Tags);
+        Assert.Equal("wiki:Onboarding", updated.WikiRefs);
+        Assert.Equal("Must be done before release", updated.Constraints);
+    }
 }
 

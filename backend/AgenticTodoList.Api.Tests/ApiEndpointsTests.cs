@@ -238,5 +238,60 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SubTasks_ShouldCreateAndExposeParentWorkItemId()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto SubTasks", "Desc")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var backlogResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/backlog", new AddBacklogItemRequest("Story", "Desc", 5, 1));
+        backlogResponse.EnsureSuccessStatusCode();
+        var backlog = await backlogResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+        var sprintResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/sprints", new
+        {
+            name = "Sprint Sub",
+            goal = "Sub-task test",
+            startDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            endDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
+            backlogItemIds = new[] { backlog.GetProperty("id").GetGuid() }
+        });
+        sprintResponse.EnsureSuccessStatusCode();
+
+        var sprints = await _client.GetFromJsonAsync<JsonElement>($"/api/projects/{projectId}/sprints");
+        var parentId = sprints[0].GetProperty("workItems")[0].GetProperty("id").GetGuid();
+
+        var subResponse = await _client.PostAsJsonAsync($"/api/work-items/{parentId}/sub-tasks",
+            new AddSubTaskRequest("Sub A", "Sub desc", "dev", "feature/sub-a", "sub"));
+        Assert.Equal(HttpStatusCode.Created, subResponse.StatusCode);
+
+        var sub = await subResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(parentId, sub.GetProperty("parentWorkItemId").GetGuid());
+        Assert.Equal("feature/sub-a", sub.GetProperty("branch").GetString());
+    }
+
+    [Fact]
+    public async Task BacklogContext_PatchContext_ShouldUpdateTagsAndWikiRefs()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects", new CreateProjectRequest("Projeto Context", "Desc")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var backlogResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/backlog", new AddBacklogItemRequest("Story", "Desc", 5, 1));
+        backlogResponse.EnsureSuccessStatusCode();
+        var backlog = await backlogResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var backlogId = backlog.GetProperty("id").GetGuid();
+
+        var patchResponse = await _client.PatchAsJsonAsync(
+            $"/api/backlog-items/{backlogId}/context",
+            new UpdateBacklogItemContextRequest("tag1,tag2", "wiki:Onboarding", "Must be before release"));
+        Assert.Equal(HttpStatusCode.OK, patchResponse.StatusCode);
+
+        var updated = await patchResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("tag1,tag2", updated.GetProperty("tags").GetString());
+        Assert.Equal("wiki:Onboarding", updated.GetProperty("wikiRefs").GetString());
+    }
+
 }
 
