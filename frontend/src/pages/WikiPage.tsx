@@ -56,9 +56,9 @@ export function WikiPage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography variant="h6">No active project</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 540 }}>
-              Selecione um projeto para cadastrar e revisar as paginas de wiki.
+              Select a project to register and review wiki pages.
             </Typography>
           </Stack>
         </CardContent>
@@ -74,13 +74,13 @@ export function WikiPage() {
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.2} alignItems={{ md: 'center' }}>
             <Stack>
-              <Typography variant="h6">Wiki do Projeto</Typography>
+              <Typography variant="h6">Project Wiki</Typography>
               <Typography color="text.secondary">
-                Conteudo vivo para padroes, how-to e acordos operacionais.
+                Living content for standards, how-to and operational agreements.
               </Typography>
             </Stack>
             <Button variant="contained" startIcon={<AddCircleOutlineRoundedIcon />} onClick={() => setModalOpen(true)}>
-              Nova Wiki
+              New Wiki
             </Button>
           </Stack>
         </CardContent>
@@ -108,23 +108,23 @@ export function WikiPage() {
       </Grid>
 
       {Object.keys(wikiByCategory).length === 0 ? (
-        <Typography color="text.secondary">Sem registros de wiki neste projeto.</Typography>
+        <Typography color="text.secondary">No wiki entries in this project.</Typography>
       ) : null}
 
       <Dialog open={isModalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="lg">
         <Stack component="form" onSubmit={handleCreateWiki}>
-          <DialogTitle>Nova Wiki</DialogTitle>
+          <DialogTitle>New Wiki</DialogTitle>
           <DialogContent>
             <Stack spacing={1.2} sx={{ mt: 1 }}>
-              <TextField label="Titulo" value={wikiTitle} onChange={(event) => setWikiTitle(event.target.value)} required />
-              <TextField label="Categoria" value={wikiCategory} onChange={(event) => setWikiCategory(event.target.value)} required />
+              <TextField label="Title" value={wikiTitle} onChange={(event) => setWikiTitle(event.target.value)} required />
+              <TextField label="Category" value={wikiCategory} onChange={(event) => setWikiCategory(event.target.value)} required />
               <TextField label="Tags" value={wikiTags} onChange={(event) => setWikiTags(event.target.value)} />
-              <MarkdownField label="Conteudo" value={wikiContent} onChange={setWikiContent} required height={320} />
+              <MarkdownField label="Content" value={wikiContent} onChange={setWikiContent} required height={320} />
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">Salvar wiki</Button>
+            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">Save wiki</Button>
           </DialogActions>
         </Stack>
       </Dialog>

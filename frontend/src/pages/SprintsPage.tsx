@@ -272,9 +272,9 @@ export function SprintsPage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography variant="h6">No active project</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 520 }}>
-              Selecione um projeto para montar sprint, distribuir tarefas no kanban e acompanhar o fluxo.
+              Select a project to build sprints, distribute tasks on the kanban and track the flow.
             </Typography>
           </Stack>
         </CardContent>
@@ -288,13 +288,13 @@ export function SprintsPage() {
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.2} alignItems={{ md: 'center' }}>
             <Stack>
-              <Typography variant="h6">Planejamento da Sprint</Typography>
+              <Typography variant="h6">Sprint Planning</Typography>
               <Typography variant="body2" color="text.secondary">
-                Defina objetivo, datas e backlog em um modal para manter foco no board.
+                Define objective, dates and backlog in a modal to keep focus on the board.
               </Typography>
             </Stack>
             <Button variant="contained" onClick={() => setSprintModalOpen(true)}>
-              Nova Sprint
+              New Sprint
             </Button>
           </Stack>
         </CardContent>
@@ -319,7 +319,7 @@ export function SprintsPage() {
                   }
                 }}
               >
-                <MenuItem value="">Todas as Sprints</MenuItem>
+                <MenuItem value="">All Sprints</MenuItem>
                 {backlog.map((item) => (
                   <MenuItem key={item.id} value={item.id}>
                     {item.title}
@@ -338,7 +338,7 @@ export function SprintsPage() {
                     value={boardSprintId}
                     onChange={(event) => setSelectedBoardSprintId(event.target.value)}
                   >
-                    <MenuItem value="all">Todas</MenuItem>
+                    <MenuItem value="all">All</MenuItem>
                     {sprints.map((sprint) => (
                       <MenuItem key={sprint.id} value={sprint.id}>
                         {sprint.name}
@@ -355,7 +355,7 @@ export function SprintsPage() {
                     value={assigneeFilter}
                     onChange={(event) => setAssigneeFilter(event.target.value)}
                   >
-                    <MenuItem value="all">Todos</MenuItem>
+                    <MenuItem value="all">All</MenuItem>
                     {availableAssignees.map((assignee) => (
                       <MenuItem key={assignee} value={assignee}>
                         {assignee}
@@ -365,14 +365,14 @@ export function SprintsPage() {
                 </FormControl>
 
                 <FormControl size="small" sx={{ minWidth: 130 }}>
-                  <InputLabel id="board-priority-label">Prioridade</InputLabel>
+                  <InputLabel id="board-priority-label">Priority</InputLabel>
                   <Select
                     labelId="board-priority-label"
-                    label="Prioridade"
+                    label="Priority"
                     value={priorityFilter}
                     onChange={(event) => setPriorityFilter(event.target.value)}
                   >
-                    <MenuItem value="all">Todas</MenuItem>
+                    <MenuItem value="all">All</MenuItem>
                     {availablePriorities.map((priority) => (
                       <MenuItem key={priority} value={String(priority)}>
                         P{priority}
@@ -389,7 +389,7 @@ export function SprintsPage() {
                     setSearchParams({})
                   }}
                 >
-                  Limpar filtro
+                  Clear filter
                 </Button>
               </>
             )}
@@ -400,11 +400,11 @@ export function SprintsPage() {
       {/* Grouped view: no backlog filter active */}
       {!backlogIdFilter && (
         <Stack spacing={1.2}>
-          <Typography variant="h6">Sprints agrupadas por Backlog</Typography>
+          <Typography variant="h6">Sprints grouped by Backlog</Typography>
           {sprints.length === 0 ? (
-            <Alert severity="info">Crie uma sprint para visualizar a listagem.</Alert>
+            <Alert severity="info">Create a sprint to view the list.</Alert>
           ) : sprintsGroupedByBacklog && sprintsGroupedByBacklog.length === 0 ? (
-            <Alert severity="info">Nenhum item de backlog associado a sprints ainda.</Alert>
+            <Alert severity="info">No backlog items associated with sprints yet.</Alert>
           ) : (
             (sprintsGroupedByBacklog ?? []).map(({ backlogItem, sprintIds }) => {
               const relatedSprints = sprints.filter((s) => sprintIds.has(s.id))
@@ -426,7 +426,7 @@ export function SprintsPage() {
                         variant="contained"
                         onClick={() => setSearchParams({ backlogId: backlogItem.id })}
                       >
-                        Ver Kanban
+                      >View Kanban
                       </Button>
                     </Stack>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.2 }}>
@@ -436,7 +436,7 @@ export function SprintsPage() {
                         const totalFeedbacks = sprintWorkItems.reduce((acc, w) => acc + (w.feedbacks?.length ?? 0), 0)
                         const sprintActive = toNumberStatus(sprint.status) === 1
                         const dateRange = sprint.startDate && sprint.endDate
-                          ? `${new Date(sprint.startDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} – ${new Date(sprint.endDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
+                          ? `${new Date(sprint.startDate).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })} – ${new Date(sprint.endDate).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })}`
                           : ''
                         return (
                           <Chip
@@ -447,7 +447,7 @@ export function SprintsPage() {
                             variant="outlined"
                             label={[
                               sprint.name,
-                              sprintActive ? 'Ativa' : 'Planejada/Fechada',
+                              sprintActive ? 'Active' : 'Planned/Closed',
                               `${sprintWorkItems.length} tasks`,
                               dateRange,
                               totalTokens > 0 ? `${totalTokens} tk` : '',
@@ -471,7 +471,7 @@ export function SprintsPage() {
             <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
               <CardContent>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Sprints sem tasks vinculadas
+                  Sprints without linked tasks
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                   {sprints.filter((s) => s.workItems.length === 0).map((sprint) => (
@@ -494,7 +494,7 @@ export function SprintsPage() {
       {backlogIdFilter && (
         <>
       {sprints.length === 0 ? (
-        <Alert severity="info">Crie uma sprint para visualizar o quadro Kanban.</Alert>
+        <Alert severity="info">Create a sprint to view the Kanban board.</Alert>
       ) : (
         <Stack spacing={1.2}>
           <Typography variant="h6">
@@ -556,7 +556,7 @@ export function SprintsPage() {
                             fontSize: 13,
                           }}
                         >
-                          Arraste uma task para esta lista.
+                          Drag a task to this list.
                         </Box>
                       ) : null}
                     </Stack>
@@ -573,19 +573,19 @@ export function SprintsPage() {
 
       <Dialog open={isSprintModalOpen} onClose={() => setSprintModalOpen(false)} fullWidth maxWidth="md">
         <Stack component="form" spacing={1.2} onSubmit={handleCreateSprint}>
-          <DialogTitle>Nova Sprint</DialogTitle>
+          <DialogTitle>New Sprint</DialogTitle>
           <DialogContent>
             <Stack spacing={1.2} sx={{ mt: 1 }}>
               <TextField
                 value={newSprintName}
                 onChange={(event) => setNewSprintName(event.target.value)}
-                label="Nome da sprint"
+                label="Sprint name"
                 required
               />
               <TextField
                 value={newSprintGoal}
                 onChange={(event) => setNewSprintGoal(event.target.value)}
-                label="Objetivo"
+                label="Goal"
                 required
               />
               <Grid container spacing={1.2}>
@@ -594,7 +594,7 @@ export function SprintsPage() {
                     type="date"
                     value={newSprintStartDate}
                     onChange={(event) => setNewSprintStartDate(event.target.value)}
-                    label="Inicio"
+                    label="Start"
                     InputLabelProps={{ shrink: true }}
                     fullWidth
                   />
@@ -604,7 +604,7 @@ export function SprintsPage() {
                     type="date"
                     value={newSprintEndDate}
                     onChange={(event) => setNewSprintEndDate(event.target.value)}
-                    label="Fim"
+                    label="End"
                     InputLabelProps={{ shrink: true }}
                     fullWidth
                   />
@@ -630,17 +630,17 @@ export function SprintsPage() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setSprintModalOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">Criar sprint</Button>
+            <Button onClick={() => setSprintModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">Create sprint</Button>
           </DialogActions>
         </Stack>
       </Dialog>
 
       <Dialog open={Boolean(editingWorkItemId)} onClose={() => setEditingWorkItemId('')} fullWidth maxWidth="md">
-        <DialogTitle>Editar task</DialogTitle>
+        <DialogTitle>Edit task</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography variant="overline" color="text.secondary">Status & Responsável</Typography>
+            <Typography variant="overline" color="text.secondary">Status & Assignee</Typography>
             <Grid container spacing={1.5}>
               <Grid size={6}>
                 <FormControl size="small" fullWidth>
@@ -670,12 +670,12 @@ export function SprintsPage() {
               </Grid>
             </Grid>
 
-            <Typography variant="overline" color="text.secondary">Contexto do Agente</Typography>
+            <Typography variant="overline" color="text.secondary">Agent Context</Typography>
             <Grid container spacing={1.5}>
               <Grid size={6}>
                 <TextField
                   size="small"
-                  label="Nome do Agente"
+                  label="Agent Name"
                   fullWidth
                   placeholder="ex: GitHub Copilot"
                   value={editingAgentName}
@@ -685,7 +685,7 @@ export function SprintsPage() {
               <Grid size={6}>
                 <TextField
                   size="small"
-                  label="Tokens usados nesta sessão"
+                  label="Tokens used in this session"
                   fullWidth
                   type="number"
                   inputProps={{ min: 0 }}
@@ -706,7 +706,7 @@ export function SprintsPage() {
               <Grid size={6}>
                 <TextField
                   size="small"
-                  label="IDE usada"
+                  label="IDE used"
                   fullWidth
                   placeholder="ex: VS Code"
                   value={editingIdeUsed}
@@ -715,14 +715,14 @@ export function SprintsPage() {
               </Grid>
             </Grid>
 
-            <Typography variant="overline" color="text.secondary">Registro de Trabalho</Typography>
+            <Typography variant="overline" color="text.secondary">Work Log</Typography>
             <TextField
               size="small"
-              label="Feedback / O que foi feito"
+              label="Feedback / What was done"
               fullWidth
               multiline
               minRows={3}
-              placeholder="Descreva o que foi feito, decisões tomadas, próximos passos..."
+              placeholder="Describe what was done, decisions made, next steps..."
               value={editingFeedback}
               onChange={(event) => setEditingFeedback(event.target.value)}
             />
@@ -739,8 +739,8 @@ export function SprintsPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditingWorkItemId('')}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSaveTaskFromModal}>Salvar</Button>
+          <Button onClick={() => setEditingWorkItemId('')}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveTaskFromModal}>Save</Button>
         </DialogActions>
       </Dialog>
     </Stack>
@@ -771,7 +771,7 @@ function BoxDragHandle({
         cursor: 'grab',
       }}
     >
-      <Typography variant="caption" fontWeight={700}>Arrastar</Typography>
+      <Typography variant="caption" fontWeight={700}>Drag</Typography>
     </Stack>
   )
 }
@@ -810,7 +810,7 @@ function WorkItemCard({
   const borderColor = statusBorderColor[statusNum] ?? '#2f78c5'
   const lastActivity = item.updatedAt ?? item.createdAt
   const formattedDate = lastActivity
-    ? new Date(lastActivity).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(lastActivity).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
     : null
 
   return (
@@ -838,7 +838,7 @@ function WorkItemCard({
               <Chip size="small" label={`P${priority}`} variant="outlined" color="secondary" />
             )}
             {item.totalTokensSpent > 0 && (
-              <Tooltip title="Total de tokens gastos nesta task">
+              <Tooltip title="Total tokens spent on this task">
                 <Chip size="small" label={`${item.totalTokensSpent} tk`} color="info" variant="outlined" />
               </Tooltip>
             )}
@@ -865,7 +865,7 @@ function WorkItemCard({
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
               <Chip
                 size="small"
-                label={`Modelo: ${item.lastModelUsed}`}
+                label={`Model: ${item.lastModelUsed}`}
                 sx={{ bgcolor: '#f0f4ff', fontSize: 11 }}
               />
               {item.lastIdeUsed && (
@@ -881,11 +881,11 @@ function WorkItemCard({
           {/* Assignee + Last updated */}
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="caption" color="text.secondary">
-              {item.assignee ? `@${item.assignee}` : 'sem assignee'}
+              {item.assignee ? `@${item.assignee}` : 'no assignee'}
             </Typography>
             {formattedDate && (
               <Typography variant="caption" color="text.disabled">
-                {item.updatedAt ? 'Atualizado' : 'Criado'} {formattedDate}
+                {item.updatedAt ? 'Updated' : 'Created'} {formattedDate}
               </Typography>
             )}
           </Stack>
@@ -899,7 +899,7 @@ function WorkItemCard({
                 onClick={onToggleFeedbacks}
                 sx={{ justifyContent: 'flex-start', px: 0, fontSize: 12, color: 'text.secondary' }}
               >
-                {feedbackExpanded ? '▾' : '▸'} {item.feedbacks.length} feedback{item.feedbacks.length > 1 ? 's' : ''} de agente
+                {feedbackExpanded ? '▾' : '▸'} {item.feedbacks.length} agent feedback{item.feedbacks.length > 1 ? 's' : ''}
               </Button>
               <Collapse in={feedbackExpanded} unmountOnExit>
                 <Stack spacing={0.6}>
@@ -913,7 +913,7 @@ function WorkItemCard({
 
           {/* Edit button */}
           <Button size="small" variant="contained" onClick={onEdit}>
-            Editar task
+            Edit task
           </Button>
         </Stack>
       </CardContent>
@@ -922,7 +922,7 @@ function WorkItemCard({
 }
 
 function FeedbackEntry({ feedback }: { feedback: WorkItemFeedback }) {
-  const date = new Date(feedback.createdAt).toLocaleDateString('pt-BR', {
+  const date = new Date(feedback.createdAt).toLocaleDateString('en-US', {
     day: '2-digit',
     month: '2-digit',
     year: '2-digit',
@@ -941,7 +941,7 @@ function FeedbackEntry({ feedback }: { feedback: WorkItemFeedback }) {
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.3 }}>
         <Stack direction="row" spacing={0.5} alignItems="center">
           <Typography variant="caption" fontWeight={700} color="text.primary">
-            {feedback.agentName || 'agente'}
+            {feedback.agentName || 'agent'}
           </Typography>
           {feedback.modelUsed && (
             <Typography variant="caption" color="text.disabled">

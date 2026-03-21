@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import date, timedelta
-from typing import Any
+from typing import Any, Union
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -59,6 +59,7 @@ def _flatten_workitems(sprints: list[dict[str, Any]], sprint_id: str | None = No
 
 def _normalize_workitem_status(status: str) -> int:
     value = status.strip().lower()
+    # ENUM: Todo=0 | InProgress=1 | Review=2 | Done=3 | Blocked=4
     aliases = {
         "0": 0,
         "todo": 0,
@@ -68,6 +69,7 @@ def _normalize_workitem_status(status: str) -> int:
         "in_progress": 1,
         "in-progress": 1,
         "in progress": 1,
+        "inprogress": 1,
         "doing": 1,
         "2": 2,
         "review": 2,
@@ -81,9 +83,13 @@ def _normalize_workitem_status(status: str) -> int:
     }
     if value not in aliases:
         raise ApiError(
-            "Invalid work item status. Use one of: 0,1,2,3,4,todo,in_progress,review,done,blocked."
+            "Invalid work item status. Valid string labels: todo, in_progress, review, done, blocked. "
+            "Valid integers: 0=Todo 1=InProgress 2=Review 3=Done 4=Blocked."
         )
     return aliases[value]
+
+
+_STATUS_LABELS = {0: "Todo", 1: "InProgress", 2: "Review", 3: "Done", 4: "Blocked"}
 
 
 @mcp.resource("pandora://about")
@@ -402,7 +408,7 @@ def workitem_list(project_id: str, sprint_id: str | None = None) -> list[dict[st
 @mcp.tool(name="workitem_update")
 def workitem_update(
     work_item_id: str,
-    status: int,
+    status: Union[str, int],
     assignee: str,
     tokens_used: int = 0,
     agent_name: str = "",
@@ -411,12 +417,23 @@ def workitem_update(
     feedback: str = "",
     metadata_json: str = "",
 ) -> dict[str, Any]:
-    """Update work item status and track token/feedback metadata."""
-    return _request(
+    """Update work item status and track token/feedback metadata.
+
+    status — use string label (preferred) or integer:
+      todo / 0       → Todo
+      in_progress / 1 → InProgress
+      review / 2     → Review
+      done / 3       → Done
+      blocked / 4    → Blocked
+
+    The response includes 'statusLabel' confirming the resolved status.
+    """
+    status_int = _normalize_workitem_status(str(status))
+    result = _request(
         "POST",
         f"/api/work-items/{work_item_id}/status",
         payload={
-            "status": status,
+            "status": status_int,
             "assignee": assignee,
             "tokensUsed": tokens_used,
             "agentName": agent_name,
@@ -426,6 +443,10 @@ def workitem_update(
             "metadataJson": metadata_json,
         },
     )
+    # Echo status label back so agents can verify what was actually set
+    if isinstance(result, dict):
+        result["statusLabel"] = _STATUS_LABELS.get(status_int, str(status_int))
+    return result
 
 
 @mcp.tool(name="knowledge_checkpoint")

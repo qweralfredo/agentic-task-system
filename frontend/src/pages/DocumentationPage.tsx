@@ -56,9 +56,9 @@ export function DocumentationPage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography variant="h6">No active project</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 540 }}>
-              Selecione um projeto para manter a documentacao tecnica organizada.
+              Select a project to keep the technical documentation organized.
             </Typography>
           </Stack>
         </CardContent>
@@ -74,13 +74,13 @@ export function DocumentationPage() {
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.2} alignItems={{ md: 'center' }}>
             <Stack>
-              <Typography variant="h6">Documentacao do Projeto</Typography>
+              <Typography variant="h6">Project Documentation</Typography>
               <Typography color="text.secondary">
-                Paginas oficiais de arquitetura, operacao e decisoes de engenharia.
+                Official pages for architecture, operations and engineering decisions.
               </Typography>
             </Stack>
             <Button variant="contained" startIcon={<AddCircleOutlineRoundedIcon />} onClick={() => setModalOpen(true)}>
-              Novo Documento
+              New Document
             </Button>
           </Stack>
         </CardContent>
@@ -108,23 +108,23 @@ export function DocumentationPage() {
       </Grid>
 
       {Object.keys(docsByCategory).length === 0 ? (
-        <Typography color="text.secondary">Sem documentos neste projeto.</Typography>
+        <Typography color="text.secondary">No documents in this project.</Typography>
       ) : null}
 
       <Dialog open={isModalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="lg">
         <Stack component="form" onSubmit={handleCreateDocumentation}>
-          <DialogTitle>Novo Documento</DialogTitle>
+          <DialogTitle>New Document</DialogTitle>
           <DialogContent>
             <Stack spacing={1.2} sx={{ mt: 1 }}>
-              <TextField label="Titulo" value={docTitle} onChange={(event) => setDocTitle(event.target.value)} required />
-              <TextField label="Categoria" value={docCategory} onChange={(event) => setDocCategory(event.target.value)} required />
+              <TextField label="Title" value={docTitle} onChange={(event) => setDocTitle(event.target.value)} required />
+              <TextField label="Category" value={docCategory} onChange={(event) => setDocCategory(event.target.value)} required />
               <TextField label="Tags" value={docTags} onChange={(event) => setDocTags(event.target.value)} />
-              <MarkdownField label="Conteudo" value={docContent} onChange={setDocContent} required height={320} />
+              <MarkdownField label="Content" value={docContent} onChange={setDocContent} required height={320} />
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">Salvar documento</Button>
+            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">Save document</Button>
           </DialogActions>
         </Stack>
       </Dialog>

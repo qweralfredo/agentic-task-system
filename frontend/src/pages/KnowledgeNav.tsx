@@ -5,7 +5,7 @@ const tabs = [
   { label: 'Hub', to: '/knowledge' },
   { label: 'Wiki', to: '/knowledge/wiki' },
   { label: 'Checkpoints', to: '/knowledge/checkpoints' },
-  { label: 'Documentacao', to: '/knowledge/documentation' },
+  { label: 'Documentation', to: '/knowledge/documentation' },
 ]
 
 function resolveTabValue(pathname: string): string {

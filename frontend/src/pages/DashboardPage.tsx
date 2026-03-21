@@ -11,15 +11,15 @@ import {
 import { useProjectContext } from '../context/useProjectContext'
 
 const metricCards: Array<{ key: string; label: string; color: 'primary' | 'secondary' | 'success' | 'warning' }> = [
-  { key: 'backlogTotal', label: 'Backlog total', color: 'primary' },
-  { key: 'backlogDone', label: 'Backlog concluido', color: 'success' },
-  { key: 'activeSprints', label: 'Sprints ativas', color: 'secondary' },
-  { key: 'workItemsInProgress', label: 'Tasks em progresso', color: 'warning' },
-  { key: 'workItemsReview', label: 'Tasks em review', color: 'warning' },
+  { key: 'backlogTotal', label: 'Total backlog', color: 'primary' },
+  { key: 'backlogDone', label: 'Completed backlog', color: 'success' },
+  { key: 'activeSprints', label: 'Active sprints', color: 'secondary' },
+  { key: 'workItemsInProgress', label: 'Tasks in progress', color: 'warning' },
+  { key: 'workItemsReview', label: 'Tasks in review', color: 'warning' },
   { key: 'workItemsDone', label: 'Tasks done', color: 'success' },
   { key: 'knowledgeCheckpoints', label: 'Checkpoints', color: 'primary' },
-  { key: 'wikiPages', label: 'Wikis', color: 'secondary' },
-  { key: 'agentRuns', label: 'Execucoes agenticas', color: 'primary' },
+  { key: 'wikiPages', label: 'Wiki pages', color: 'secondary' },
+  { key: 'agentRuns', label: 'Agentic runs', color: 'primary' },
 ]
 
 export function DashboardPage() {
@@ -30,9 +30,9 @@ export function DashboardPage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Nenhum projeto selecionado</Typography>
+            <Typography variant="h6">No project selected</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 480 }}>
-              Selecione um projeto no topo para visualizar capacidade da sprint, progresso de tasks e indicadores de conhecimento.
+              Select a project at the top to view sprint capacity, task progress and knowledge indicators.
             </Typography>
           </Stack>
         </CardContent>
@@ -62,7 +62,7 @@ export function DashboardPage() {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems="center">
             <Stack>
               <Typography variant="h5">{dashboard.projectName}</Typography>
-              <Typography color="text.secondary">Painel de capacidade e andamento no estilo Jira.</Typography>
+              <Typography color="text.secondary">Capacity and progress panel in Jira style.</Typography>
             </Stack>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               <Chip color="primary" label={`To Do: ${dashboard.workItemsTodo}`} />

@@ -61,9 +61,9 @@ export function CheckpointsPage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography variant="h6">No active project</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 540 }}>
-              Selecione um projeto para registrar checkpoints de progresso.
+              Select a project to register progress checkpoints.
             </Typography>
           </Stack>
         </CardContent>
@@ -79,13 +79,13 @@ export function CheckpointsPage() {
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.2} alignItems={{ md: 'center' }}>
             <Stack>
-              <Typography variant="h6">Checkpoints do Projeto</Typography>
+              <Typography variant="h6">Project Checkpoints</Typography>
               <Typography color="text.secondary">
-                Marcos com contexto, decisoes, riscos e proximas acoes.
+                Milestones with context, decisions, risks and next actions.
               </Typography>
             </Stack>
             <Button variant="contained" startIcon={<AddCircleOutlineRoundedIcon />} onClick={() => setModalOpen(true)}>
-              Novo Checkpoint
+              New Checkpoint
             </Button>
           </Stack>
         </CardContent>
@@ -111,25 +111,25 @@ export function CheckpointsPage() {
       </Grid>
 
       {Object.keys(checkpointByCategory).length === 0 ? (
-        <Typography color="text.secondary">Sem checkpoints neste projeto.</Typography>
+        <Typography color="text.secondary">No checkpoints in this project.</Typography>
       ) : null}
 
       <Dialog open={isModalOpen} onClose={() => setModalOpen(false)} fullWidth maxWidth="xl">
         <Stack component="form" onSubmit={handleCreateCheckpoint}>
-          <DialogTitle>Novo Checkpoint</DialogTitle>
+          <DialogTitle>New Checkpoint</DialogTitle>
           <DialogContent>
             <Stack spacing={1.2} sx={{ mt: 1 }}>
-              <TextField label="Nome" value={checkpointName} onChange={(event) => setCheckpointName(event.target.value)} required />
-              <TextField label="Categoria" value={checkpointCategory} onChange={(event) => setCheckpointCategory(event.target.value)} required />
-              <MarkdownField label="Contexto" value={checkpointContext} onChange={setCheckpointContext} height={160} />
-              <MarkdownField label="Decisoes" value={checkpointDecisions} onChange={setCheckpointDecisions} height={160} />
-              <MarkdownField label="Riscos" value={checkpointRisks} onChange={setCheckpointRisks} height={160} />
-              <MarkdownField label="Proximas acoes" value={checkpointNextActions} onChange={setCheckpointNextActions} height={160} />
+              <TextField label="Name" value={checkpointName} onChange={(event) => setCheckpointName(event.target.value)} required />
+              <TextField label="Category" value={checkpointCategory} onChange={(event) => setCheckpointCategory(event.target.value)} required />
+              <MarkdownField label="Context" value={checkpointContext} onChange={setCheckpointContext} height={160} />
+              <MarkdownField label="Decisions" value={checkpointDecisions} onChange={setCheckpointDecisions} height={160} />
+              <MarkdownField label="Risks" value={checkpointRisks} onChange={setCheckpointRisks} height={160} />
+              <MarkdownField label="Next actions" value={checkpointNextActions} onChange={setCheckpointNextActions} height={160} />
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">Salvar checkpoint</Button>
+            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">Save checkpoint</Button>
           </DialogActions>
         </Stack>
       </Dialog>

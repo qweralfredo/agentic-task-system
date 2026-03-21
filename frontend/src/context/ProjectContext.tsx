@@ -67,7 +67,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         await apiClient.createProject(payload)
         await refreshProjects()
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : 'Erro ao criar projeto')
+        setError(requestError instanceof Error ? requestError.message : 'Error creating project')
       }
     },
     [refreshProjects],

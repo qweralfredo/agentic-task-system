@@ -18,9 +18,9 @@ export function KnowledgePage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography variant="h6">No active project</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 540 }}>
-              Selecione um projeto para cadastrar wiki, checkpoints e documentação da execução.
+              Select a project to register wiki, checkpoints and execution documentation.
             </Typography>
           </Stack>
         </CardContent>
@@ -38,10 +38,10 @@ export function KnowledgePage() {
             <CardContent>
               <Typography variant="h6">Wiki</Typography>
               <Typography color="text.secondary" sx={{ mt: 0.8 }}>
-                Centralize guias, how-tos e acordos tecnicos da equipe.
+                Centralize guides, how-tos and team technical agreements.
               </Typography>
               <Link component={NavLink} to="/knowledge/wiki" underline="hover" sx={{ mt: 1.2, display: 'inline-flex' }}>
-                Abrir tela de Wiki
+                Open Wiki
               </Link>
             </CardContent>
           </Card>
@@ -52,10 +52,10 @@ export function KnowledgePage() {
             <CardContent>
               <Typography variant="h6">Checkpoint</Typography>
               <Typography color="text.secondary" sx={{ mt: 0.8 }}>
-                Registre contexto, decisoes, riscos e proximos passos por marco.
+                Register context, decisions, risks and next steps per milestone.
               </Typography>
               <Link component={NavLink} to="/knowledge/checkpoints" underline="hover" sx={{ mt: 1.2, display: 'inline-flex' }}>
-                Abrir tela de Checkpoints
+                Open Checkpoints
               </Link>
             </CardContent>
           </Card>
@@ -64,12 +64,12 @@ export function KnowledgePage() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Card>
             <CardContent>
-              <Typography variant="h6">Documentacao</Typography>
+              <Typography variant="h6">Documentation</Typography>
               <Typography color="text.secondary" sx={{ mt: 0.8 }}>
-                Mantenha arquitetura, operacao e referencias tecnicas organizadas.
+                Keep architecture, operations and technical references organized.
               </Typography>
               <Link component={NavLink} to="/knowledge/documentation" underline="hover" sx={{ mt: 1.2, display: 'inline-flex' }}>
-                Abrir tela de Documentacao
+                Open Documentation
               </Link>
             </CardContent>
           </Card>
@@ -84,7 +84,7 @@ export function KnowledgePage() {
           <CategoryCountCard title="Checkpoints" total={knowledge?.checkpoints.length ?? 0} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <CategoryCountCard title="Documentacao" total={knowledge?.documentationPages.length ?? 0} />
+          <CategoryCountCard title="Documentation" total={knowledge?.documentationPages.length ?? 0} />
         </Grid>
       </Grid>
     </Stack>
@@ -98,7 +98,7 @@ function CategoryCountCard({ title, total }: { title: string; total: number }) {
         <Typography variant="h6">{title}</Typography>
         <Typography variant="h3" sx={{ mt: 1.2 }}>{total}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8 }}>
-          itens cadastrados
+          registered items
         </Typography>
       </CardContent>
     </Card>

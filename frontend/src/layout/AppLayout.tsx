@@ -88,17 +88,17 @@ export function AppLayout() {
           <Box>
             <Typography variant="h6">Pandora Todo List</Typography>
             <Typography variant="caption" sx={{ opacity: 0.88 }}>
-              Projeto &gt; Backlog &gt; Sprint &gt; Tasks &gt; Knowledge
+              Project &gt; Backlog &gt; Sprint &gt; Tasks &gt; Knowledge
             </Typography>
           </Box>
 
           <Stack direction="row" spacing={1.2} alignItems="center">
             <FormControl size="small" sx={{ minWidth: 260, bgcolor: 'rgba(255,255,255,0.9)', borderRadius: 1 }}>
-              <InputLabel id="project-select-label">Projeto ativo</InputLabel>
+              <InputLabel id="project-select-label">Active project</InputLabel>
               <Select
                 labelId="project-select-label"
                 value={selectedProjectId}
-                label="Projeto ativo"
+                label="Active project"
                 onChange={(event) => setSelectedProjectId(event.target.value)}
               >
                 {projects.map((project) => (
@@ -109,7 +109,7 @@ export function AppLayout() {
               </Select>
             </FormControl>
             <Button variant="contained" color="secondary" onClick={() => setDialogOpen(true)} sx={{ px: 2.2 }}>
-              Novo projeto
+              New project
             </Button>
           </Stack>
         </Toolbar>
@@ -131,13 +131,13 @@ export function AppLayout() {
         <Toolbar />
         <Box sx={{ p: 2.2 }}>
           <Typography variant="subtitle2" color="text.secondary">
-            Painel atual
+            Current panel
           </Typography>
           <Typography variant="h6" sx={{ mt: 0.4 }}>
-            {selectedProject?.name ?? 'Sem projeto'}
+            {selectedProject?.name ?? 'No project'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {selectedProject?.description ?? 'Crie ou selecione um projeto para comeÃ§ar.'}
+            {selectedProject?.description ?? 'Create or select a project to get started.'}
           </Typography>
           <Divider sx={{ mt: 1.6 }} />
         </Box>
@@ -198,22 +198,22 @@ export function AppLayout() {
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="md">
         <Box component="form" onSubmit={handleCreateProject}>
-          <DialogTitle>Novo Projeto</DialogTitle>
+          <DialogTitle>New Project</DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <TextField
                 value={projectName}
                 onChange={(event) => setProjectName(event.target.value)}
-                label="Nome"
+                label="Name"
                 required
                 fullWidth
               />
-              <MarkdownField label="Descricao" value={projectDescription} onChange={setProjectDescription} required />
+              <MarkdownField label="Description" value={projectDescription} onChange={setProjectDescription} required />
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">Criar</Button>
+            <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">Create</Button>
           </DialogActions>
         </Box>
       </Dialog>

@@ -56,9 +56,9 @@ export function BacklogPage() {
       <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
         <CardContent>
           <Stack alignItems="center" justifyContent="center" spacing={1.2} sx={{ py: 4 }}>
-            <Typography variant="h6">Sem projeto ativo</Typography>
+            <Typography variant="h6">No active project</Typography>
             <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 520 }}>
-              Escolha um projeto para criar stories, priorizar backlog e organizar o planejamento de sprint.
+              Choose a project to create stories, prioritize the backlog and organize sprint planning.
             </Typography>
           </Stack>
         </CardContent>
@@ -72,22 +72,22 @@ export function BacklogPage() {
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.2} alignItems={{ md: 'center' }}>
             <Stack>
-              <Typography variant="h6">Backlog de Stories</Typography>
+              <Typography variant="h6">Story Backlog</Typography>
               <Typography variant="body2" color="text.secondary">
-                Estruture itens com prioridade e story points em um fluxo objetivo de planejamento.
+                Structure items with priority and story points in an objective planning flow.
               </Typography>
             </Stack>
             <Button variant="contained" startIcon={<AddTaskOutlinedIcon />} onClick={() => setCreateModalOpen(true)}>
-              Nova Story
+              New Story
             </Button>
           </Stack>
         </CardContent>
       </Card>
 
       <Stack spacing={1}>
-        <Typography variant="h6">Lista de Backlog</Typography>
+        <Typography variant="h6">Backlog List</Typography>
         {backlog.length === 0 ? (
-          <Typography color="text.secondary">Nenhum item cadastrado para este projeto.</Typography>
+          <Typography color="text.secondary">No items registered for this project.</Typography>
         ) : (
           backlog.map((item) => (
             <Card key={item.id}>
@@ -106,7 +106,7 @@ export function BacklogPage() {
                       variant="outlined"
                       onClick={() => navigate(`/sprints?backlogId=${item.id}`)}
                     >
-                      Acessar Sprints
+                      View Sprints
                     </Button>
                   </Stack>
                 </Stack>
@@ -122,11 +122,11 @@ export function BacklogPage() {
 
       <Dialog open={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} fullWidth maxWidth="md">
         <Stack component="form" onSubmit={handleCreateBacklogItem}>
-          <DialogTitle>Nova Story</DialogTitle>
+          <DialogTitle>New Story</DialogTitle>
           <DialogContent>
             <Stack spacing={1.5} sx={{ mt: 1 }}>
-              <TextField label="Titulo" value={title} onChange={(event) => setTitle(event.target.value)} required fullWidth />
-              <MarkdownField label="Descricao" value={description} onChange={setDescription} required />
+              <TextField label="Title" value={title} onChange={(event) => setTitle(event.target.value)} required fullWidth />
+              <MarkdownField label="Description" value={description} onChange={setDescription} required />
               <Grid container spacing={1.2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
@@ -141,7 +141,7 @@ export function BacklogPage() {
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     type="number"
-                    label="Prioridade"
+                    label="Priority"
                     value={priority}
                     onChange={(event) => setPriority(Number(event.target.value))}
                     inputProps={{ min: 1 }}
@@ -152,8 +152,8 @@ export function BacklogPage() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setCreateModalOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="contained">Adicionar item</Button>
+            <Button onClick={() => setCreateModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">Add item</Button>
           </DialogActions>
         </Stack>
       </Dialog>

@@ -16,7 +16,7 @@ function PageFallback() {
   return (
     <Box sx={{ minHeight: 200, display: 'grid', placeItems: 'center', gap: 1 }}>
       <CircularProgress size={30} />
-      <Typography color="text.secondary">Carregando tela...</Typography>
+      <Typography color="text.secondary">Loading...</Typography>
     </Box>
   )
 }

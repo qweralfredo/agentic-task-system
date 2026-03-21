@@ -39,7 +39,7 @@ Ao concluir uma epic ou sprint, chamar `knowledge_checkpoint` para salvar contex
 |---|---|
 | `backlog_add` | `project_id`, `title`, `description`, `priority` (int), `story_points` |
 | `sprint_create` | `project_id`, `name`, `goal`, `start_date` (YYYY-MM-DD), `end_date`, `backlog_item_ids` |
-| `workitem_update` | `work_item_id`, `status` (int), `assignee`, `agent_name`, `model_used`, `ide_used`, `tokens_used`, `feedback` |
+| `workitem_update` | `work_item_id`, `status` (**string label** preferido: `"done"`, `"review"`, `"todo"`, `"in_progress"`, `"blocked"`), `assignee`, `agent_name`, `model_used`, `ide_used`, `tokens_used`, `feedback` |
 | `knowledge_checkpoint` | `project_id`, `name`, `context_snapshot`, `decisions`, `risks`, `next_actions` |
 
 ### Valores fixos para workitem_update (contexto do agente)
@@ -59,6 +59,7 @@ Sempre preencha os campos de contexto do agente em **toda** chamada `workitem_up
 
 - `BacklogItemPriority`: Low=0, Medium=1, High=2, Critical=3
 - `WorkItemStatus`: Todo=0, InProgress=1, Review=2, Done=3, Blocked=4
+  - **Prefer string labels** (`"done"`, `"review"`, etc.) em vez de inteiros para evitar erros de enum mismatch
 
 ---
 
