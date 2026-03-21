@@ -20,8 +20,35 @@
   --font:      'Inter', system-ui, sans-serif;
   --mono:      'JetBrains Mono', 'Fira Code', monospace;
   --max-w:     1160px;
+  --author-h:  36px;
   --nav-h:     64px;
 }
+
+/* ---- AUTHOR BAR ---- */
+.author-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--author-h);
+  z-index: 101;
+  background: rgba(124, 110, 247, 0.12);
+  border-bottom: 1px solid rgba(124, 110, 247, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(10px);
+}
+.author-bar a {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 700;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+.author-bar a:hover { color: #fff; }
 
 html { scroll-behavior: smooth; font-size: 16px; }
 
@@ -52,7 +79,7 @@ body {
    ========================================================= */
 .nav {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: var(--author-h); left: 0; right: 0;
   height: var(--nav-h);
   z-index: 100;
   transition: background 0.3s, box-shadow 0.3s;
@@ -116,7 +143,7 @@ body {
   align-items: center;
   position: relative;
   overflow: hidden;
-  padding: calc(var(--nav-h) + 60px) 24px 80px;
+  padding: calc(var(--author-h) + var(--nav-h) + 60px) 24px 80px;
 }
 .hero-bg-grid {
   position: absolute;
