@@ -61,6 +61,44 @@ Sempre preencha os campos de contexto do agente em **toda** chamada `workitem_up
 
 ---
 
+## Atomic-Agent Flow (NEW)
+
+Para intenções de alto nível que requerem planejamento proporcional à complexidade, use o **Atomic-Agent Flow** via `/pandora-atomic-flow`.
+
+### Quando usar
+
+| Cenário | C | Skill recomendada |
+|---|---|---|
+| Correção pontual / task isolada | 0.2 | `/pandora-plan` + `/pandora-execute` |
+| Feature pequena / melhoria simples | 0.5 | `/pandora-atomic-flow` com C=0.5 |
+| Iniciativa de médio porte / novo módulo | 1 | `/pandora-atomic-flow` com C=1 |
+| Feature complexa / múltiplos domínios | 2 | `/pandora-atomic-flow` com C=2 |
+| Refactor estrutural / grande épico | 3 | `/pandora-atomic-flow` com C=3 |
+
+### Motor de Expansão (C ∈ {0.2, 0.5, 1, 2, 3})
+
+| Nível             | C=0.2 | C=0.5 | C=1 | C=2 | C=3  |
+|-------------------|-------|-------|-----|-----|------|
+| Backlogs          | 2     | 5     | 10  | 20  | 30   |
+| Sprints / Backlog | 1     | 4     | 7   | 14  | 21   |
+| Tasks / Sprint    | 1     | 2     | 3   | 6   | 9    |
+| Subtasks / Task   | 1     | 2     | 4   | 8   | 12   |
+
+### Git Flow Atômico (Branches Efêmeras)
+
+Cada subtask usa uma branch `task/{work_item_id}`:
+
+```bash
+git checkout -b task/{id}    # isolation
+# implementação atômica
+git merge task/{id} --no-ff  # merge
+git branch -d task/{id}      # delete — sem acúmulo
+```
+
+Referência completa: [docs/skills/pandora-atomic-flow.md](../docs/skills/pandora-atomic-flow.md)
+
+---
+
 ## Context-First Execution Flow (NEW)
 
 **Obrigatório para qualquer work item complexo:**
@@ -153,3 +191,4 @@ ops/scripts/                         # PowerShell backup/restore
 - [Skills: GitHub PR & Issues](../docs/skills/github-pr/github-pr-skills.md)
 - [MCP: Pandora Todo List](../docs/mcps/pandora-mcp.md)
 - [MCP: Playwright](../docs/mcps/playwright-mcp.md)
+- [Skill: Atomic-Agent Flow](../docs/skills/pandora-atomic-flow.md)
