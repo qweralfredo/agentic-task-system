@@ -1,0 +1,16 @@
+﻿{
+  "name": "code-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated web-based coding agent with Ollama, skills and workspace sandboxing.",
+  "scripts": {
+    "start": "node src/backend/server.mjs",
+    "dev": "node --watch src/backend/server.mjs",
+    "test": "node tests/run-tests.mjs",
+    "test:live": "node tests/live-ollama-smoke.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
