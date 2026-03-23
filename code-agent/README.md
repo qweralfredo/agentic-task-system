@@ -45,6 +45,17 @@ node src\backend\server.mjs
 
 Open `http://localhost:8787`.
 
+## Background server commands
+
+```powershell
+cd c:\projetos\todolist\code-agent
+npm run start:bg
+npm run status:bg
+npm run stop:bg
+```
+
+The daemon stores PID in `%LOCALAPPDATA%\Temp\code-agent-runtime\server.pid` and logs in `%TEMP%`.
+
 ## Ollama discovery
 
 If `OLLAMA_BASE_URL` is not set, the agent tries these endpoints in order:
