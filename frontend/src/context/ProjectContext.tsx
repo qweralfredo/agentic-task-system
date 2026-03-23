@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '../api/client'
 import type { BacklogItem, Dashboard, KnowledgeResponse, Project, Sprint } from '../types'
 import { ProjectContext } from './projectContextObject'
@@ -13,19 +13,28 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [knowledge, setKnowledge] = useState<KnowledgeResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const isRefreshingRef = useRef(false)
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   )
 
-  const refreshProjectViews = useCallback(async (projectId: string) => {
+  const refreshProjectViews = useCallback(async (projectId: string, options?: { silent?: boolean }) => {
     if (!projectId) {
       return
     }
 
-    setLoading(true)
-    setError('')
+    if (options?.silent && isRefreshingRef.current) {
+      return
+    }
+
+    if (!options?.silent) {
+      setLoading(true)
+      setError('')
+    }
+
+    isRefreshingRef.current = true
     try {
       const [dashboardResult, backlogResult, sprintResult, knowledgeResult] = await Promise.all([
         apiClient.getDashboard(projectId),
@@ -39,9 +48,14 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setSprints(sprintResult)
       setKnowledge(knowledgeResult)
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Erro ao carregar dados')
+      if (!options?.silent) {
+        setError(requestError instanceof Error ? requestError.message : 'Erro ao carregar dados')
+      }
     } finally {
-      setLoading(false)
+      if (!options?.silent) {
+        setLoading(false)
+      }
+      isRefreshingRef.current = false
     }
   }, [])
 
@@ -73,6 +87,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     [refreshProjects],
   )
 
+  const updateProjectConfig = useCallback(
+    async (payload: { gitHubUrl?: string; localPath?: string; techStack?: string; mainBranch?: string }) => {
+      if (!selectedProjectId) return
+      setError('')
+      try {
+        await apiClient.updateProjectConfig(selectedProjectId, payload)
+        await refreshProjects()
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : 'Erro ao salvar configurações')
+      }
+    },
+    [selectedProjectId, refreshProjects],
+  )
+
   useEffect(() => {
     void refreshProjects()
   }, [refreshProjects])
@@ -80,6 +108,33 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (selectedProjectId) {
       void refreshProjectViews(selectedProjectId)
+    }
+  }, [refreshProjectViews, selectedProjectId])
+
+  useEffect(() => {
+    if (!selectedProjectId) {
+      return
+    }
+
+    const refreshSilently = () => {
+      void refreshProjectViews(selectedProjectId, { silent: true })
+    }
+
+    const intervalId = window.setInterval(refreshSilently, 5000)
+    const handleWindowFocus = () => refreshSilently()
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshSilently()
+      }
+    }
+
+    window.addEventListener('focus', handleWindowFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', handleWindowFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [refreshProjectViews, selectedProjectId])
 
@@ -98,10 +153,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       refreshProjects,
       refreshProjectViews,
       createProject,
+      updateProjectConfig,
     }),
     [
       backlog,
       createProject,
+      updateProjectConfig,
       dashboard,
       error,
       knowledge,

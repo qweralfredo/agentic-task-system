@@ -3,6 +3,10 @@ export type Project = {
   name: string
   description: string
   createdAt: string
+  gitHubUrl?: string
+  localPath?: string
+  techStack?: string
+  mainBranch?: string
 }
 
 export type BacklogItem = {
@@ -12,6 +16,10 @@ export type BacklogItem = {
   storyPoints: number
   priority: number
   status: number | string
+  tags?: string
+  wikiRefs?: string
+  constraints?: string
+  commitIds?: string[]
 }
 
 export type WorkItemFeedback = {
@@ -38,6 +46,10 @@ export type SprintWorkItem = {
   createdAt: string
   updatedAt?: string
   feedbacks: WorkItemFeedback[]
+  branch?: string
+  tags?: string
+  parentWorkItemId?: string
+  commitIds?: string[]
 }
 
 export type Sprint = {
@@ -48,6 +60,7 @@ export type Sprint = {
   startDate: string
   endDate: string
   workItems: SprintWorkItem[]
+  commitIds?: string[]
 }
 
 export type KnowledgeWikiPage = {

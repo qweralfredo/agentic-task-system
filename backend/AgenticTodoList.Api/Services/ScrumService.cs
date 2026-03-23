@@ -7,6 +7,36 @@ namespace PandoraTodoList.Api.Services;
 
 public class ScrumService(AppDbContext db)
 {
+    private static List<string> NormalizeCommitIds(IEnumerable<string>? commitIds)
+    {
+        if (commitIds is null)
+        {
+            return [];
+        }
+
+        return commitIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Select(id => id.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AppendCommitIds(List<string> target, IEnumerable<string>? commitIds)
+    {
+        if (commitIds is null)
+        {
+            return;
+        }
+
+        foreach (var commitId in NormalizeCommitIds(commitIds))
+        {
+            if (!target.Contains(commitId, StringComparer.OrdinalIgnoreCase))
+            {
+                target.Add(commitId);
+            }
+        }
+    }
+
     public async Task<ProjectEntity> CreateProjectAsync(CreateProjectRequest request, CancellationToken cancellationToken)
     {
         var project = new ProjectEntity
@@ -40,7 +70,8 @@ public class ScrumService(AppDbContext db)
             Description = request.Description.Trim(),
             StoryPoints = request.StoryPoints,
             Priority = request.Priority,
-            Status = BacklogItemStatus.Planned
+            Status = BacklogItemStatus.Planned,
+            CommitIds = NormalizeCommitIds(request.CommitIds)
         };
 
         db.BacklogItems.Add(item);
@@ -60,7 +91,8 @@ public class ScrumService(AppDbContext db)
             Goal = request.Goal.Trim(),
             StartDate = request.StartDate,
             EndDate = request.EndDate,
-            Status = SprintStatus.Active
+            Status = SprintStatus.Active,
+            CommitIds = NormalizeCommitIds(request.CommitIds)
         };
 
         db.Sprints.Add(sprint);
@@ -83,6 +115,8 @@ public class ScrumService(AppDbContext db)
                 BacklogItemId = backlog.Id,
                 Title = backlog.Title,
                 Description = backlog.Description,
+                Tags = backlog.Tags,
+                CommitIds = [.. backlog.CommitIds],
                 Status = WorkItemStatus.Todo
             });
         }
@@ -113,7 +147,27 @@ public class ScrumService(AppDbContext db)
         {
             workItem.LastIdeUsed = request.IdeUsed.Trim();
         }
+
+        if (!string.IsNullOrWhiteSpace(request.Branch))
+        {
+            workItem.Branch = request.Branch.Trim();
+        }
+
+        AppendCommitIds(workItem.CommitIds, request.CommitIds);
+
         workItem.UpdatedAt = DateTimeOffset.UtcNow;
+
+        var sprint = await db.Sprints.FirstOrDefaultAsync(s => s.Id == workItem.SprintId, cancellationToken);
+        if (sprint is not null)
+        {
+            AppendCommitIds(sprint.CommitIds, request.CommitIds);
+        }
+
+        var backlogForCommit = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == workItem.BacklogItemId, cancellationToken);
+        if (backlogForCommit is not null)
+        {
+            AppendCommitIds(backlogForCommit.CommitIds, request.CommitIds);
+        }
 
         var feedback = new WorkItemFeedbackEntity
         {
@@ -130,15 +184,83 @@ public class ScrumService(AppDbContext db)
 
         if (request.Status == WorkItemStatus.Done)
         {
-            var backlog = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == workItem.BacklogItemId, cancellationToken);
+            var backlog = backlogForCommit ?? await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == workItem.BacklogItemId, cancellationToken);
             if (backlog is not null)
             {
                 backlog.Status = BacklogItemStatus.Done;
+            }
+
+            // Auto-complete parent if all siblings are done
+            if (workItem.ParentWorkItemId.HasValue)
+            {
+                var siblings = await db.WorkItems
+                    .Where(w => w.ParentWorkItemId == workItem.ParentWorkItemId && w.Id != workItem.Id)
+                    .Select(w => w.Status)
+                    .ToListAsync(cancellationToken);
+
+                if (siblings.All(s => s == WorkItemStatus.Done))
+                {
+                    var parent = await db.WorkItems.FirstOrDefaultAsync(w => w.Id == workItem.ParentWorkItemId, cancellationToken);
+                    if (parent is not null && parent.Status != WorkItemStatus.Done)
+                    {
+                        parent.Status = WorkItemStatus.Done;
+                        parent.UpdatedAt = DateTimeOffset.UtcNow;
+                    }
+                }
             }
         }
 
         await db.SaveChangesAsync(cancellationToken);
         return workItem;
+    }
+
+    public async Task<WorkItemEntity> AddSubTaskAsync(Guid parentWorkItemId, AddSubTaskRequest request, CancellationToken cancellationToken)
+    {
+        var parent = await db.WorkItems.FirstOrDefaultAsync(w => w.Id == parentWorkItemId, cancellationToken)
+            ?? throw new InvalidOperationException("Parent work item not found.");
+
+        var subTask = new WorkItemEntity
+        {
+            ProjectId = parent.ProjectId,
+            SprintId = parent.SprintId,
+            BacklogItemId = parent.BacklogItemId,
+            ParentWorkItemId = parent.Id,
+            Title = request.Title.Trim(),
+            Description = request.Description.Trim(),
+            Assignee = request.Assignee.Trim(),
+            Branch = request.Branch.Trim(),
+            Tags = request.Tags.Trim(),
+            Status = WorkItemStatus.Todo
+        };
+
+        db.WorkItems.Add(subTask);
+        await db.SaveChangesAsync(cancellationToken);
+        return subTask;
+    }
+
+    public async Task<BacklogItemEntity> UpdateBacklogItemContextAsync(Guid backlogItemId, UpdateBacklogItemContextRequest request, CancellationToken cancellationToken)
+    {
+        var item = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogItemId, cancellationToken)
+            ?? throw new InvalidOperationException("Backlog item not found.");
+
+        if (request.Tags is not null) item.Tags = request.Tags.Trim();
+        if (request.WikiRefs is not null) item.WikiRefs = request.WikiRefs.Trim();
+        if (request.Constraints is not null) item.Constraints = request.Constraints.Trim();
+        AppendCommitIds(item.CommitIds, request.CommitIds);
+
+        await db.SaveChangesAsync(cancellationToken);
+        return item;
+    }
+
+    public async Task<SprintEntity> UpdateSprintCommitIdsAsync(Guid sprintId, UpdateSprintCommitIdsRequest request, CancellationToken cancellationToken)
+    {
+        var sprint = await db.Sprints.FirstOrDefaultAsync(s => s.Id == sprintId, cancellationToken)
+            ?? throw new InvalidOperationException("Sprint not found.");
+
+        AppendCommitIds(sprint.CommitIds, request.CommitIds);
+
+        await db.SaveChangesAsync(cancellationToken);
+        return sprint;
     }
 
     public async Task<ReviewEntity> AddReviewAsync(Guid sprintId, AddReviewRequest request, CancellationToken cancellationToken)

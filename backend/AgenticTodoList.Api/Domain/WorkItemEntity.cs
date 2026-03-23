@@ -23,6 +23,14 @@ public class WorkItemEntity
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
 
+    public string Branch { get; set; } = string.Empty;
+    public string Tags { get; set; } = string.Empty;
+    public List<string> CommitIds { get; set; } = [];
+
+    public Guid? ParentWorkItemId { get; set; }
+    public WorkItemEntity? ParentWorkItem { get; set; }
+    public List<WorkItemEntity> SubTasks { get; set; } = [];
+
     public List<WorkItemFeedbackEntity> AgentFeedbacks { get; set; } = [];
 }
 

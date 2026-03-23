@@ -29,12 +29,38 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(p => p.Title)
             .HasMaxLength(250);
 
+        modelBuilder.Entity<BacklogItemEntity>()
+            .Property(b => b.CommitIds)
+            .HasColumnType("text[]");
+
+        modelBuilder.Entity<SprintEntity>()
+            .Property(s => s.CommitIds)
+            .HasColumnType("text[]");
+
         modelBuilder.Entity<WorkItemEntity>()
             .Property(p => p.Title)
             .HasMaxLength(250);
 
         modelBuilder.Entity<WorkItemEntity>()
+            .Property(w => w.CommitIds)
+            .HasColumnType("text[]");
+
+        modelBuilder.Entity<WorkItemEntity>()
             .HasIndex(w => new { w.ProjectId, w.SprintId, w.Status });
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .HasMany(w => w.SubTasks)
+            .WithOne(w => w.ParentWorkItem)
+            .HasForeignKey(w => w.ParentWorkItemId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .HasIndex(w => w.ParentWorkItemId);
+
+        modelBuilder.Entity<WorkItemEntity>()
+            .Property(w => w.Branch)
+            .HasMaxLength(250);
 
         modelBuilder.Entity<WorkItemEntity>()
             .Property(w => w.LastModelUsed)

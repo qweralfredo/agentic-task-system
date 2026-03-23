@@ -85,9 +85,11 @@ curl http://127.0.0.1:8481/health
 | `project_config_update` | Update project settings |
 | `backlog_list` | List backlog items |
 | `backlog_add` | Add item to backlog |
+| `backlog_context_update` | **NEW:** Update backlog item context (tags, wiki refs, constraints) |
 | `sprint_create` | Create a new sprint |
 | `workitem_list` | List work items |
 | `workitem_update` | Update work item status/context |
+| `workitem_add_subtask` | **NEW:** Create a sub-task (child work item) |
 | `wiki_add` | Add a wiki page |
 | `wiki_list` | List wiki pages |
 | `documentation_add` | Add a documentation page |
@@ -134,6 +136,7 @@ curl http://127.0.0.1:8481/health
   "work_item_id": "work-item-uuid",
   "status": 1,
   "assignee": "GitHub Copilot",
+  "branch": "develop",
   "agent_name": "GitHub Copilot",
   "model_used": "Claude Sonnet 4.6",
   "ide_used": "VS Code",
@@ -144,6 +147,36 @@ curl http://127.0.0.1:8481/health
 ```
 
 `status` values: `Todo=0`, `InProgress=1`, `Done=2`, `Review=3`
+
+**NEW:** `branch` field allows tracking git branches associated with work items (optional).
+
+### workitem_add_subtask
+
+```json
+{
+  "parent_work_item_id": "parent-uuid",
+  "title": "Sub-task title",
+  "description": "Detailed description",
+  "assignee": "GitHub Copilot",
+  "branch": "develop",
+  "tags": "tag1,tag2"
+}
+```
+
+**NEW:** Creates a recursive sub-task linked to a parent work item. Parent auto-completes when all children are Done.
+
+### backlog_context_update
+
+```json
+{
+  "backlog_item_id": "backlog-uuid",
+  "tags": "key-pair,feature,api",
+  "wikiRefs": "architecture-doc",
+  "constraints": "Must maintain backward compatibility"
+}
+```
+
+**NEW:** Enriches backlog items with metadata for context-first execution flow.
 
 ### knowledge_checkpoint
 
@@ -157,6 +190,28 @@ curl http://127.0.0.1:8481/health
   "next_actions": "Planned next actions"
 }
 ```
+
+---
+
+## Available Prompts
+
+| Prompt | Description |
+|---|---|
+| `pandora_resources_guide` | Complete guide to all MCP resources and tools |
+| `pandora_project_config` | Project configuration and environment setup |
+| `pandora_context_first_execute` | **NEW:** 5-step context-first execution flow for agents |
+
+### pandora_context_first_execute
+
+A structured workflow prompt for AI agents implementing context-first task execution:
+
+1. **Discovery** — Scan project context and active work items without assumptions
+2. **Knowledge Warm-up** — Retrieve and analyze relevant wiki pages and checkpoints
+3. **Context Injection** — Load backlog item metadata (tags, wiki refs, constraints)
+4. **Execution** — Implement task while maintaining cognitive state via sub-tasks and wiki updates
+5. **Validation Review** — Verify completion and record learnings
+
+Invoke before implementing any work item to ensure full context availability.
 
 ---
 

@@ -92,6 +92,23 @@ docker-compose.yml                   # Full stack definition
 - Work item status updates
 - Sprint reviews
 
+### Advanced Task Management (NEW)
+- **Recursive Sub-Tasks** — unlimited task hierarchy with parent auto-completion when all children are Done
+- **Branch Tracking** — associate git branches with individual work items for traceability
+- **Commit IDs Tracking** — backlog items, sprints, and work items can store multiple commit IDs (`commitIds`)
+- **Context-First Backlog Enrichment** — annotate backlog items with tags, wiki references, and constraints
+- Sub-task visibility and status badges on kanban board
+- Parent-child relationship preservation across sprints
+
+### Frontend UX Improvements
+- **Responsive App Shell** — main layout now adapts for mobile/tablet/desktop
+- On small screens, the sidebar switches to a temporary drawer with a menu button in the top bar
+- On desktop, the sidebar supports collapsed mode (retratil)
+- Header controls (active project selector and new project action) stack safely on narrow widths
+- Main content area recalculates spacing and offsets per breakpoint to avoid overlap, clipping, and side gaps
+- **Sprints Race Mode** — `/sprints` now includes a `Race (all cards live)` view that lists cards from all project sprints together, with live refresh, assignee/priority filters, sprint/backlog context chips, activity date+time, and descending ordering by latest activity
+- **Task Edit Modal (current data)** — modal pre-fills current work item and latest feedback data (agent/model/ide/tokens/feedback/metadata/branch/commitIds)
+
 ### Pandora Knowledge Hub
 - Per-project wiki pages
 - Knowledge checkpoints (context snapshot, decisions, risks, next actions)
@@ -123,16 +140,23 @@ python server.py
 | `project_delete` | Soft-delete a project |
 | `backlog_add` | Add a backlog item |
 | `backlog_list` | List backlog items |
+| `backlog_context_update` | **NEW:** Update backlog item context (tags, wiki refs, constraints) |
 | `sprint_create` | Create a sprint |
 | `workitem_list` | List work items |
 | `workitem_update` | Update work item status |
+| `workitem_add_subtask` | **NEW:** Create a sub-task (recursive) |
 | `knowledge_checkpoint` | Save a knowledge checkpoint |
+| `wiki_add` | Add wiki page |
+| `wiki_list` | List wiki pages |
+| `documentation_add` | Add documentation page |
+| `documentation_list` | List documentation pages |
 
 ### Available Prompts
 
 - `pandora_project_create` — guided project creation
 - `pandora_sprint_create` — guided sprint creation
 - `pandora_resources_guide` — full UI and MCP/API resource map
+- `pandora_context_first_execute` — **NEW:** 5-step context-first execution flow for agents
 
 ### MCP Resources (read-only context for agents)
 
@@ -163,12 +187,16 @@ python server.py
 | GET | `/api/projects` |
 | POST | `/api/projects` |
 | DELETE | `/api/projects/{projectId}` |
+| PATCH | `/api/projects/{projectId}/config` |
 | GET | `/api/projects/{projectId}/dashboard` |
 | GET | `/api/projects/{projectId}/backlog` |
 | POST | `/api/projects/{projectId}/backlog` |
+| PATCH | `/api/backlog-items/{backlogItemId}/context` | **NEW:** Update tags, wiki refs, constraints |
 | GET | `/api/projects/{projectId}/sprints` |
 | POST | `/api/projects/{projectId}/sprints` |
+| PATCH | `/api/sprints/{sprintId}/commits` | **NEW:** Append sprint commit IDs |
 | POST | `/api/work-items/{workItemId}/status` |
+| POST | `/api/work-items/{workItemId}/sub-tasks` | **NEW:** Create sub-task |
 | POST | `/api/sprints/{sprintId}/reviews` |
 | GET | `/api/projects/{projectId}/knowledge` |
 | POST | `/api/projects/{projectId}/wiki` |

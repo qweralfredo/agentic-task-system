@@ -15,8 +15,8 @@ public record UpdateProjectConfigRequest(
     string? LocalPath,
     string? TechStack,
     string? MainBranch);
-public record AddBacklogItemRequest(string Title, string Description, int StoryPoints, int Priority);
-public record CreateSprintRequest(string Name, string Goal, DateOnly StartDate, DateOnly EndDate, Guid[] BacklogItemIds);
+public record AddBacklogItemRequest(string Title, string Description, int StoryPoints, int Priority, string[]? CommitIds = null);
+public record CreateSprintRequest(string Name, string Goal, DateOnly StartDate, DateOnly EndDate, Guid[] BacklogItemIds, string[]? CommitIds = null);
 public record UpdateWorkItemStatusRequest(
     WorkItemStatus Status,
     string Assignee,
@@ -25,7 +25,12 @@ public record UpdateWorkItemStatusRequest(
     string ModelUsed = "",
     string IdeUsed = "",
     string Feedback = "",
-    string MetadataJson = "");
+    string MetadataJson = "",
+    string Branch = "",
+    string[]? CommitIds = null);
+public record AddSubTaskRequest(string Title, string Description, string Assignee = "", string Branch = "", string Tags = "");
+public record UpdateBacklogItemContextRequest(string? Tags, string? WikiRefs, string? Constraints, string[]? CommitIds = null);
+public record UpdateSprintCommitIdsRequest(string[] CommitIds);
 public record AddReviewRequest(string Type, string Summary, string Notes);
 public record AddWikiPageRequest(string Title, string ContentMarkdown, string Tags, string Category = "General");
 public record AddCheckpointRequest(string Name, string ContextSnapshot, string Decisions, string Risks, string NextActions, string Category = "General");

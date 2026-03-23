@@ -12,6 +12,7 @@ import {
   Grid,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { MarkdownField } from '../components/MarkdownField'
@@ -21,6 +22,13 @@ import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
 import { backlogStatusLabels, toNumberStatus } from '../types'
 
+function parseCommitIds(value: string): string[] {
+  return value
+    .split(/[,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
 export function BacklogPage() {
   const { selectedProjectId, selectedProject, backlog, refreshProjectViews } = useProjectContext()
   const navigate = useNavigate()
@@ -29,6 +37,31 @@ export function BacklogPage() {
   const [storyPoints, setStoryPoints] = useState(3)
   const [priority, setPriority] = useState(1)
   const [isCreateModalOpen, setCreateModalOpen] = useState(false)
+  const [contextItemId, setContextItemId] = useState('')
+  const [contextTags, setContextTags] = useState('')
+  const [contextWikiRefs, setContextWikiRefs] = useState('')
+  const [contextConstraints, setContextConstraints] = useState('')
+  const [contextCommitIds, setContextCommitIds] = useState('')
+
+  function handleOpenContextModal(id: string, tags = '', wikiRefs = '', constraints = '', commitIds: string[] = []) {
+    setContextItemId(id)
+    setContextTags(tags)
+    setContextWikiRefs(wikiRefs)
+    setContextConstraints(constraints)
+    setContextCommitIds(commitIds.join(', '))
+  }
+
+  async function handleSaveContext() {
+    if (!contextItemId || !selectedProjectId) return
+    await apiClient.updateBacklogContext(contextItemId, {
+      tags: contextTags,
+      wikiRefs: contextWikiRefs,
+      constraints: contextConstraints,
+      commitIds: parseCommitIds(contextCommitIds),
+    })
+    setContextItemId('')
+    await refreshProjectViews(selectedProjectId)
+  }
 
   async function handleCreateBacklogItem(event: React.FormEvent) {
     event.preventDefault()
@@ -108,8 +141,34 @@ export function BacklogPage() {
                     >
                       View Sprints
                     </Button>
+                    <Tooltip title="Edit tags, wiki refs and constraints for this backlog item">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleOpenContextModal(item.id, item.tags, item.wikiRefs, item.constraints, item.commitIds ?? [])}
+                      >
+                        Context
+                      </Button>
+                    </Tooltip>
                   </Stack>
                 </Stack>
+                {(item.tags || item.wikiRefs || item.constraints || (item.commitIds && item.commitIds.length > 0)) && (
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                    {item.tags && item.tags.trim() && item.tags.split(',').map((t) => t.trim()).filter(Boolean).map((tag) => (
+                      <Chip key={tag} size="small" label={tag} variant="outlined" color="default" sx={{ fontSize: 11 }} />
+                    ))}
+                    {item.wikiRefs && item.wikiRefs.trim() && (
+                      <Chip size="small" label={`wiki: ${item.wikiRefs}`} variant="outlined" sx={{ fontSize: 11, color: '#1565c0' }} />
+                    )}
+                    {item.constraints && item.constraints.trim() && (
+                      <Chip size="small" label={`constraints: ${item.constraints}`} variant="outlined" color="warning" sx={{ fontSize: 11 }} />
+                    )}
+                    {item.commitIds && item.commitIds.length > 0 && item.commitIds.map((commitId) => (
+                      <Chip key={commitId} size="small" label={commitId} variant="outlined" sx={{ fontSize: 11, fontFamily: 'monospace' }} />
+                    ))}
+                  </Stack>
+                )}
                 <Divider sx={{ my: 1.2 }} />
                 <Typography variant="caption" color="text.secondary">
                   ID: {item.id}
@@ -156,6 +215,53 @@ export function BacklogPage() {
             <Button type="submit" variant="contained">Add item</Button>
           </DialogActions>
         </Stack>
+      </Dialog>
+      <Dialog open={Boolean(contextItemId)} onClose={() => setContextItemId('')} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Context</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <TextField
+              size="small"
+              label="Tags (comma-separated)"
+              fullWidth
+              placeholder="ex: auth, backend, performance"
+              value={contextTags}
+              onChange={(event) => setContextTags(event.target.value)}
+            />
+            <TextField
+              size="small"
+              label="Wiki Refs"
+              fullWidth
+              placeholder="ex: architecture, api-design"
+              value={contextWikiRefs}
+              onChange={(event) => setContextWikiRefs(event.target.value)}
+            />
+            <TextField
+              size="small"
+              label="Constraints"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder="ex: must not break existing API, max 200ms latency"
+              value={contextConstraints}
+              onChange={(event) => setContextConstraints(event.target.value)}
+            />
+            <TextField
+              size="small"
+              label="Commit IDs"
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder="abc123, def456"
+              value={contextCommitIds}
+              onChange={(event) => setContextCommitIds(event.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setContextItemId('')}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveContext}>Save</Button>
+        </DialogActions>
       </Dialog>
     </Stack>
   )

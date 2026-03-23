@@ -416,6 +416,7 @@ def workitem_update(
     ide_used: str = "",
     feedback: str = "",
     metadata_json: str = "",
+    branch: str = "",
 ) -> dict[str, Any]:
     """Update work item status and track token/feedback metadata.
 
@@ -425,6 +426,8 @@ def workitem_update(
       review / 2     → Review
       done / 3       → Done
       blocked / 4    → Blocked
+
+    branch — git branch being worked on for this task (e.g. 'feature/sub-tasks').
 
     tokens_used — only pass this when you have the ACTUAL token count from
       observability tooling. Do NOT estimate or fabricate a value.
@@ -448,6 +451,7 @@ def workitem_update(
             "ideUsed": ide_used,
             "feedback": feedback,
             "metadataJson": metadata_json,
+            "branch": branch,
         },
     )
     # Echo status label back so agents can verify what was actually set
@@ -455,6 +459,61 @@ def workitem_update(
         result["statusLabel"] = _STATUS_LABELS.get(status_int, str(status_int))
         result["tokensTracked"] = tokens_used is not None and tokens_used > 0
     return result
+
+
+@mcp.tool(name="workitem_add_subtask")
+def workitem_add_subtask(
+    parent_work_item_id: str,
+    title: str,
+    description: str,
+    assignee: str = "",
+    branch: str = "",
+    tags: str = "",
+) -> dict[str, Any]:
+    """Create a sub-task under an existing work item.
+
+    Sub-tasks inherit sprint and backlog item from the parent.
+    They appear in the sprint board with a parent badge.
+    When all sub-tasks of a parent reach Done, the parent is auto-completed.
+    """
+    return _request(
+        "POST",
+        f"/api/work-items/{parent_work_item_id}/sub-tasks",
+        payload={
+            "title": title,
+            "description": description,
+            "assignee": assignee,
+            "branch": branch,
+            "tags": tags,
+        },
+    )
+
+
+@mcp.tool(name="backlog_context_update")
+def backlog_context_update(
+    backlog_item_id: str,
+    tags: str | None = None,
+    wiki_refs: str | None = None,
+    constraints: str | None = None,
+) -> dict[str, Any]:
+    """Update context metadata on a backlog item.
+
+    tags       — comma-separated labels (e.g. 'auth,security,mvp')
+    wiki_refs  — references to wiki pages (e.g. 'wiki:Authentication,wiki:JWT-Design')
+    constraints — free-text preconditions or dependencies (e.g. 'Must be done before Sprint 3 release')
+
+    Only provided fields are changed.
+    """
+    payload: dict[str, Any] = {}
+    if tags is not None:
+        payload["tags"] = tags
+    if wiki_refs is not None:
+        payload["wikiRefs"] = wiki_refs
+    if constraints is not None:
+        payload["constraints"] = constraints
+    if not payload:
+        raise ApiError("At least one context field must be provided (tags, wiki_refs or constraints).")
+    return _request("PATCH", f"/api/backlog-items/{backlog_item_id}/context", payload=payload)
 
 
 @mcp.tool(name="knowledge_checkpoint")
@@ -685,6 +744,66 @@ def pandora_resources_guide(project_id: str = "<project-id>") -> str:
         "Fluxo recomendado objetivo:\n"
         "project_create -> project_config_update (github/path/stack) -> backlog_add/list -> sprint_create -> workitem_list/update -> knowledge_checkpoint -> validacao dashboard/knowledge via API.\n"
         f"Contexto sugerido para execucao agora: project_id='{project_id}'."
+    )
+
+
+@mcp.prompt(name="pandora_context_first_execute")
+def pandora_context_first_execute(
+    project_id: str = "<project-id>",
+    work_item_id: str = "<work-item-id>",
+    branch: str = "develop",
+) -> str:
+    """Prompt para execucao Context-First: ciclo de 5 passos para agentes antes de implementar qualquer tarefa."""
+    return (
+        "## Context-First Execution Flow — 5 Passos Obrigatorios\n\n"
+        "Execute TODOS os passos abaixo em ordem antes de escrever qualquer codigo.\n\n"
+        "### Passo 1 — Discovery (Scan do Contexto do Projeto)\n"
+        "Ler o estado atual do projeto antes de qualquer acao:\n"
+        f"- Resource: pandora://projects/{project_id}/context\n"
+        f"- Resource: pandora://projects/{project_id}/config\n"
+        "Extrair: mainBranch, localPath, techStack, sprint(s) ativo(s), work items abertos.\n\n"
+        "### Passo 2 — Knowledge Warm-up (Aquecimento de Conhecimento)\n"
+        "Ler o knowledge base para evitar repeticao e garantir consistencia:\n"
+        f"- Resource: pandora://projects/{project_id}/knowledge\n"
+        "Extrair: checkpoints recentes, wiki pages relevantes, decisoes anteriores.\n"
+        "Verificar se ha constraints ou wiki_refs no backlog item relacionado.\n\n"
+        "### Passo 3 — Context Injection (Injecao de Contexto)\n"
+        f"Ler o work item especifico: pandora://projects/{project_id}/workitems\n"
+        f"Filtrar pelo work_item_id: {work_item_id}\n"
+        "Extrair: title, description, tags, branch, parentWorkItemId (se sub-task).\n"
+        "Se o item tiver parentWorkItemId, ler o pai para entender o escopo maior.\n"
+        "Verificar backlog item associado para ler tags, wikiRefs e constraints.\n\n"
+        "### Passo 4 — Execucao (Implementacao com Manutencao Cognitiva)\n"
+        "Agora sim, implementar a tarefa:\n"
+        f"- workitem_update(work_item_id='{work_item_id}', status='in_progress', branch='{branch}', ...)\n"
+        "Durante a implementacao:\n"
+        "  - Se criar sub-tarefas: workitem_add_subtask(parent_work_item_id='...', ...)\n"
+        "  - Se descobrir constraints novas: backlog_context_update(backlog_item_id='...', constraints='...')\n"
+        "  - Se gerar conhecimento novo: wiki_add ou knowledge_checkpoint\n"
+        "Ao concluir:\n"
+        f"- workitem_update(work_item_id='{work_item_id}', status='done', feedback='...', branch='{branch}')\n\n"
+        "### Passo 5 — Validation Review (Revisao de Validacao)\n"
+        "Verificar o estado final antes de encerrar a sessao:\n"
+        f"- Resource: pandora://projects/{project_id}/tasks/overview\n"
+        f"- Resource: pandora://projects/{project_id}/tasks/triage\n"
+        "Confirmar:\n"
+        "  - Work item marcado como Done.\n"
+        "  - Sub-tasks (se existirem) todos Done.\n"
+        "  - Nenhum item bloqueado sem responsavel.\n"
+        "  - Dashboard atualizado (GET /api/projects/{project_id}/dashboard).\n"
+        "  - Se encerramento de sprint/epic: executar knowledge_checkpoint.\n\n"
+        "### Resumo dos Recursos MCP para este Fluxo\n"
+        f"- pandora://projects/{project_id}/context  (leitura completa)\n"
+        f"- pandora://projects/{project_id}/config   (stack, branch, paths)\n"
+        f"- pandora://projects/{project_id}/knowledge (wiki, checkpoints)\n"
+        f"- pandora://projects/{project_id}/tasks/overview (visao geral)\n"
+        f"- pandora://projects/{project_id}/tasks/triage   (revisao/bloqueios)\n\n"
+        "### Tools de Escrita neste Fluxo\n"
+        "- workitem_update       (status, branch, tokens, feedback)\n"
+        "- workitem_add_subtask  (sub-tarefas recursivas)\n"
+        "- backlog_context_update (tags, wiki_refs, constraints)\n"
+        "- wiki_add              (documentar decisoes)\n"
+        "- knowledge_checkpoint  (salvar contexto ao final de epic/sprint)\n"
     )
 
 
