@@ -74,6 +74,32 @@ Esses artefatos permitem:
 5. Servidor MCP chama a API REST do backend (`/api/...`)
 6. Salva checkpoints para preservar contexto entre sessoes
 
+## Atomic-Agent Flow
+
+Metodologia de orquestração hierárquica fractal para converter intenções de alto nível em unidades atômicas de trabalho. Invocada via `/pandora-atomic-flow`.
+
+### Motor de Expansão (Multiplicador C)
+
+| Nível             | Fórmula           | C=1 | C=2 | C=3  |
+|-------------------|-------------------|-----|-----|------|
+| Backlogs          | 10 × C            | 10  | 20  | 30   |
+| Sprints / Backlog | 7 × C             | 7   | 14  | 21   |
+| Tasks / Sprint    | 3 × C             | 3   | 6   | 9    |
+| Subtasks / Task   | 4 × C             | 4   | 8   | 12   |
+
+No nível C=3: até **22.680 subtasks atômicas**.
+
+### Protocolo de Branches Efêmeras
+
+Cada subtask recebe uma branch de vida curta `task/{work_item_id}`:
+
+- Criada a partir de `develop`
+- Implementação atômica (arquivo único)
+- Merge `--no-ff` → `develop`
+- Branch deletada após merge
+
+Ver referência completa: [docs/skills/pandora-atomic-flow.md](skills/pandora-atomic-flow.md)
+
 ## Seguranca e confiabilidade
 
 - Persistencia real via PostgreSQL
