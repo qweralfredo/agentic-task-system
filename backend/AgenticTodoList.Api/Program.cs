@@ -443,6 +443,85 @@ app.MapGet("/api/projects/{projectId:guid}/evaluations/pending", async (Guid pro
     return Results.Ok(pendingRuns);
 });
 
+// ── BL-07: Token & Cost Analytics Pipeline endpoints ─────────────────────
+app.MapGet("/api/projects/{projectId:guid}/metrics/token-summary", async (
+    Guid projectId, AppDbContext db, CancellationToken ct,
+    int days = 30) =>
+{
+    var since = DateTimeOffset.UtcNow.AddDays(-days);
+    var runs = await db.AgentRunLogs
+        .Where(r => r.ProjectId == projectId && r.StartedAt >= since)
+        .ToListAsync(ct);
+
+    if (!runs.Any()) return Results.Ok(new
+    {
+        totalRuns = 0, successRate = 0.0, totalTokensInput = 0, totalTokensOutput = 0,
+        totalCostUsd = 0.0, avgCostPerRun = 0.0, avgLatencyMs = 0L,
+        byModel = new object[0], dailyRollup = new object[0]
+    });
+
+    var byModel = runs
+        .GroupBy(r => r.ModelName)
+        .Select(g => new
+        {
+            model = g.Key,
+            runs = g.Count(),
+            successRate = Math.Round(g.Count(r => r.Success) / (double)g.Count() * 100, 1),
+            totalTokens = g.Sum(r => r.TokensInput + r.TokensOutput),
+            totalCostUsd = Math.Round((double)g.Sum(r => r.CostUsd), 4),
+            avgLatencyMs = (long)g.Average(r => r.LatencyMs)
+        }).ToList();
+
+    var dailyRollup = runs
+        .GroupBy(r => r.StartedAt.Date)
+        .OrderBy(g => g.Key)
+        .Select(g => new
+        {
+            date = g.Key.ToString("yyyy-MM-dd"),
+            runs = g.Count(),
+            totalCostUsd = Math.Round((double)g.Sum(r => r.CostUsd), 4),
+            totalTokens = g.Sum(r => r.TokensInput + r.TokensOutput),
+            successRate = Math.Round(g.Count(r => r.Success) / (double)g.Count() * 100, 1)
+        }).ToList();
+
+    return Results.Ok(new
+    {
+        totalRuns = runs.Count,
+        successRate = Math.Round(runs.Count(r => r.Success) / (double)runs.Count * 100, 1),
+        totalTokensInput = runs.Sum(r => r.TokensInput),
+        totalTokensOutput = runs.Sum(r => r.TokensOutput),
+        totalCostUsd = Math.Round((double)runs.Sum(r => r.CostUsd), 4),
+        avgCostPerRun = Math.Round((double)runs.Average(r => r.CostUsd), 6),
+        avgLatencyMs = (long)runs.Average(r => r.LatencyMs),
+        byModel,
+        dailyRollup
+    });
+});
+
+app.MapGet("/api/projects/{projectId:guid}/metrics/cost-budget", async (
+    Guid projectId, AppDbContext db, IConfiguration cfg, CancellationToken ct) =>
+{
+    var budgetLimit = cfg.GetValue<double>($"Analytics:BudgetLimitUsd:{projectId}", 100.0);
+    var monthStart = new DateTimeOffset(DateTimeOffset.UtcNow.Year, DateTimeOffset.UtcNow.Month, 1, 0, 0, 0, TimeSpan.Zero);
+    var spentThisMonth = await db.AgentRunLogs
+        .Where(r => r.ProjectId == projectId && r.StartedAt >= monthStart)
+        .SumAsync(r => r.CostUsd, ct);
+
+    return Results.Ok(new
+    {
+        budgetUsd = budgetLimit,
+        spentUsd = Math.Round((double)spentThisMonth, 4),
+        remainingUsd = Math.Round(budgetLimit - (double)spentThisMonth, 4),
+        usagePct = Math.Round((double)spentThisMonth / budgetLimit * 100, 1),
+        alertLevel = (spentThisMonth / (decimal)budgetLimit) switch
+        {
+            >= 0.9m => "critical",
+            >= 0.7m => "warning",
+            _        => "ok"
+        }
+    });
+});
+
 // ── BL-13: SSE endpoint /api/metrics/stream ──────────────────────────────
 app.MapGet("/api/metrics/stream", async (MetricsEventService events, HttpContext ctx, CancellationToken ct) =>
 {

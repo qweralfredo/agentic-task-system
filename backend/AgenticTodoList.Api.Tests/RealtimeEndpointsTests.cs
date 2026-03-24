@@ -111,12 +111,17 @@ public class RealtimeEndpointsTests(TestAppFactory factory) : IClassFixture<Test
     [Fact]
     public async Task POST_DevLakeWebhook_WithInvalidSignature_Returns401()
     {
+        // Need a fresh factory with a secret so HMAC verification is active
+        await using var f = new TestAppFactory();
+        f.WithWebhookSecret("test-secret-for-invalid-sig");
+        var client = f.CreateClient();
+
         var payload = JsonSerializer.Serialize(new { eventType = "agent_run_completed", data = new { } });
         var content = new StringContent(payload, Encoding.UTF8, "application/json");
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/devlake/webhook") { Content = content };
         request.Headers.Add("X-Pandora-Signature-256", "sha256=invalidsignature");
 
-        var response = await _client.SendAsync(request);
+        var response = await client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
