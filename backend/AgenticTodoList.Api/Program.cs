@@ -1,4 +1,4 @@
-﻿using PandoraTodoList.Api.Contracts;
+using PandoraTodoList.Api.Contracts;
 using PandoraTodoList.Api.Data;
 using PandoraTodoList.Api.Domain;
 using PandoraTodoList.Api.Services;
@@ -29,6 +29,9 @@ builder.Services.AddHttpClient("devlake", c =>
     c.Timeout = TimeSpan.FromSeconds(10);
 });
 builder.Services.AddScoped<DevLakeSyncService>();
+
+// Real-time metrics (BL-13 SP-10)
+builder.Services.AddSingleton<MetricsEventService>();
 
 var app = builder.Build();
 
@@ -270,6 +273,19 @@ app.MapPatch("/api/backlog-items/{backlogItemId:guid}/context", async (Guid back
     }
 });
 
+app.MapDelete("/api/backlog-items/{backlogItemId:guid}", async (Guid backlogItemId, ScrumService service, CancellationToken ct) =>
+{
+    try
+    {
+        await service.DeleteBacklogItemAsync(backlogItemId, ct);
+        return Results.NoContent();
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.NotFound(new { error = ex.Message });
+    }
+});
+
 app.MapPatch("/api/sprints/{sprintId:guid}/commits", async (Guid sprintId, UpdateSprintCommitIdsRequest request, ScrumService service, CancellationToken ct) =>
 {
     try
@@ -425,6 +441,92 @@ app.MapGet("/api/projects/{projectId:guid}/evaluations/pending", async (Guid pro
         .Select(r => new { r.Id, r.AgentName, r.EntryPoint, r.StartedAt, r.Success, r.ModelName })
         .ToListAsync(ct);
     return Results.Ok(pendingRuns);
+});
+
+// ── BL-13: SSE endpoint /api/metrics/stream ──────────────────────────────
+app.MapGet("/api/metrics/stream", async (MetricsEventService events, HttpContext ctx, CancellationToken ct) =>
+{
+    ctx.Response.Headers.ContentType = "text/event-stream";
+    ctx.Response.Headers.CacheControl = "no-cache";
+    ctx.Response.Headers.Connection = "keep-alive";
+
+    var reader = events.Subscribe();
+    try
+    {
+        // Send connection confirmation
+        await ctx.Response.WriteAsync("event: connected\ndata: {\"status\":\"ok\"}\n\n", ct);
+        await ctx.Response.Body.FlushAsync(ct);
+
+        using var keepAliveTimer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+        var keepAliveTask = Task.Run(async () =>
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await keepAliveTimer.WaitForNextTickAsync(ct);
+                if (!ct.IsCancellationRequested)
+                {
+                    await ctx.Response.WriteAsync(": keep-alive\n\n", ct);
+                    await ctx.Response.Body.FlushAsync(ct);
+                }
+            }
+        }, ct);
+
+        await foreach (var evt in reader.ReadAllAsync(ct))
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(evt.Data);
+            await ctx.Response.WriteAsync($"event: {evt.EventType}\ndata: {json}\n\n", ct);
+            await ctx.Response.Body.FlushAsync(ct);
+        }
+    }
+    catch (OperationCanceledException) { /* client disconnected */ }
+    finally
+    {
+        events.Unsubscribe(reader);
+    }
+});
+
+// ── BL-16: Webhook endpoint /api/devlake/webhook ─────────────────────────
+app.MapPost("/api/devlake/webhook", async (
+    HttpContext ctx,
+    MetricsEventService events,
+    IConfiguration config,
+    CancellationToken ct) =>
+{
+    var secret = config["DevLake:WebhookSecret"] ?? string.Empty;
+    var signatureHeader = ctx.Request.Headers["X-Pandora-Signature-256"].FirstOrDefault() ?? string.Empty;
+
+    if (string.IsNullOrEmpty(signatureHeader))
+        return Results.Unauthorized();
+
+    // Read body for HMAC verification
+    ctx.Request.EnableBuffering();
+    using var ms = new System.IO.MemoryStream();
+    await ctx.Request.Body.CopyToAsync(ms, ct);
+    var bodyBytes = ms.ToArray();
+    ctx.Request.Body.Position = 0;
+
+    // Verify HMAC-SHA256
+    if (!string.IsNullOrEmpty(secret))
+    {
+        using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(secret));
+        var expected = "sha256=" + Convert.ToHexString(hmac.ComputeHash(bodyBytes)).ToLowerInvariant();
+        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            System.Text.Encoding.UTF8.GetBytes(expected),
+            System.Text.Encoding.UTF8.GetBytes(signatureHeader)))
+            return Results.Unauthorized();
+    }
+
+    var payload = System.Text.Json.JsonDocument.Parse(bodyBytes).RootElement;
+    var eventType = payload.TryGetProperty("eventType", out var et) ? et.GetString() ?? "" : "";
+
+    var knownEvents = new[] { "agent_run_completed", "evaluation_submitted", "workitem_updated" };
+    if (!knownEvents.Contains(eventType))
+        return Results.UnprocessableEntity(new { error = $"Unknown event type: {eventType}" });
+
+    // Fan out to SSE subscribers
+    events.Publish(new MetricsEvent(eventType, payload));
+
+    return Results.Ok(new { received = true, eventType });
 });
 
 app.Run();
