@@ -87,17 +87,29 @@ function removeStream(sessionId, response) {
 
 function serveFrontendAsset(response, pathname) {
   const relative = pathname === "/" ? "index.html" : pathname.replace(/^\//, "");
-  const fullPath = path.join(FRONTEND_DIR, relative);
+  let fullPath = path.join(FRONTEND_DIR, relative);
+
+  // SPA fallback: unknown paths → index.html
   if (!fullPath.startsWith(FRONTEND_DIR) || !fs.existsSync(fullPath)) {
-    notFound(response);
-    return;
+    fullPath = path.join(FRONTEND_DIR, "index.html");
+    if (!fs.existsSync(fullPath)) {
+      notFound(response);
+      return;
+    }
   }
 
   const extension = path.extname(fullPath);
   const contentType = {
     ".html": "text/html; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
     ".css": "text/css; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".ico": "image/x-icon",
+    ".json": "application/json; charset=utf-8",
+    ".woff2": "font/woff2",
+    ".woff": "font/woff",
   }[extension] ?? "application/octet-stream";
 
   sendText(response, 200, contentType, fs.readFileSync(fullPath));
@@ -234,7 +246,8 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, { session });
     }
 
-    if (pathname === "/" || pathname === "/app.js" || pathname === "/styles.css") {
+    // Serve frontend: SPA fallback to index.html for all non-API GET routes
+    if (request.method === "GET" && !pathname.startsWith("/api/")) {
       return serveFrontendAsset(response, pathname);
     }
 
