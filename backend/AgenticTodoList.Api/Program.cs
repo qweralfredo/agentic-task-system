@@ -36,6 +36,10 @@ builder.Services.AddSingleton<MetricsEventService>();
 // Auth & RBAC (BL-14 SP-11)
 builder.Services.AddSingleton<ApiKeyService>();
 
+// Bidirectional sync worker (BL-15 SP-12)
+builder.Services.AddSingleton<DevLakeSyncWorker>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<DevLakeSyncWorker>());
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -546,6 +550,32 @@ app.MapGet("/api/projects/{projectId:guid}/audit-log", async (
         .ToListAsync(ct);
 
     return Results.Ok(new { projectId, count = entries.Count, entries });
+});
+
+// ── BL-15: Sync trigger + status endpoints ────────────────────────────────
+app.MapPost("/api/devlake/sync", async (
+    HttpContext ctx, ApiKeyService apiKeys, DevLakeSyncWorker worker, CancellationToken ct) =>
+{
+    var key = ctx.Request.Headers["X-Pandora-Api-Key"].FirstOrDefault();
+    if (!apiKeys.IsValid(key))
+        return Results.Unauthorized();
+
+    var count = await worker.SyncAsync(ct);
+    return Results.Ok(new { synced = count, triggeredAt = DateTimeOffset.UtcNow });
+});
+
+app.MapGet("/api/devlake/sync/status", (HttpContext ctx, ApiKeyService apiKeys, DevLakeSyncWorker worker) =>
+{
+    var key = ctx.Request.Headers["X-Pandora-Api-Key"].FirstOrDefault();
+    if (!apiKeys.IsValid(key))
+        return Results.Unauthorized();
+
+    return Results.Ok(new
+    {
+        isEnabled = true,
+        syncIntervalMinutes = worker.SyncIntervalMinutes,
+        lastSyncAt = worker.LastSyncAt
+    });
 });
 
 // ── BL-13: SSE endpoint /api/metrics/stream ──────────────────────────────
