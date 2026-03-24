@@ -37,7 +37,8 @@ export function ChatPanel({ session, onSessionUpdate }: ChatPanelProps) {
     }
     if (event === "assistant:message") {
       setThinking(false);
-      setAgentEvents([]);
+      // Keep non-error events cleared, but preserve agent:error cards
+      setAgentEvents((prev) => prev.filter((ev) => ev.event === "agent:error"));
       const updated = (data as { session?: Session })?.session;
       if (updated) onSessionUpdate(updated);
       return;

@@ -12,6 +12,19 @@ function sessionFilePath(sessionId) {
   return path.join(SESSION_DIR, `${sessionId}.json`);
 }
 
+export function hydrateSessionsFromDisk() {
+  if (!fs.existsSync(SESSION_DIR)) return;
+  for (const file of fs.readdirSync(SESSION_DIR)) {
+    if (!file.endsWith(".json")) continue;
+    try {
+      const session = JSON.parse(fs.readFileSync(path.join(SESSION_DIR, file), "utf8"));
+      if (session?.id) sessions.set(session.id, session);
+    } catch {
+      // corrupt file — skip
+    }
+  }
+}
+
 function persistSession(session) {
   fs.writeFileSync(sessionFilePath(session.id), JSON.stringify(session, null, 2), "utf8");
 }
@@ -326,10 +339,9 @@ export async function processUserMessage(sessionId, { prompt, model, skillIds = 
         break;
       }
     } catch (error) {
-      finalReply = makeFallbackReply(prompt, session);
-      emit("agent:error", {
-        message: error instanceof Error ? error.message : String(error),
-      });
+      const errMsg = error instanceof Error ? error.message : String(error);
+      finalReply = `⚠️ Agent error: ${errMsg}`;
+      emit("agent:error", { message: errMsg });
       break;
     }
   }

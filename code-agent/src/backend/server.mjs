@@ -6,6 +6,7 @@ import { ensureRuntimeLayout, FRONTEND_DIR, PORT } from "./config.mjs";
 import {
   createSession,
   getSession,
+  hydrateSessionsFromDisk,
   listAvailableSkills,
   listSessions,
   processUserMessage,
@@ -24,6 +25,7 @@ import { createWorkspaceBootstrapFile, getWorkspaceSummary } from "./workspace.m
 
 ensureRuntimeLayout();
 ensureDefaultProject();
+hydrateSessionsFromDisk();
 createWorkspaceBootstrapFile();
 
 const eventStreams = new Map();
