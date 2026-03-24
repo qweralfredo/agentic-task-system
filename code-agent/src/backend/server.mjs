@@ -11,9 +11,19 @@ import {
   processUserMessage,
 } from "./agent.mjs";
 import { listModels } from "./ollama.mjs";
+import {
+  createProject,
+  deleteProject,
+  ensureDefaultProject,
+  getProject,
+  listProjects,
+  updateProject,
+} from "./projects.mjs";
+import { scaffoldWorkspace } from "./scaffold.mjs";
 import { createWorkspaceBootstrapFile, getWorkspaceSummary } from "./workspace.mjs";
 
 ensureRuntimeLayout();
+ensureDefaultProject();
 createWorkspaceBootstrapFile();
 
 const eventStreams = new Map();
@@ -114,16 +124,70 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, { skills: listAvailableSkills() });
     }
 
+    // Projects
+    if (request.method === "GET" && pathname === "/api/projects") {
+      return sendJson(response, 200, { projects: listProjects() });
+    }
+
+    if (request.method === "POST" && pathname === "/api/projects") {
+      const body = await readBody(request);
+      const project = createProject({
+        name: body.name,
+        slug: body.slug,
+        description: body.description,
+      });
+      const scaffold = scaffoldWorkspace(project.workspacePath);
+      return sendJson(response, 201, { project, scaffold });
+    }
+
+    if (request.method === "POST" && /^\/api\/projects\/[^/]+\/scaffold$/.test(pathname)) {
+      const projectId = pathname.split("/")[3];
+      const project = getProject(projectId);
+      if (!project) return notFound(response);
+      const scaffold = scaffoldWorkspace(project.workspacePath);
+      return sendJson(response, 200, { scaffold });
+    }
+
+    if (request.method === "GET" && /^\/api\/projects\/[^/]+$/.test(pathname)) {
+      const projectId = pathname.split("/").at(-1);
+      const project = getProject(projectId);
+      if (!project) return notFound(response);
+      return sendJson(response, 200, { project });
+    }
+
+    if (request.method === "PATCH" && /^\/api\/projects\/[^/]+$/.test(pathname)) {
+      const projectId = pathname.split("/").at(-1);
+      const body = await readBody(request);
+      const project = updateProject(projectId, { name: body.name, description: body.description });
+      return sendJson(response, 200, { project });
+    }
+
+    if (request.method === "DELETE" && /^\/api\/projects\/[^/]+$/.test(pathname)) {
+      const projectId = pathname.split("/").at(-1);
+      const project = deleteProject(projectId);
+      return sendJson(response, 200, { project });
+    }
+
+    // Sessions
     if (request.method === "GET" && pathname === "/api/sessions") {
       return sendJson(response, 200, { sessions: listSessions() });
     }
 
     if (request.method === "POST" && pathname === "/api/sessions") {
       const body = await readBody(request);
+      if (!body.projectId) {
+        return sendJson(response, 400, { error: "projectId is required." });
+      }
+      const project = getProject(body.projectId);
+      if (!project) {
+        return sendJson(response, 404, { error: "Project not found." });
+      }
       const session = createSession({
         title: body.title,
         model: body.model,
-        workspaceName: body.workspaceName || "default",
+        projectId: project.id,
+        projectName: project.name,
+        workspacePath: project.workspacePath,
       });
       return sendJson(response, 201, { session });
     }
