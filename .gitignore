@@ -16,3 +16,13 @@ mcp-server-python/.coverage
 mcp-server-python/htmlcov/
 mcp-server-python/tests/__pycache__/
 mcp-server-python/*.pyc
+
+.playwright-mcp/
+
+# DevLake data volumes
+ops/devlake/mysql/data/
+ops/devlake/grafana/data/
+ops/devlake/config/*.env
+
+# DevLake environment
+.env.devlake
