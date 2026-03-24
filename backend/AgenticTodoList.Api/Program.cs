@@ -33,6 +33,9 @@ builder.Services.AddScoped<DevLakeSyncService>();
 // Real-time metrics (BL-13 SP-10)
 builder.Services.AddSingleton<MetricsEventService>();
 
+// Auth & RBAC (BL-14 SP-11)
+builder.Services.AddSingleton<ApiKeyService>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -520,6 +523,29 @@ app.MapGet("/api/projects/{projectId:guid}/metrics/cost-budget", async (
             _        => "ok"
         }
     });
+});
+
+// ── BL-14: Audit log endpoint (API-key protected) ─────────────────────────
+app.MapGet("/api/projects/{projectId:guid}/audit-log", async (
+    Guid projectId, HttpContext ctx, AppDbContext db,
+    ApiKeyService apiKeys, CancellationToken ct) =>
+{
+    var key = ctx.Request.Headers["X-Pandora-Api-Key"].FirstOrDefault();
+    if (!apiKeys.IsValid(key))
+        return Results.Unauthorized();
+
+    var entries = await db.AgentRunLogs
+        .Where(r => r.ProjectId == projectId)
+        .OrderByDescending(r => r.StartedAt)
+        .Take(200)
+        .Select(r => new
+        {
+            r.Id, r.AgentName, r.ModelName, r.StartedAt, r.Success,
+            r.TokensInput, r.TokensOutput, r.CostUsd, r.LatencyMs, r.Environment
+        })
+        .ToListAsync(ct);
+
+    return Results.Ok(new { projectId, count = entries.Count, entries });
 });
 
 // ── BL-13: SSE endpoint /api/metrics/stream ──────────────────────────────

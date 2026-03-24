@@ -33,11 +33,13 @@ public class TestAppFactory : WebApplicationFactory<Program>
 
         builder.ConfigureAppConfiguration((_, cfg) =>
         {
+            var extra = new Dictionary<string, string?>
+            {
+                ["Auth:ApiKeys:0"] = "test-api-key-1234"
+            };
             if (_webhookSecret is not null)
-                cfg.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["DevLake:WebhookSecret"] = _webhookSecret
-                });
+                extra["DevLake:WebhookSecret"] = _webhookSecret;
+            cfg.AddInMemoryCollection(extra);
         });
     }
 }

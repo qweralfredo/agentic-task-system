@@ -1,0 +1,66 @@
+# Grafana RBAC provisioning — Pandora DevLake (BL-14 SP-11)
+# Roles: viewer (read-only dashboards), editor (can save), admin (full access)
+# Docs: https://grafana.com/docs/grafana/latest/administration/roles-and-permissions/
+
+apiVersion: 1
+
+# Default org role for new users
+orgs:
+  - orgId: 1
+    name: "Pandora"
+
+# Role assignments — map environment-based users to roles
+# Override via GF_SECURITY_* env vars in docker-compose
+roles:
+  - name: "pandora:viewer"
+    description: "Read-only access to all Pandora dashboards"
+    global: false
+    permissions:
+      - action: "dashboards:read"
+        scope: "dashboards:*"
+      - action: "folders:read"
+        scope: "folders:*"
+      - action: "datasources:explore"
+        scope: "datasources:*"
+
+  - name: "pandora:editor"
+    description: "Can view and save Pandora dashboards"
+    global: false
+    permissions:
+      - action: "dashboards:read"
+        scope: "dashboards:*"
+      - action: "dashboards:write"
+        scope: "dashboards:*"
+      - action: "folders:read"
+        scope: "folders:*"
+      - action: "folders:write"
+        scope: "folders:*"
+      - action: "datasources:explore"
+        scope: "datasources:*"
+      - action: "datasources:read"
+        scope: "datasources:*"
+
+  - name: "pandora:admin"
+    description: "Full admin access to Pandora Grafana"
+    global: false
+    permissions:
+      - action: "dashboards:read"
+        scope: "dashboards:*"
+      - action: "dashboards:write"
+        scope: "dashboards:*"
+      - action: "dashboards:delete"
+        scope: "dashboards:*"
+      - action: "folders:read"
+        scope: "folders:*"
+      - action: "folders:write"
+        scope: "folders:*"
+      - action: "datasources:read"
+        scope: "datasources:*"
+      - action: "datasources:write"
+        scope: "datasources:*"
+      - action: "users:read"
+        scope: "global:users:*"
+      - action: "org.users:read"
+        scope: "users:*"
+      - action: "org.users:write"
+        scope: "users:*"
