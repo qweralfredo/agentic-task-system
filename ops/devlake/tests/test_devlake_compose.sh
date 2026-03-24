@@ -106,6 +106,60 @@ else
   fail "DevLake versão não obtida (retornou: $VERSION)"
 fi
 
+# --- T-02-1: GitHub connector creation via REST API ---
+echo ""
+echo "--- T-02-1: GitHub connector API ---"
+# Test: list existing GitHub connections (endpoint must respond)
+GH_CONN_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+  "$DEVLAKE_URL/api/plugins/github/connections" 2>/dev/null || echo "000")
+if [ "$GH_CONN_STATUS" = "200" ]; then
+  pass "DevLake GitHub connections endpoint acessível (HTTP $GH_CONN_STATUS)"
+else
+  fail "DevLake GitHub connections endpoint retornou HTTP $GH_CONN_STATUS (esperado: 200)"
+fi
+
+# Test: webhook connections endpoint available
+WEBHOOK_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+  "$DEVLAKE_URL/api/plugins/webhook/connections" 2>/dev/null || echo "000")
+if [ "$WEBHOOK_STATUS" = "200" ]; then
+  pass "DevLake webhook connections endpoint acessível (HTTP $WEBHOOK_STATUS)"
+else
+  fail "DevLake webhook connections endpoint retornou HTTP $WEBHOOK_STATUS (esperado: 200)"
+fi
+
+# --- T-02-2: Blueprint API ---
+echo ""
+echo "--- T-02-2: Blueprint API ---"
+BLUEPRINT_STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+  "$DEVLAKE_URL/api/blueprints" 2>/dev/null || echo "000")
+if [ "$BLUEPRINT_STATUS" = "200" ]; then
+  pass "DevLake blueprints endpoint acessível (HTTP $BLUEPRINT_STATUS)"
+else
+  fail "DevLake blueprints endpoint retornou HTTP $BLUEPRINT_STATUS (esperado: 200)"
+fi
+
+# Test: blueprints list is valid JSON
+BLUEPRINT_JSON=$(curl -sf "$DEVLAKE_URL/api/blueprints" 2>/dev/null || echo "")
+if echo "$BLUEPRINT_JSON" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null; then
+  pass "DevLake blueprints API retornou JSON válido"
+else
+  fail "DevLake blueprints API não retornou JSON válido"
+fi
+
+# --- T-02-5: MySQL tables validation ---
+echo ""
+echo "--- T-02-5: MySQL DevLake tables ---"
+# DevLake schema tables that must exist after initial startup
+for table in _devlake_migrations pipelines tasks; do
+  if docker exec devlake-mysql mysql -u merico -pdevlake lake \
+    -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='lake' AND table_name='${table}'" \
+    2>/dev/null | grep -q "^[1-9]"; then
+    pass "MySQL: tabela '${table}' existe no banco lake"
+  else
+    fail "MySQL: tabela '${table}' não encontrada no banco lake"
+  fi
+done
+
 # --- Resumo ---
 echo ""
 echo "============================================"
