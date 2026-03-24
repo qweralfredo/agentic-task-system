@@ -401,7 +401,7 @@ export function SprintsPage() {
                 }}
               >
                 <MenuItem value="">All Sprints</MenuItem>
-                {backlog.map((item) => (
+                {backlog.sort((a, b) => a.title.localeCompare(b.title)).map((item) => (
                   <MenuItem key={item.id} value={item.id}>
                     {item.title}
                   </MenuItem>
@@ -811,7 +811,7 @@ export function SprintsPage() {
               </Grid>
 
               <Stack spacing={0.5} sx={{ maxHeight: 260, overflowY: 'auto', p: 1, border: '1px solid #dde6f0', borderRadius: 2 }}>
-                {backlog.filter((item) => toNumberStatus(item.status) <= 2).map((item) => (
+                {backlog.filter((item) => toNumberStatus(item.status) <= 2).sort((a, b) => a.title.localeCompare(b.title)).map((item) => (
                   <Stack key={item.id} direction="row" alignItems="center" spacing={1}>
                     <Checkbox
                       checked={selectedBacklogIds.includes(item.id)}
