@@ -371,7 +371,15 @@ public class ScrumService(AppDbContext db)
             OutputSummary = request.OutputSummary,
             Status = request.Status,
             StartedAt = request.StartedAt,
-            FinishedAt = request.FinishedAt
+            FinishedAt = request.FinishedAt,
+            ModelName = request.ModelName,
+            TokensInput = request.TokensInput,
+            TokensOutput = request.TokensOutput,
+            LatencyMs = request.LatencyMs,
+            CostUsd = request.CostUsd,
+            Success = request.Success,
+            ErrorMessage = request.ErrorMessage,
+            Environment = string.IsNullOrWhiteSpace(request.Environment) ? "production" : request.Environment,
         };
 
         db.AgentRunLogs.Add(run);

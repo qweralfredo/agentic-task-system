@@ -336,5 +336,166 @@ public class ApiEndpointsTests : IClassFixture<TestAppFactory>
         Assert.Equal(2, updatedSprint.GetProperty("commitIds").GetArrayLength());
     }
 
+    // ---- SP-03: Agent Metrics + Human Evaluation tests ----
+
+    [Fact]
+    public async Task AgentRun_WithMetrics_ShouldPersistDevLakeFields()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects",
+            new CreateProjectRequest("Metrics Project", "DevLake SP-03")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var runResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/agent-runs", new
+        {
+            agentName = "claude-code",
+            entryPoint = "feat/sp03",
+            inputSummary = "input",
+            outputSummary = "output",
+            status = "done",
+            startedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+            finishedAt = DateTimeOffset.UtcNow,
+            modelName = "claude-sonnet-4-6",
+            tokensInput = 1000,
+            tokensOutput = 500,
+            latencyMs = 3200,
+            costUsd = 0.015,
+            success = true,
+            environment = "production"
+        });
+        Assert.Equal(HttpStatusCode.Created, runResponse.StatusCode);
+
+        var run = await runResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("claude-sonnet-4-6", run.GetProperty("modelName").GetString());
+        Assert.Equal(1000, run.GetProperty("tokensInput").GetInt32());
+        Assert.Equal(500, run.GetProperty("tokensOutput").GetInt32());
+        Assert.Equal(3200, run.GetProperty("latencyMs").GetInt64());
+        Assert.True(run.GetProperty("success").GetBoolean());
+    }
+
+    [Fact]
+    public async Task HumanEvaluation_Submit_ShouldComputeCompositeScore()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects",
+            new CreateProjectRequest("Eval Project", "Human eval SP-03")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var runResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/agent-runs", new
+        {
+            agentName = "evaluator-test",
+            entryPoint = "eval",
+            inputSummary = "q",
+            outputSummary = "a",
+            status = "done",
+            startedAt = DateTimeOffset.UtcNow.AddMinutes(-2),
+            finishedAt = DateTimeOffset.UtcNow,
+            modelName = "claude-haiku-4-5",
+            success = true
+        });
+        var run = await runResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var runId = run.GetProperty("id").GetGuid();
+
+        // accuracy=1.0 (30%) + relevance=0.8 (25%) + completeness=0.6 (25%) + safety=1.0 (20%)
+        // = (0.30 + 0.20 + 0.15 + 0.20) * 5 = 0.85 * 5 = 4.25
+        var evalResponse = await _client.PostAsJsonAsync($"/api/agent-runs/{runId}/evaluations", new
+        {
+            reviewerId = "reviewer-alice",
+            accuracyScore = 1.0f,
+            relevanceScore = 0.8f,
+            completenessScore = 0.6f,
+            safetyScore = 1.0f,
+            feedbackText = "Good overall",
+            requiresEscalation = false,
+            reviewTimeSeconds = 120
+        });
+        Assert.Equal(HttpStatusCode.Created, evalResponse.StatusCode);
+
+        var eval = await evalResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("reviewer-alice", eval.GetProperty("reviewerId").GetString());
+        var score = eval.GetProperty("score").GetSingle();
+        Assert.True(score > 4.0f && score < 4.5f, $"Expected score ~4.25, got {score}");
+    }
+
+    [Fact]
+    public async Task HumanEvaluation_List_ShouldReturnEvaluationsForRun()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects",
+            new CreateProjectRequest("List Eval Project", "SP-03 list test")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        var runResponse = await _client.PostAsJsonAsync($"/api/projects/{projectId}/agent-runs", new
+        {
+            agentName = "list-test-agent",
+            entryPoint = "list",
+            inputSummary = "i",
+            outputSummary = "o",
+            status = "done",
+            startedAt = DateTimeOffset.UtcNow,
+            success = true
+        });
+        var run = await runResponse.Content.ReadFromJsonAsync<JsonElement>();
+        var runId = run.GetProperty("id").GetGuid();
+
+        await _client.PostAsJsonAsync($"/api/agent-runs/{runId}/evaluations", new
+        {
+            reviewerId = "reviewer-bob",
+            accuracyScore = 0.8f,
+            relevanceScore = 0.8f,
+            completenessScore = 0.8f,
+            safetyScore = 0.8f
+        });
+
+        var listResponse = await _client.GetAsync($"/api/agent-runs/{runId}/evaluations");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+
+        var evals = await listResponse.Content.ReadFromJsonAsync<List<JsonElement>>();
+        Assert.NotNull(evals);
+        Assert.True(evals!.Count >= 1);
+    }
+
+    [Fact]
+    public async Task HumanEvaluation_NotFound_RunId_ShouldReturn404()
+    {
+        var fakeRunId = Guid.NewGuid();
+        var response = await _client.PostAsJsonAsync($"/api/agent-runs/{fakeRunId}/evaluations", new
+        {
+            reviewerId = "nobody",
+            accuracyScore = 0.5f,
+            relevanceScore = 0.5f,
+            completenessScore = 0.5f,
+            safetyScore = 0.5f
+        });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PendingEvaluations_ShouldReturnRunsWithoutReview()
+    {
+        var project = await (await _client.PostAsJsonAsync("/api/projects",
+            new CreateProjectRequest("Pending Eval Project", "SP-03 pending")))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        var projectId = project.GetProperty("id").GetGuid();
+
+        await _client.PostAsJsonAsync($"/api/projects/{projectId}/agent-runs", new
+        {
+            agentName = "unevaluated-agent",
+            entryPoint = "task",
+            inputSummary = "i",
+            outputSummary = "o",
+            status = "done",
+            startedAt = DateTimeOffset.UtcNow,
+            success = true
+        });
+
+        var pendingResponse = await _client.GetAsync($"/api/projects/{projectId}/evaluations/pending");
+        Assert.Equal(HttpStatusCode.OK, pendingResponse.StatusCode);
+
+        var pending = await pendingResponse.Content.ReadFromJsonAsync<List<JsonElement>>();
+        Assert.NotNull(pending);
+        Assert.True(pending!.Count >= 1);
+    }
+
 }
 

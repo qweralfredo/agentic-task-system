@@ -23,6 +23,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 builder.Services.AddScoped<ScrumService>();
 
+// DevLake integration (SP-03)
+builder.Services.AddHttpClient("devlake", c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddScoped<DevLakeSyncService>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -344,11 +351,13 @@ app.MapPost("/api/projects/{projectId:guid}/documentation", async (Guid projectI
     }
 });
 
-app.MapPost("/api/projects/{projectId:guid}/agent-runs", async (Guid projectId, AddAgentRunLogRequest request, ScrumService service, CancellationToken ct) =>
+app.MapPost("/api/projects/{projectId:guid}/agent-runs", async (Guid projectId, AddAgentRunLogRequest request, ScrumService service, DevLakeSyncService devLake, CancellationToken ct) =>
 {
     try
     {
-        return Results.Created($"/api/projects/{projectId}/agent-runs", await service.AddAgentRunAsync(projectId, request, ct));
+        var run = await service.AddAgentRunAsync(projectId, request, ct);
+        await devLake.NotifyAgentRunAsync(run, ct);
+        return Results.Created($"/api/projects/{projectId}/agent-runs", run);
     }
     catch (InvalidOperationException ex)
     {
@@ -356,7 +365,74 @@ app.MapPost("/api/projects/{projectId:guid}/agent-runs", async (Guid projectId, 
     }
 });
 
+// Human Evaluation endpoints (SP-03 BL-06)
+app.MapPost("/api/agent-runs/{runId:guid}/evaluations", async (
+    Guid runId,
+    SubmitHumanEvaluationRequest request,
+    AppDbContext db,
+    CancellationToken ct) =>
+{
+    var run = await db.AgentRunLogs.FirstOrDefaultAsync(r => r.Id == runId, ct);
+    if (run is null)
+        return Results.NotFound(new { error = "Agent run not found." });
+
+    // Composite score: Accuracy×0.30 + Relevance×0.25 + Completeness×0.25 + Safety×0.20, then ×5
+    var composite = (request.AccuracyScore * 0.30f
+                   + request.RelevanceScore * 0.25f
+                   + request.CompletenessScore * 0.25f
+                   + request.SafetyScore * 0.20f) * 5f;
+
+    var eval = new HumanEvaluationEntity
+    {
+        AgentRunId = runId,
+        ReviewerId = request.ReviewerId,
+        AccuracyScore = request.AccuracyScore,
+        RelevanceScore = request.RelevanceScore,
+        CompletenessScore = request.CompletenessScore,
+        SafetyScore = request.SafetyScore,
+        Score = MathF.Round(composite, 2),
+        FeedbackText = request.FeedbackText,
+        RequiresEscalation = request.RequiresEscalation,
+        ReviewTimeSeconds = request.ReviewTimeSeconds,
+    };
+
+    db.HumanEvaluations.Add(eval);
+    await db.SaveChangesAsync(ct);
+
+    return Results.Created($"/api/agent-runs/{runId}/evaluations/{eval.Id}",
+        ToDto(eval));
+});
+
+app.MapGet("/api/agent-runs/{runId:guid}/evaluations", async (Guid runId, AppDbContext db, CancellationToken ct) =>
+{
+    var evals = (await db.HumanEvaluations
+        .Where(e => e.AgentRunId == runId)
+        .OrderByDescending(e => e.SubmittedAt)
+        .ToListAsync(ct))
+        .Select(ToDto)
+        .ToList();
+    return Results.Ok(evals);
+});
+
+app.MapGet("/api/projects/{projectId:guid}/evaluations/pending", async (Guid projectId, AppDbContext db, CancellationToken ct) =>
+{
+    // Work items with agent runs that have no evaluation in last 7 days
+    var since = DateTimeOffset.UtcNow.AddDays(-7);
+    var pendingRuns = await db.AgentRunLogs
+        .Where(r => r.ProjectId == projectId && r.StartedAt >= since)
+        .Where(r => !r.HumanEvaluations.Any())
+        .OrderByDescending(r => r.StartedAt)
+        .Select(r => new { r.Id, r.AgentName, r.EntryPoint, r.StartedAt, r.Success, r.ModelName })
+        .ToListAsync(ct);
+    return Results.Ok(pendingRuns);
+});
+
 app.Run();
+
+static HumanEvaluationDto ToDto(HumanEvaluationEntity e) => new(
+    e.Id, e.AgentRunId, e.ReviewerId, e.Score,
+    e.AccuracyScore, e.RelevanceScore, e.CompletenessScore, e.SafetyScore,
+    e.FeedbackText, e.RequiresEscalation, e.ReviewTimeSeconds, e.SubmittedAt);
 
 static async Task<object> ArchiveProjectAsync(AppDbContext db, ProjectEntity project, CancellationToken ct)
 {

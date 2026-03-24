@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<DocumentationPageEntity> DocumentationPages => Set<DocumentationPageEntity>();
     public DbSet<KnowledgeCheckpointEntity> KnowledgeCheckpoints => Set<KnowledgeCheckpointEntity>();
     public DbSet<AgentRunLogEntity> AgentRunLogs => Set<AgentRunLogEntity>();
+    public DbSet<HumanEvaluationEntity> HumanEvaluations => Set<HumanEvaluationEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -114,6 +115,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<AgentRunLogEntity>()
             .HasIndex(a => new { a.ProjectId, a.AgentName, a.StartedAt });
+
+        modelBuilder.Entity<AgentRunLogEntity>()
+            .Property(a => a.ModelName).HasMaxLength(120);
+
+        modelBuilder.Entity<AgentRunLogEntity>()
+            .Property(a => a.Environment).HasMaxLength(50);
+
+        modelBuilder.Entity<AgentRunLogEntity>()
+            .Property(a => a.CostUsd).HasPrecision(10, 6);
+
+        modelBuilder.Entity<HumanEvaluationEntity>()
+            .HasOne(e => e.AgentRun)
+            .WithMany(a => a.HumanEvaluations)
+            .HasForeignKey(e => e.AgentRunId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HumanEvaluationEntity>()
+            .HasIndex(e => new { e.AgentRunId, e.ReviewerId });
+
+        modelBuilder.Entity<HumanEvaluationEntity>()
+            .HasIndex(e => e.SubmittedAt);
+
+        modelBuilder.Entity<HumanEvaluationEntity>()
+            .Property(e => e.ReviewerId).HasMaxLength(200);
     }
 }
 
