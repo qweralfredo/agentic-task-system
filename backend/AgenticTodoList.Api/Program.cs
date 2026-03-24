@@ -529,6 +529,83 @@ app.MapGet("/api/projects/{projectId:guid}/metrics/cost-budget", async (
     });
 });
 
+// ── BL-17: ML Model Performance endpoints ─────────────────────────────────
+app.MapGet("/api/projects/{projectId:guid}/metrics/model-performance", async (
+    Guid projectId, AppDbContext db, CancellationToken ct, int days = 30) =>
+{
+    var since = DateTimeOffset.UtcNow.AddDays(-days);
+    var runs = await db.AgentRunLogs
+        .Where(r => r.ProjectId == projectId && r.StartedAt >= since)
+        .ToListAsync(ct);
+
+    var models = runs
+        .GroupBy(r => r.ModelName)
+        .Select(g =>
+        {
+            var latencies = g.Select(r => r.LatencyMs).OrderBy(l => l).ToList();
+            var n = latencies.Count;
+            return new
+            {
+                model          = g.Key,
+                totalRuns      = n,
+                successRate    = n == 0 ? 0.0 : Math.Round(g.Count(r => r.Success) / (double)n * 100, 1),
+                avgLatencyMs   = n == 0 ? 0L : (long)g.Average(r => r.LatencyMs),
+                p50LatencyMs   = n == 0 ? 0L : latencies[(int)(n * 0.50)],
+                p95LatencyMs   = n == 0 ? 0L : latencies[Math.Min((int)(n * 0.95), n - 1)],
+                p99LatencyMs   = n == 0 ? 0L : latencies[Math.Min((int)(n * 0.99), n - 1)],
+                avgCostUsd     = n == 0 ? 0.0 : Math.Round((double)g.Average(r => r.CostUsd), 6),
+                totalTokens    = g.Sum(r => r.TokensInput + r.TokensOutput)
+            };
+        })
+        .OrderBy(m => m.p50LatencyMs)
+        .ToList();
+
+    return Results.Ok(new { projectId, days, models });
+});
+
+app.MapGet("/api/projects/{projectId:guid}/metrics/drift", async (
+    Guid projectId, AppDbContext db, CancellationToken ct,
+    double threshold = 15.0) =>
+{
+    // Compare last 3 days vs prior 4–7 days for latency drift
+    var now        = DateTimeOffset.UtcNow;
+    var recentFrom = now.AddDays(-3);
+    var baseFrom   = now.AddDays(-7);
+
+    var allRuns = await db.AgentRunLogs
+        .Where(r => r.ProjectId == projectId && r.StartedAt >= baseFrom)
+        .ToListAsync(ct);
+
+    var alerts = allRuns
+        .GroupBy(r => r.ModelName)
+        .Select(g =>
+        {
+            var recent   = g.Where(r => r.StartedAt >= recentFrom).ToList();
+            var baseline = g.Where(r => r.StartedAt < recentFrom).ToList();
+            if (recent.Count == 0 || baseline.Count == 0) return null;
+
+            var recentAvg   = recent.Average(r => r.LatencyMs);
+            var baselineAvg = baseline.Average(r => r.LatencyMs);
+            if (baselineAvg == 0) return null;
+
+            var driftPct = (recentAvg - baselineAvg) / baselineAvg * 100.0;
+            if (driftPct <= threshold) return null;
+
+            return (object)new
+            {
+                model       = g.Key,
+                driftPct    = Math.Round(driftPct, 1),
+                recentAvgMs = (long)recentAvg,
+                baselineAvgMs = (long)baselineAvg,
+                severity    = driftPct > 50 ? "critical" : "warning"
+            };
+        })
+        .Where(a => a is not null)
+        .ToList();
+
+    return Results.Ok(new { projectId, thresholdPct = threshold, alerts });
+});
+
 // ── BL-14: Audit log endpoint (API-key protected) ─────────────────────────
 app.MapGet("/api/projects/{projectId:guid}/audit-log", async (
     Guid projectId, HttpContext ctx, AppDbContext db,
