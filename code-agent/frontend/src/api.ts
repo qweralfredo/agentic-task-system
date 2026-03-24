@@ -54,6 +54,9 @@ export const api = {
   },
 
   models: {
-    list: () => request<{ models: string[] }>("/models").then((r) => r.models),
+    list: () =>
+      request<{ models: Array<{ name: string; size?: number; modifiedAt?: string } | string> }>("/models").then((r) =>
+        r.models.map((m) => (typeof m === "string" ? m : m.name)),
+      ),
   },
 };
