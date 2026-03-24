@@ -179,6 +179,27 @@ services:
       - pandora-devlake-net
       - pandora-net
 
+  pandora-devlake-collector:
+    image: pandora-devlake-plugin:latest
+    container_name: pandora-devlake-collector
+    profiles: [devlake]
+    build:
+      context: ./ops/devlake/pandora-plugin
+      dockerfile: Dockerfile
+    depends_on:
+      devlake:
+        condition: service_healthy
+    environment:
+      PANDORA_API_URL: http://pandora-api:5000
+      DEVLAKE_URL: http://devlake:8080
+      DEVLAKE_WEBHOOK_ID: ${DEVLAKE_WEBHOOK_ID:-1}
+      PANDORA_PROJECT_ID: ${PANDORA_PROJECT_ID:-}
+      POLL_INTERVAL_SEC: ${POLL_INTERVAL_SEC:-300}
+    restart: unless-stopped
+    networks:
+      - pandora-net
+      - pandora-devlake-net
+
 # =============================================================================
 # Networks
 # =============================================================================
