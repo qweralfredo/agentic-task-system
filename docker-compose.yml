@@ -189,6 +189,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_INSTALL_PLUGINS: grafana-piechart-panel
       GF_DATABASE_URL: ${DEVLAKE_DB_URL:-mysql://merico:devlake@devlake-mysql:3306/lake?charset=utf8mb4&parseTime=True&loc=UTC}
+      DEVLAKE_MYSQL_PASSWORD: ${DEVLAKE_MYSQL_PASSWORD:-devlake}
     ports:
       - "3002:3000"
     volumes:

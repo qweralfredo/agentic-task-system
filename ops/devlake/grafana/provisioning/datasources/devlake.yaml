@@ -7,12 +7,12 @@ datasources:
     database: lake
     user: merico
     secureJsonData:
-      password: "${DEVLAKE_MYSQL_PASSWORD:-devlake}"
+      password: "${DEVLAKE_MYSQL_PASSWORD}"
     jsonData:
       maxOpenConns: 10
       maxIdleConns: 5
       connMaxLifetime: 14400
       tlsSkipVerify: true
     isDefault: true
-    editable: false
+    editable: true
     uid: devlake-mysql-ds
