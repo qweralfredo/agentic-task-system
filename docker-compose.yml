@@ -31,6 +31,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=pandora_todo_list;Username=pandora;Password=pandora
+      Auth__ApiKeys__0: ${PANDORA_API_KEY:-dev-api-key}
     ports:
       - "8480:8080"
     networks:
@@ -46,6 +47,32 @@ services:
       - api
     ports:
       - "8400:80"
+    networks:
+      - pandora-net
+
+  postgres-backup:
+    image: postgres:17-alpine
+    container_name: pandora-postgres-backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: pandora_todo_list
+      PGUSER: pandora
+      PGPASSWORD: pandora
+      BACKUP_DIR: /backups
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-7}
+    volumes:
+      - ./ops/postgres/backups:/backups
+    entrypoint: >
+      sh -c "
+        mkdir -p /backups &&
+        echo '*/30 * * * * pg_dump -Fc -f /backups/pandora-\$$(date +%Y%m%d-%H%M%S).dump && find /backups -name \"*.dump\" -mtime +$$KEEP_DAYS -delete && echo \"Backup OK \$$(date)\"' > /etc/crontabs/root &&
+        crond -f -l 6
+      "
+    restart: unless-stopped
     networks:
       - pandora-net
 
