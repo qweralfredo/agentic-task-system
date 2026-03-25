@@ -126,7 +126,7 @@ services:
       - pandora-devlake-net
 
   devlake:
-    image: devlake/lake:v0.21.1
+    image: apache/devlake:v0.21.0
     container_name: devlake
     profiles: [devlake]
     depends_on:
@@ -143,7 +143,7 @@ services:
     volumes:
       - ./ops/devlake/config:/app/.env:ro
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -sf http://localhost:8080/api/version || exit 1"]
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:8080/version || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -154,7 +154,7 @@ services:
       - pandora-net
 
   devlake-config-ui:
-    image: devlake/config-ui:v0.21.1
+    image: apache/devlake-config-ui:v0.21.0
     container_name: devlake-config-ui
     profiles: [devlake]
     depends_on:

@@ -44,7 +44,7 @@
       "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
       "id": 2,
       "options": {"colorMode": "background", "reduceOptions": {"calcs": ["lastNotNull"]}},
-      "title": "Pending Reviews",
+      "title": "Review Queue",
       "type": "stat",
       "targets": [
         {
@@ -96,6 +96,24 @@
   "refresh": "30s",
   "schemaVersion": 38,
   "tags": ["pandora", "human-evaluation", "devlake"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
+        "definition": "SELECT DISTINCT project_id FROM pandora_human_evaluations ORDER BY project_id",
+        "hide": 0,
+        "includeAll": true,
+        "multi": false,
+        "name": "project",
+        "options": [],
+        "query": "SELECT DISTINCT project_id FROM pandora_human_evaluations ORDER BY project_id",
+        "refresh": 2,
+        "type": "query",
+        "label": "Project"
+      }
+    ]
+  },
   "time": {"from": "now-30d", "to": "now"},
   "title": "Pandora — Human Evaluation Board",
   "uid": "pandora-human-eval",
