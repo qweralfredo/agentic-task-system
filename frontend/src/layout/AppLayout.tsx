@@ -1,4 +1,5 @@
-﻿import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
+import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { MarkdownField } from '../components/MarkdownField'
@@ -46,6 +47,7 @@ const drawerWidthCollapsed = 76
 
 const menu = [
   { label: 'Dashboard', to: '/', icon: <DashboardOutlinedIcon /> },
+  { label: 'Token Insights', to: '/dashboard/tokens', icon: <AnalyticsOutlinedIcon /> },
   { label: 'Backlog', to: '/backlog', icon: <ViewKanbanOutlinedIcon /> },
   { label: 'Sprints', to: '/sprints', icon: <SprintOutlinedIcon /> },
   { label: 'Knowledge', to: '/knowledge', icon: <DescriptionOutlinedIcon /> },

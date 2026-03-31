@@ -5,6 +5,7 @@ import { ProjectProvider } from './context/ProjectContext'
 import { AppLayout } from './layout/AppLayout'
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })))
+const TokenInsightsPage = lazy(() => import('./pages/TokenInsightsPage').then((module) => ({ default: module.TokenInsightsPage })))
 const BacklogPage = lazy(() => import('./pages/BacklogPage').then((module) => ({ default: module.BacklogPage })))
 const SprintsPage = lazy(() => import('./pages/SprintsPage').then((module) => ({ default: module.SprintsPage })))
 const KnowledgePage = lazy(() => import('./pages/KnowledgePage').then((module) => ({ default: module.KnowledgePage })))
@@ -40,6 +41,14 @@ function App() {
             element={(
               <Suspense fallback={<PageFallback />}>
                 <BacklogPage />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="dashboard/tokens"
+            element={(
+              <Suspense fallback={<PageFallback />}>
+                <TokenInsightsPage />
               </Suspense>
             )}
           />

@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/projetos/todolist/**)",
+      "mcp__local__project_list",
+      "mcp__local__backlog_list",
+      "mcp__local__wiki_list",
+      "mcp__local__checkpoint_list",
+      "Read(//c/Users/alfre/.claude/**)",
+      "Read(//c/Users/alfre/.claude --ignore=todos --ignore=projects --ignore=statsig --ignore=shell-snapshots 2>/dev/**)",
+      "Bash(grep -v \"^todos$\\\\|^projects$\\\\|^statsig$\\\\|^shell-snapshots$\")",
+      "mcp__local__wiki_add",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__local__sprint_create",
+      "mcp__local__workitem_list",
+      "mcp__local__workitem_add_subtask",
+      "mcp__local__workitem_update",
+      "mcp__local__knowledge_checkpoint",
+      "Bash(mkdir -p /c/projetos/todolist/docs/skills/claude)",
+      "Bash(cp /c/Users/alfre/.claude/commands/*.md /c/projetos/todolist/docs/skills/claude/)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(python3 -c \":*)",
+      "Read(//c/Users/alfre/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\alfre\\.claude\\commands",
+      "c:\\projetos\\todolist\\docs"
+    ]
+  }
+}

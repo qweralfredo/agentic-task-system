@@ -1,2 +1,0 @@
-[    2498ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:58080/api/projects:0
-[   19646ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:58080/api/projects:0

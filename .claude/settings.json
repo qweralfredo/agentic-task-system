@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(__NEW_LINE_c1b83285cf6eead8__ docker:*)",
+      "Bash(E2E_PROJECT_ID=c8dac667-f0aa-4c46-8d75-cf95278d7fbe PANDORA_API_KEY=dev-api-key npx playwright test tests/04-api-data-verification.spec.ts tests/03-grafana-dashboards.spec.ts tests/05-grafana-data-queries.spec.ts tests/06-devlake-ui.spec.ts --reporter=list)",
+      "Bash(E2E_PROJECT_ID=c8dac667-f0aa-4c46-8d75-cf95278d7fbe PANDORA_API_KEY=dev-api-key npx playwright test tests/03-grafana-dashboards.spec.ts --grep \"screenshot\" --reporter=list)",
+      "WebFetch(domain:github.com)",
+      "Bash(uv --version)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ]
+  }
+}

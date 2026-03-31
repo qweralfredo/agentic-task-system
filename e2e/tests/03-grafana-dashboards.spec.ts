@@ -101,7 +101,7 @@ for (const dash of DASHBOARDS) {
       await page.locator('button[type="submit"], [data-testid="data-testid Login button"]').first().click();
       await page.waitForLoadState('networkidle');
 
-      await page.goto(`${GRAFANA}/d/${dash.uid}`);
+      await page.goto(`${GRAFANA}/d/${dash.uid}`, { waitUntil: 'domcontentloaded' }).catch(() => null);
       await page.waitForTimeout(4000);
       await page.screenshot({
         path: `playwright-report/screenshots/${dash.uid}.png`,

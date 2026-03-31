@@ -1,4 +1,4 @@
-﻿using PandoraTodoList.Api.Contracts;
+using PandoraTodoList.Api.Contracts;
 using PandoraTodoList.Api.Data;
 using PandoraTodoList.Api.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -236,6 +236,49 @@ public class ScrumService(AppDbContext db)
         db.WorkItems.Add(subTask);
         await db.SaveChangesAsync(cancellationToken);
         return subTask;
+    }
+
+    public async Task DeleteBacklogItemAsync(Guid backlogItemId, CancellationToken cancellationToken)
+    {
+        var backlog = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogItemId, cancellationToken)
+            ?? throw new InvalidOperationException("Backlog item not found.");
+
+        var items = await db.WorkItems.Where(w => w.BacklogItemId == backlogItemId).ToListAsync(cancellationToken);
+        var sprintIds = items.Select(w => w.SprintId).Distinct().ToList();
+        var ids = items.Select(w => w.Id).ToHashSet();
+
+        while (ids.Count > 0)
+        {
+            var leafIds = ids.Where(id => !items.Any(w => ids.Contains(w.Id) && w.ParentWorkItemId == id)).ToList();
+            foreach (var lid in leafIds)
+            {
+                var entity = items.First(w => w.Id == lid);
+                db.WorkItems.Remove(entity);
+                ids.Remove(lid);
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        db.BacklogItems.Remove(backlog);
+        await db.SaveChangesAsync(cancellationToken);
+
+        foreach (var sid in sprintIds)
+        {
+            var any = await db.WorkItems.AnyAsync(w => w.SprintId == sid, cancellationToken);
+            if (any)
+            {
+                continue;
+            }
+
+            var sprint = await db.Sprints.FirstOrDefaultAsync(s => s.Id == sid, cancellationToken);
+            if (sprint is not null)
+            {
+                db.Sprints.Remove(sprint);
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<BacklogItemEntity> UpdateBacklogItemContextAsync(Guid backlogItemId, UpdateBacklogItemContextRequest request, CancellationToken cancellationToken)
