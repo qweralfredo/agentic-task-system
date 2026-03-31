@@ -3,6 +3,7 @@ using PandoraTodoList.Api.Data;
 using PandoraTodoList.Api.Domain;
 using PandoraTodoList.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,8 @@ var allowedCorsOrigins = corsOrigins
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddCors(options =>
     options.AddPolicy("FrontendCors", policy =>
         policy.WithOrigins(allowedCorsOrigins)
@@ -64,6 +67,25 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTimeOffset
 app.MapGet("/api/projects", async (bool? includeArchived, AppDbContext db, CancellationToken ct) =>
     await (includeArchived == true ? db.Projects : db.Projects.Where(p => p.Status == ProjectStatus.Active))
         .OrderByDescending(p => p.CreatedAt)
+        .Select(p => new
+        {
+            p.Id,
+            p.Name,
+            p.Description,
+            p.Status,
+            p.ArchivedAt,
+            p.CreatedAt,
+            p.GitHubUrl,
+            p.LocalPath,
+            p.TechStack,
+            p.MainBranch,
+            BacklogCount = p.BacklogItems.Count,
+            SprintCount = p.Sprints.Count,
+            WikiCount = p.WikiPages.Count,
+            DocCount = p.DocumentationPages.Count,
+            CheckpointCount = p.KnowledgeCheckpoints.Count,
+            AgentRunCount = p.AgentRuns.Count,
+        })
         .ToListAsync(ct));
 
 app.MapPost("/api/projects", async (CreateProjectRequest request, ScrumService service, CancellationToken ct) =>
