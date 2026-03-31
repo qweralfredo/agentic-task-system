@@ -35,7 +35,48 @@ public record AddReviewRequest(string Type, string Summary, string Notes);
 public record AddWikiPageRequest(string Title, string ContentMarkdown, string Tags, string Category = "General");
 public record AddCheckpointRequest(string Name, string ContextSnapshot, string Decisions, string Risks, string NextActions, string Category = "General");
 public record AddDocumentationPageRequest(string Title, string ContentMarkdown, string Category, string Tags);
-public record AddAgentRunLogRequest(string AgentName, string EntryPoint, string InputSummary, string OutputSummary, string Status, DateTimeOffset StartedAt, DateTimeOffset? FinishedAt);
+public record AddAgentRunLogRequest(
+    string AgentName,
+    string EntryPoint,
+    string InputSummary,
+    string OutputSummary,
+    string Status,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? FinishedAt,
+    // DevLake metrics fields (SP-03 BL-05)
+    string ModelName = "",
+    int TokensInput = 0,
+    int TokensOutput = 0,
+    long LatencyMs = 0,
+    decimal CostUsd = 0m,
+    bool Success = true,
+    string ErrorMessage = "",
+    string Environment = "production");
+
+// Human Evaluation requests/responses (SP-03 BL-06)
+public record SubmitHumanEvaluationRequest(
+    string ReviewerId,
+    float AccuracyScore,    // 0.0-1.0
+    float RelevanceScore,   // 0.0-1.0
+    float CompletenessScore,// 0.0-1.0
+    float SafetyScore,      // 0.0-1.0
+    string FeedbackText = "",
+    bool RequiresEscalation = false,
+    long ReviewTimeSeconds = 0);
+
+public record HumanEvaluationDto(
+    Guid Id,
+    Guid AgentRunId,
+    string ReviewerId,
+    float Score,
+    float AccuracyScore,
+    float RelevanceScore,
+    float CompletenessScore,
+    float SafetyScore,
+    string FeedbackText,
+    bool RequiresEscalation,
+    long ReviewTimeSeconds,
+    DateTimeOffset SubmittedAt);
 
 public record DashboardDto(
     Guid ProjectId,

@@ -1,2 +1,5 @@
 mcp>=1.7.1
 httpx>=0.28.1
+pydriller>=2.6
+networkx>=3.4
+psycopg2-binary>=2.9

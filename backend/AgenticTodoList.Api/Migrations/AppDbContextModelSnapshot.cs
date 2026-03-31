@@ -33,7 +33,20 @@ namespace PandoraTodoList.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal>("CostUsd")
+                        .HasPrecision(10, 6)
+                        .HasColumnType("numeric(10,6)");
+
                     b.Property<string>("EntryPoint")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ErrorMessage")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -43,6 +56,14 @@ namespace PandoraTodoList.Api.Migrations
                     b.Property<string>("InputSummary")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<long>("LatencyMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ModelName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<string>("OutputSummary")
                         .IsRequired()
@@ -58,11 +79,71 @@ namespace PandoraTodoList.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("TokensInput")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TokensOutput")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProjectId", "AgentName", "StartedAt");
 
                     b.ToTable("AgentRunLogs");
+                });
+
+            modelBuilder.Entity("PandoraTodoList.Api.Domain.HumanEvaluationEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<float>("AccuracyScore")
+                        .HasColumnType("real");
+
+                    b.Property<Guid>("AgentRunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<float>("CompletenessScore")
+                        .HasColumnType("real");
+
+                    b.Property<string>("FeedbackText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<float>("RelevanceScore")
+                        .HasColumnType("real");
+
+                    b.Property<bool>("RequiresEscalation")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ReviewerId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("ReviewTimeSeconds")
+                        .HasColumnType("bigint");
+
+                    b.Property<float>("SafetyScore")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Score")
+                        .HasColumnType("real");
+
+                    b.Property<DateTimeOffset>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgentRunId", "ReviewerId");
+
+                    b.HasIndex("SubmittedAt");
+
+                    b.ToTable("HumanEvaluations");
                 });
 
             modelBuilder.Entity("PandoraTodoList.Api.Domain.BacklogItemEntity", b =>
@@ -593,6 +674,17 @@ namespace PandoraTodoList.Api.Migrations
                     b.Navigation("Sprint");
                 });
 
+            modelBuilder.Entity("PandoraTodoList.Api.Domain.HumanEvaluationEntity", b =>
+                {
+                    b.HasOne("PandoraTodoList.Api.Domain.AgentRunLogEntity", "AgentRun")
+                        .WithMany("HumanEvaluations")
+                        .HasForeignKey("AgentRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AgentRun");
+                });
+
             modelBuilder.Entity("PandoraTodoList.Api.Domain.WorkItemFeedbackEntity", b =>
                 {
                     b.HasOne("PandoraTodoList.Api.Domain.WorkItemEntity", "WorkItem")
@@ -602,6 +694,11 @@ namespace PandoraTodoList.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("WorkItem");
+                });
+
+            modelBuilder.Entity("PandoraTodoList.Api.Domain.AgentRunLogEntity", b =>
+                {
+                    b.Navigation("HumanEvaluations");
                 });
 
             modelBuilder.Entity("PandoraTodoList.Api.Domain.BacklogItemEntity", b =>

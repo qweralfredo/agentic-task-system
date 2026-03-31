@@ -1,0 +1,17 @@
+{
+  "name": "pandora-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test tests/02-frontend-token-insights.spec.ts tests/04-api-data-verification.spec.ts --grep='API'",
+    "test:grafana": "playwright test tests/03-grafana-dashboards.spec.ts tests/05-grafana-data-queries.spec.ts",
+    "test:frontend": "playwright test tests/01-frontend-kanban.spec.ts tests/02-frontend-token-insights.spec.ts",
+    "test:devlake": "playwright test tests/06-devlake-ui.spec.ts",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.42.0",
+    "@types/node": "^20.0.0"
+  }
+}

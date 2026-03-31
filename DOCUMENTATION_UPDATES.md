@@ -145,3 +145,30 @@ Data: 21/03/2026
 
 ### Validação
 - Build frontend executado com sucesso: `npm run build`
+
+---
+
+## Atualização UI — Ordenação Alfabética de Backlogs
+
+Data: 24/03/2026
+
+### Feature
+- Backlogs combobox na página de sprints (http://localhost:8400/sprints) agora ordena opções em ordem alfabética por título
+- Aplicado em dois locais:
+  1. **Filter combobox** (cabeçalho): Dropdown de filtro mostra todos os backlogs ordenados alfabeticamente
+  2. **Sprint creation modal**: Lista de backlogs selecionáveis (filtrada por status ≤ 2) também ordenada alfabeticamente
+
+### Implementação
+- Arquivo: `frontend/src/pages/SprintsPage.tsx`
+- Método: `.sort((a, b) => a.title.localeCompare(b.title))`
+- Sorting: Case-insensitive, compatível com caracteres acentuados (pt-BR)
+- Nota: Grouped view mantém ordenação por prioridade (não alterado)
+
+### Validação
+- ✅ Build executado sem erros: `npm run build`
+- ✅ Container Docker construído: `docker compose build frontend --no-cache`
+- ✅ Deployment realizado: `docker compose up -d frontend`
+- ✅ Container rodando em porta 8400:80
+
+### Commit
+- `feat/rich-ui-copilot-style` — Sort backlog comboboxes alphabetically on sprints page
