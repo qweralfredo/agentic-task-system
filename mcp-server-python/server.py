@@ -5,6 +5,7 @@ from typing import Any, Union
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+import git_graph_service
 
 API_BASE_URL = os.getenv("PANDORA_API_BASE_URL", "http://127.0.0.1:8480")
 TIMEOUT_SECONDS = float(os.getenv("PANDORA_API_TIMEOUT", "30"))
@@ -606,6 +607,40 @@ def checkpoint_list(project_id: str) -> list[dict[str, Any]]:
     """List knowledge checkpoints from a project."""
     knowledge = _request("GET", f"/api/projects/{project_id}/knowledge")
     return knowledge.get("checkpoints", [])
+
+
+@mcp.tool(name="get_modification_impact")
+def get_modification_impact(project_id: str, file_path: str) -> str:
+    """Read a context modification graph for a specified file to discover temporal coupling and historical context."""
+    projects = _request("GET", "/api/projects", params={"includeArchived": False})
+    project = next((p for p in projects if str(p.get("id")) == project_id), None)
+    if not project or not project.get("localPath"):
+        raise ApiError(f"Project {project_id} not found or localPath not configured.")
+        
+    impact = git_graph_service.analyze_impact(project.get("localPath"), file_path)
+    
+    if "error" in impact:
+        return impact["error"]
+        
+    md = [f"## Impact Analysis for `{file_path}`", ""]
+    
+    md.append("### Temporally Coupled Files (Co-modified)")
+    if impact.get("co_modified_files"):
+        for f in impact["co_modified_files"][:10]:
+            md.append(f"- `{f['file']}` (Modified together {f['frequency']} times)")
+    else:
+        md.append("- No temporal coupling found.")
+        
+    md.append("")
+    md.append("### Historically Related WorkItems")
+    if impact.get("historically_related_workitems"):
+        for wi in impact["historically_related_workitems"][:10]:
+            md.append(f"- WorkItem `{wi}`")
+    else:
+        md.append("- No correlated WorkItems found in recent history.")
+        
+    return "\\n".join(md)
+
 
 
 @mcp.prompt(name="pandora_project_config")
