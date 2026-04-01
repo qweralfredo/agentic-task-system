@@ -48,7 +48,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT 100.0 * SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) / COUNT(*) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+          "rawSql": "SELECT 100.0 * SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) / COUNT(*) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
           "refId": "A"
         }
       ]
@@ -70,7 +70,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT COUNT(*) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+          "rawSql": "SELECT COUNT(*) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
           "refId": "A"
         }
       ]
@@ -99,7 +99,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT AVG(cost_usd) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+          "rawSql": "SELECT AVG(cost_usd) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
           "refId": "A"
         }
       ]
@@ -121,7 +121,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT AVG(latency_ms) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
+          "rawSql": "SELECT AVG(latency_ms) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)",
           "refId": "A"
         }
       ]
@@ -143,7 +143,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT DATE(created_at) AS time, SUM(tokens_input) AS tokens_input, SUM(tokens_output) AS tokens_output FROM pandora_agent_runs WHERE $__timeFilter(created_at) GROUP BY DATE(created_at) ORDER BY time",
+          "rawSql": "SELECT DATE(started_at) AS time, SUM(tokens_input) AS tokens_input, SUM(tokens_output) AS tokens_output FROM pandora_agent_runs WHERE $__timeFilter(started_at) GROUP BY DATE(started_at) ORDER BY time",
           "refId": "A",
           "format": "time_series"
         }
@@ -162,7 +162,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT DATE(created_at) AS time, model_used AS metric, SUM(cost_usd) AS value FROM pandora_agent_runs WHERE $__timeFilter(created_at) GROUP BY DATE(created_at), model_used ORDER BY time",
+          "rawSql": "SELECT DATE(started_at) AS time, model_used AS metric, SUM(cost_usd) AS value FROM pandora_agent_runs WHERE $__timeFilter(started_at) GROUP BY DATE(started_at), model_used ORDER BY time",
           "refId": "A",
           "format": "time_series"
         }
@@ -186,7 +186,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT model_used AS model, COUNT(*) AS total_runs, ROUND(100.0 * SUM(CASE WHEN success=1 THEN 1 ELSE 0 END) / COUNT(*), 1) AS success_rate, ROUND(AVG(latency_ms)) AS avg_latency, ROUND(SUM(cost_usd), 4) AS total_cost, SUM(tokens_input + tokens_output) AS total_tokens FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY model_used ORDER BY total_runs DESC",
+          "rawSql": "SELECT model_used AS model, COUNT(*) AS total_runs, ROUND(100.0 * SUM(CASE WHEN success=1 THEN 1 ELSE 0 END) / COUNT(*), 1) AS success_rate, ROUND(AVG(latency_ms)) AS avg_latency, ROUND(SUM(cost_usd), 4) AS total_cost, SUM(tokens_input + tokens_output) AS total_tokens FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY model_used ORDER BY total_runs DESC",
           "refId": "A"
         }
       ]

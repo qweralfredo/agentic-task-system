@@ -35,7 +35,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT SUM(cost_usd) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
+          "rawSql": "SELECT SUM(cost_usd) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
           "refId": "A"
         }
       ]
@@ -57,7 +57,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT SUM(tokens_input + tokens_output) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
+          "rawSql": "SELECT SUM(tokens_input + tokens_output) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
           "refId": "A"
         }
       ]
@@ -85,7 +85,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT AVG(cost_usd) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
+          "rawSql": "SELECT AVG(cost_usd) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
           "refId": "A"
         }
       ]
@@ -113,7 +113,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT AVG(tokens_input + tokens_output) AS value FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
+          "rawSql": "SELECT AVG(tokens_input + tokens_output) AS value FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND model_name REGEXP '${model}'",
           "refId": "A"
         }
       ]
@@ -129,7 +129,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT DATE(created_at) AS time, model_name, SUM(cost_usd) AS daily_cost FROM pandora_agent_runs WHERE $__timeFilter(created_at) AND model_name REGEXP '${model}' GROUP BY DATE(created_at), model_name ORDER BY time",
+          "rawSql": "SELECT DATE(started_at) AS time, model_name, SUM(cost_usd) AS daily_cost FROM pandora_agent_runs WHERE $__timeFilter(started_at) AND model_name REGEXP '${model}' GROUP BY DATE(started_at), model_name ORDER BY time",
           "refId": "A",
           "format": "time_series"
         }
@@ -146,7 +146,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT DATE(created_at) AS time, SUM(tokens_input) AS input_tokens, SUM(tokens_output) AS output_tokens, SUM(tokens_input + tokens_output) AS total_tokens FROM pandora_agent_runs WHERE $__timeFilter(created_at) AND model_name REGEXP '${model}' GROUP BY DATE(created_at) ORDER BY time",
+          "rawSql": "SELECT DATE(started_at) AS time, SUM(tokens_input) AS input_tokens, SUM(tokens_output) AS output_tokens, SUM(tokens_input + tokens_output) AS total_tokens FROM pandora_agent_runs WHERE $__timeFilter(started_at) AND model_name REGEXP '${model}' GROUP BY DATE(started_at) ORDER BY time",
           "refId": "A",
           "format": "time_series"
         }
@@ -170,7 +170,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT model_name, COUNT(*) AS total_runs, ROUND(SUM(cost_usd), 4) AS total_cost, ROUND(AVG(cost_usd), 6) AS avg_cost_per_run, ROUND(AVG(tokens_input + tokens_output), 0) AS avg_tokens, ROUND(AVG(latency_ms), 0) AS avg_latency_ms, ROUND(SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS success_rate FROM pandora_agent_runs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY model_name ORDER BY total_cost DESC",
+          "rawSql": "SELECT model_name, COUNT(*) AS total_runs, ROUND(SUM(cost_usd), 4) AS total_cost, ROUND(AVG(cost_usd), 6) AS avg_cost_per_run, ROUND(AVG(tokens_input + tokens_output), 0) AS avg_tokens, ROUND(AVG(latency_ms), 0) AS avg_latency_ms, ROUND(SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS success_rate FROM pandora_agent_runs WHERE started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY model_name ORDER BY total_cost DESC",
           "refId": "A"
         }
       ]

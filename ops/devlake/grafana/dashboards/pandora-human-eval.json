@@ -49,7 +49,7 @@
       "targets": [
         {
           "datasource": {"type": "mysql", "uid": "devlake-mysql-ds"},
-          "rawSql": "SELECT COUNT(*) AS value FROM pandora_agent_runs ar LEFT JOIN pandora_human_evaluations he ON ar.id = he.agent_run_id WHERE he.id IS NULL AND ar.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+          "rawSql": "SELECT COUNT(*) AS value FROM pandora_agent_runs ar LEFT JOIN pandora_human_evaluations he ON ar.id = he.agent_run_id WHERE he.id IS NULL AND ar.started_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
           "refId": "A"
         }
       ]
