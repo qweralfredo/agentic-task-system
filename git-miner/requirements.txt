@@ -1,0 +1,4 @@
+pydriller==2.6
+SQLAlchemy==2.0.29
+psycopg2-binary==2.9.9
+schedule==1.2.1

@@ -44,6 +44,10 @@ if [ ! -f "$ENV_FILE" ]; then
   read -r
 fi
 
+# Sanitize file endings (Windows checkout CRLF mitigation)
+sed -i 's/\r$//' "$ENV_FILE"
+
+
 set -a
 source "$ENV_FILE"
 set +a
@@ -104,7 +108,7 @@ bash "$PROJECT_ROOT/ops/devlake/tests/test_devlake_compose.sh" || true
 
 echo ""
 echo "=== Serviços disponíveis ==="
-echo "  DevLake API:    http://localhost:8082/api/version"
+echo "  DevLake API:    http://localhost:8080/api/version"
 echo "  Config UI:      http://localhost:4000"
 echo "  Grafana:        http://localhost:3002  (admin / ${GF_SECURITY_ADMIN_PASSWORD:-pandora-grafana})"
 echo ""

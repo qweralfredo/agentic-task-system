@@ -18,7 +18,7 @@ if [ -f "$PROJECT_ROOT/.env.devlake" ]; then
   set +a
 fi
 
-DEVLAKE_URL="${DEVLAKE_URL:-http://localhost:8082}"
+DEVLAKE_URL="${DEVLAKE_URL:-http://localhost:8080}"
 GITHUB_TOKEN="${GITHUB_TOKEN:?GITHUB_TOKEN não configurado em .env.devlake}"
 GITHUB_REPO_OWNER="${GITHUB_REPO_OWNER:-qweralfredo}"
 GITHUB_REPO_NAME="${GITHUB_REPO_NAME:-agentic-task-system}"
@@ -174,12 +174,12 @@ BLUEPRINT_ID=$(get_blueprint_id "$BLUEPRINT_NAME")
 if [ -n "$BLUEPRINT_ID" ]; then
   echo "  Blueprint já existe. ID: $BLUEPRINT_ID"
 else
-  echo "  Criando blueprint (coleta a cada 6h)..."
+  echo "  Criando blueprint (coleta a cada 15m)..."
   BLUEPRINT_RESPONSE=$(curl -sf -X POST "$DEVLAKE_URL/api/blueprints" \
     -H "Content-Type: application/json" \
     -d "{
       \"name\": \"${BLUEPRINT_NAME}\",
-      \"cronConfig\": \"0 */6 * * *\",
+      \"cronConfig\": \"*/15 * * * *\",
       \"enable\": true,
       \"isManual\": false,
       \"skipOnFail\": true,
@@ -234,7 +234,7 @@ if [ -n "${WH_CONN_ID:-}" ]; then
   echo "  Webhook URL:          ${DEVLAKE_URL}/api/plugins/webhook/${WH_CONN_ID}"
 fi
 echo ""
-echo "  Coleta agendada: a cada 6 horas"
+echo "  Coleta agendada: a cada 15 minutos"
 echo "  Config UI:       http://localhost:4000"
 echo "  Grafana:         http://localhost:3002"
 echo ""
