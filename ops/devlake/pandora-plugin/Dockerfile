@@ -2,10 +2,11 @@ FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 COPY go.mod ./
+COPY go.sum* ./
 RUN go mod download 2>/dev/null || true
 
 COPY . .
-RUN go build -o /pandora-plugin ./...
+RUN go mod tidy && go build -o /pandora-plugin ./cmd
 
 # ---- runtime ----
 FROM alpine:3.19
