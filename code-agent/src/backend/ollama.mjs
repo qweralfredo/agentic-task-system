@@ -47,29 +47,6 @@ export async function listModels() {
   }));
 }
 
-function extractJson(text) {
-  // Fast path: text is already valid JSON
-  try {
-    return JSON.parse(text);
-  } catch {
-    // fall through
-  }
-
-  // Extract the outermost {...} block in case the model wrapped it in prose
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start !== -1 && end > start) {
-    try {
-      return JSON.parse(text.slice(start, end + 1));
-    } catch {
-      // fall through
-    }
-  }
-
-  // Give up — return the raw text as a reply so the agent can still respond
-  return { reply: text, plan: [], actions: [], done: true };
-}
-
 export async function chatJson({ model = DEFAULT_MODEL, messages }) {
   const payload = await ollamaFetch("/api/chat", {
     method: "POST",
@@ -87,7 +64,7 @@ export async function chatJson({ model = DEFAULT_MODEL, messages }) {
   const raw = payload.message?.content?.trim() ?? "{}";
   return {
     raw,
-    json: extractJson(raw),
+    json: JSON.parse(raw),
   };
 }
 

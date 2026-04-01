@@ -53,9 +53,6 @@ async function main() {
     await sleep(2500);
 
     const models = await requestJson("http://127.0.0.1:8787/api/models", {}, 30000);
-    const projectsPayload = await requestJson("http://127.0.0.1:8787/api/projects", {}, 5000);
-    const defaultProject = (projectsPayload.projects || []).find((p) => p.slug === "default");
-    if (!defaultProject) throw new Error("Default project not found.");
     const sessionPayload = await requestJson(
       "http://127.0.0.1:8787/api/sessions",
       {
@@ -64,7 +61,7 @@ async function main() {
         body: JSON.stringify({
           title: "Live tool-action smoke test",
           model: env.OLLAMA_MODEL,
-          projectId: defaultProject.id,
+          workspaceName: "default",
         }),
       },
       30000,
