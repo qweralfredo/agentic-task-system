@@ -85,6 +85,15 @@ async function main() {
     }
 
     const chosenModel = (process.env.OLLAMA_MODEL || "").trim() || String(models[0].name);
+
+    // Get default project id for session creation
+    const projectsRes = await request(`${baseUrl}/api/projects`, {}, 5000);
+    const projectsPayload = parseJson(projectsRes.text);
+    const defaultProject = (projectsPayload.projects || []).find((p) => p.slug === "default");
+    if (!defaultProject) {
+      throw new Error("Default project not found in /api/projects.");
+    }
+
     const createSession = await request(
       `${baseUrl}/api/sessions`,
       {
@@ -93,7 +102,7 @@ async function main() {
         body: JSON.stringify({
           title: "Fast interface smoke test",
           model: chosenModel,
-          workspaceName: "default",
+          projectId: defaultProject.id,
         }),
       },
       12000,

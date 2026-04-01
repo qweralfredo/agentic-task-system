@@ -1,15 +1,28 @@
 ﻿import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { DEFAULT_MODEL, MAX_ACTIONS, MAX_AGENT_CYCLES, SESSION_DIR } from "./config.mjs";
+import { DEFAULT_MODEL, DEFAULT_WORKSPACE_PATH, MAX_ACTIONS, MAX_AGENT_CYCLES, SESSION_DIR, WORKSPACE_ROOT } from "./config.mjs";
 import { chatJson } from "./ollama.mjs";
 import { discoverSkills, loadSkills } from "./skills.mjs";
-import { executeToolAction, getWorkspaceSummary, listFiles } from "./workspace.mjs";
+import { executeToolActionByPath, getWorkspaceSummaryByPath, listFilesByPath } from "./workspace.mjs";
 
 const sessions = new Map();
 
 function sessionFilePath(sessionId) {
   return path.join(SESSION_DIR, `${sessionId}.json`);
+}
+
+export function hydrateSessionsFromDisk() {
+  if (!fs.existsSync(SESSION_DIR)) return;
+  for (const file of fs.readdirSync(SESSION_DIR)) {
+    if (!file.endsWith(".json")) continue;
+    try {
+      const session = JSON.parse(fs.readFileSync(path.join(SESSION_DIR, file), "utf8"));
+      if (session?.id) sessions.set(session.id, session);
+    } catch {
+      // corrupt file — skip
+    }
+  }
 }
 
 function persistSession(session) {
@@ -110,7 +123,7 @@ function buildToolContract() {
 }
 
 function buildSystemPrompt(session, selectedSkills) {
-  const workspace = getWorkspaceSummary(session.workspaceName);
+  const workspace = getWorkspaceSummaryByPath(session.workspacePath);
 
   return [
     "You are Code Agent, a local coding assistant inspired by GitHub Copilot and Claude Code.",
@@ -175,7 +188,7 @@ async function executeActions(session, actions, emit) {
 
     emit("tool:start", safeAction);
     try {
-      const result = await executeToolAction(safeAction, session.workspaceName);
+      const result = await executeToolActionByPath(safeAction, session.workspacePath);
       results.push({ action: safeAction, result });
 
       if ((safeAction.type === "write_file" || safeAction.type === "read_file") && typeof safeAction.path === "string") {
@@ -206,7 +219,7 @@ async function executeActions(session, actions, emit) {
 }
 
 async function askModel(session, prompt, selectedSkills, toolResults) {
-  const workspaceTree = listFiles({ workspaceName: session.workspaceName, target: ".", depth: 3 });
+  const workspaceTree = listFilesByPath({ workspacePath: session.workspacePath, target: ".", depth: 3 });
   const messages = [
     {
       role: "system",
@@ -234,7 +247,7 @@ function makeFallbackReply(prompt, session) {
     "I could not get a structured tool response from the selected Ollama model.",
     "The session is still available and you can retry with another model.",
     `Current request: ${prompt}`,
-    `Current workspace: ${getWorkspaceSummary(session.workspaceName).workspacePath}`,
+    `Current workspace: ${session.workspacePath}`,
   ].join(" ");
 }
 
@@ -242,12 +255,20 @@ export function listAvailableSkills() {
   return discoverSkills();
 }
 
-export function createSession({ title, model = DEFAULT_MODEL, workspaceName = "default" } = {}) {
+export function createSession({
+  title,
+  model = DEFAULT_MODEL,
+  projectId = null,
+  projectName = "Default",
+  workspacePath = DEFAULT_WORKSPACE_PATH,
+} = {}) {
   const session = {
     id: crypto.randomUUID(),
     title: title?.trim() || "New coding session",
     model,
-    workspaceName,
+    projectId,
+    projectName,
+    workspacePath,
     createdAt: nowIso(),
     updatedAt: nowIso(),
     messages: [],
@@ -318,10 +339,9 @@ export async function processUserMessage(sessionId, { prompt, model, skillIds = 
         break;
       }
     } catch (error) {
-      finalReply = makeFallbackReply(prompt, session);
-      emit("agent:error", {
-        message: error instanceof Error ? error.message : String(error),
-      });
+      const errMsg = error instanceof Error ? error.message : String(error);
+      finalReply = `⚠️ Agent error: ${errMsg}`;
+      emit("agent:error", { message: errMsg });
       break;
     }
   }
@@ -344,3 +364,4 @@ export async function processUserMessage(sessionId, { prompt, model, skillIds = 
 
   return session;
 }
+
