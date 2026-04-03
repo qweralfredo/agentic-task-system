@@ -1,3 +1,4 @@
+import EditIcon from '@mui/icons-material/Edit'
 import {
   Alert,
   Box,
@@ -13,6 +14,7 @@ import {
   DialogTitle,
   FormControl,
   Grid,
+  IconButton,
   InputLabel,
   MenuItem,
   Paper,
@@ -129,6 +131,22 @@ export function SprintsPage() {
   const [editingCommitIds, setEditingCommitIds] = useState('')
   const [expandedFeedbackIds, setExpandedFeedbackIds] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grouped' | 'race'>('grouped')
+
+  // ── Edit Sprint modal
+  const [editingSprintId, setEditingSprintId] = useState('')
+  const [editSprintName, setEditSprintName] = useState('')
+  const [editSprintGoal, setEditSprintGoal] = useState('')
+  const [editSprintStartDate, setEditSprintStartDate] = useState('')
+  const [editSprintEndDate, setEditSprintEndDate] = useState('')
+  const [editSprintStatus, setEditSprintStatus] = useState(0)
+  const [isSavingSprint, setIsSavingSprint] = useState(false)
+
+  // ── Edit WorkItem fields modal (title/desc/tags)
+  const [editingWiFieldsId, setEditingWiFieldsId] = useState('')
+  const [editWiTitle, setEditWiTitle] = useState('')
+  const [editWiDescription, setEditWiDescription] = useState('')
+  const [editWiTags, setEditWiTags] = useState('')
+  const [isSavingWiFields, setIsSavingWiFields] = useState(false)
 
   function toggleFeedbacks(workItemId: string) {
     setExpandedFeedbackIds((prev) => {
@@ -379,6 +397,56 @@ export function SprintsPage() {
     setTaskDraftAssignee((prev) => ({ ...prev, [editingWorkItemId]: editingWorkItemAssignee }))
     setEditingWorkItemId('')
     await refreshProjectViews(selectedProjectId)
+  }
+
+  function handleOpenEditSprint(sprint: { id: string; name: string; goal: string; startDate: string; endDate: string; status: number | string }) {
+    setEditingSprintId(sprint.id)
+    setEditSprintName(sprint.name)
+    setEditSprintGoal(sprint.goal)
+    setEditSprintStartDate(sprint.startDate ? sprint.startDate.slice(0, 10) : '')
+    setEditSprintEndDate(sprint.endDate ? sprint.endDate.slice(0, 10) : '')
+    setEditSprintStatus(toNumberStatus(sprint.status))
+  }
+
+  async function handleSaveEditSprint() {
+    if (!editingSprintId || !selectedProjectId) return
+    setIsSavingSprint(true)
+    try {
+      await apiClient.updateSprint(editingSprintId, {
+        name: editSprintName.trim() || undefined,
+        goal: editSprintGoal.trim() || undefined,
+        startDate: editSprintStartDate || undefined,
+        endDate: editSprintEndDate || undefined,
+        status: editSprintStatus,
+      })
+      setEditingSprintId('')
+      await refreshProjectViews(selectedProjectId)
+    } finally {
+      setIsSavingSprint(false)
+    }
+  }
+
+  function handleOpenEditWiFields(item: { id: string; title: string; description: string; tags?: string }) {
+    setEditingWiFieldsId(item.id)
+    setEditWiTitle(item.title)
+    setEditWiDescription(item.description)
+    setEditWiTags(item.tags ?? '')
+  }
+
+  async function handleSaveEditWiFields() {
+    if (!editingWiFieldsId || !selectedProjectId) return
+    setIsSavingWiFields(true)
+    try {
+      await apiClient.updateWorkItem(editingWiFieldsId, {
+        title: editWiTitle.trim() || undefined,
+        description: editWiDescription.trim() || undefined,
+        tags: editWiTags.trim(),
+      })
+      setEditingWiFieldsId('')
+      await refreshProjectViews(selectedProjectId)
+    } finally {
+      setIsSavingWiFields(false)
+    }
   }
 
   async function handleCreateSprint(event: React.FormEvent) {
@@ -647,26 +715,32 @@ export function SprintsPage() {
                           ? `${new Date(sprint.startDate).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })} – ${new Date(sprint.endDate).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit' })}`
                           : ''
                         return (
-                          <Chip
-                            key={sprint.id}
-                            size="small"
-                            clickable
-                            color={sprintActive ? 'success' : 'default'}
-                            variant="outlined"
-                            label={[
-                              sprint.name,
-                              sprintActive ? 'Active' : 'Planned/Closed',
-                              `${sprintWorkItems.length} tasks`,
-                              dateRange,
-                              totalTokens > 0 ? `${totalTokens} tk` : '',
-                              totalFeedbacks > 0 ? `${totalFeedbacks} fb` : '',
-                              sprintCommitCount > 0 ? `${sprintCommitCount} commits` : '',
-                            ].filter(Boolean).join(' • ')}
-                            onClick={() => {
-                              setSearchParams({ backlogId: backlogItem.id })
-                              setSelectedBoardSprintId(sprint.id)
-                            }}
-                          />
+                          <Stack key={sprint.id} direction="row" alignItems="center" spacing={0.3}>
+                            <Chip
+                              size="small"
+                              clickable
+                              color={sprintActive ? 'success' : 'default'}
+                              variant="outlined"
+                              label={[
+                                sprint.name,
+                                sprintActive ? 'Active' : 'Planned/Closed',
+                                `${sprintWorkItems.length} tasks`,
+                                dateRange,
+                                totalTokens > 0 ? `${totalTokens} tk` : '',
+                                totalFeedbacks > 0 ? `${totalFeedbacks} fb` : '',
+                                sprintCommitCount > 0 ? `${sprintCommitCount} commits` : '',
+                              ].filter(Boolean).join(' • ')}
+                              onClick={() => {
+                                setSearchParams({ backlogId: backlogItem.id })
+                                setSelectedBoardSprintId(sprint.id)
+                              }}
+                            />
+                            <Tooltip title="Edit sprint">
+                              <IconButton size="small" onClick={() => handleOpenEditSprint(sprint)}>
+                                <EditIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
                         )
                       })}
                     </Stack>
@@ -800,6 +874,7 @@ export function SprintsPage() {
                           onDragStart={(event) => handleTaskDragStart(event, item.id)}
                           onDragEnd={handleTaskDragEnd}
                           onEdit={() => handleOpenTaskModal(item)}
+                          onEditFields={() => handleOpenEditWiFields(item)}
                         />
                       ))}
                       {(sprintBoard[columnStatus] ?? []).length === 0 ? (
@@ -1022,6 +1097,59 @@ export function SprintsPage() {
           <Button variant="contained" onClick={handleSaveTaskFromModal}>Save</Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Edit Sprint modal */}
+      <Dialog open={Boolean(editingSprintId)} onClose={() => setEditingSprintId('')} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Sprint</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <TextField label="Sprint name" value={editSprintName} onChange={(e) => setEditSprintName(e.target.value)} fullWidth />
+            <TextField label="Goal" value={editSprintGoal} onChange={(e) => setEditSprintGoal(e.target.value)} fullWidth multiline minRows={2} />
+            <Grid container spacing={1.2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField type="date" label="Start" value={editSprintStartDate} onChange={(e) => setEditSprintStartDate(e.target.value)} InputLabelProps={{ shrink: true }} fullWidth />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField type="date" label="End" value={editSprintEndDate} onChange={(e) => setEditSprintEndDate(e.target.value)} InputLabelProps={{ shrink: true }} fullWidth />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="edit-sprint-status-label">Status</InputLabel>
+                  <Select labelId="edit-sprint-status-label" label="Status" value={editSprintStatus} onChange={(e) => setEditSprintStatus(Number(e.target.value))}>
+                    <MenuItem value={0}>Planned</MenuItem>
+                    <MenuItem value={1}>Active</MenuItem>
+                    <MenuItem value={2}>Closed</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingSprintId('')}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveEditSprint} disabled={isSavingSprint}>
+            {isSavingSprint ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Edit WorkItem fields modal */}
+      <Dialog open={Boolean(editingWiFieldsId)} onClose={() => setEditingWiFieldsId('')} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Task Fields</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <TextField label="Title" value={editWiTitle} onChange={(e) => setEditWiTitle(e.target.value)} fullWidth />
+            <TextField label="Description" value={editWiDescription} onChange={(e) => setEditWiDescription(e.target.value)} fullWidth multiline minRows={3} />
+            <TextField label="Tags (comma-separated)" value={editWiTags} onChange={(e) => setEditWiTags(e.target.value)} fullWidth placeholder="ex: auth, backend" />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingWiFieldsId('')}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveEditWiFields} disabled={isSavingWiFields}>
+            {isSavingWiFields ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   )
 }
@@ -1078,6 +1206,7 @@ function WorkItemCard({
   onDragStart,
   onDragEnd,
   onEdit,
+  onEditFields,
   contextChips,
 }: {
   item: SprintWorkItem
@@ -1091,6 +1220,7 @@ function WorkItemCard({
   onDragStart: (event: ReactDragEvent<HTMLDivElement>) => void
   onDragEnd: () => void
   onEdit: () => void
+  onEditFields?: () => void
   contextChips?: React.ReactNode
 }) {
   const ideLinks = buildIdeLinks(item.branch, project?.localPath, project?.gitHubUrl)
@@ -1277,9 +1407,16 @@ function WorkItemCard({
           )}
 
           {/* Edit button */}
-          <Button size="small" variant="contained" onClick={onEdit}>
-            Edit task
-          </Button>
+          <Stack direction="row" spacing={0.75}>
+            <Button size="small" variant="contained" onClick={onEdit}>
+              Edit status
+            </Button>
+            {onEditFields && (
+              <Button size="small" variant="outlined" onClick={onEditFields}>
+                Edit fields
+              </Button>
+            )}
+          </Stack>
         </Stack>
       </CardContent>
     </Paper>

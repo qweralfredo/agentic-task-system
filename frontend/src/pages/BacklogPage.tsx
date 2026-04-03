@@ -1,4 +1,5 @@
 import AddTaskOutlinedIcon from '@mui/icons-material/AddTaskOutlined'
+import EditIcon from '@mui/icons-material/Edit'
 import {
   Button,
   Card,
@@ -9,7 +10,12 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
   Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   TextField,
   Tooltip,
@@ -21,6 +27,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiClient } from '../api/client'
 import { useProjectContext } from '../context/useProjectContext'
 import { backlogStatusLabels, toNumberStatus } from '../types'
+import type { BacklogItem } from '../types'
 
 function parseCommitIds(value: string): string[] {
   return value
@@ -32,16 +39,60 @@ function parseCommitIds(value: string): string[] {
 export function BacklogPage() {
   const { selectedProjectId, selectedProject, backlog, refreshProjectViews } = useProjectContext()
   const navigate = useNavigate()
+
+  // ── Create modal ───────────────────────────────────────────────────────────
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [storyPoints, setStoryPoints] = useState(3)
   const [priority, setPriority] = useState(1)
   const [isCreateModalOpen, setCreateModalOpen] = useState(false)
+
+  // ── Edit modal ─────────────────────────────────────────────────────────────
+  const [editingItem, setEditingItem] = useState<BacklogItem | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editStoryPoints, setEditStoryPoints] = useState(3)
+  const [editPriority, setEditPriority] = useState(1)
+  const [editStatus, setEditStatus] = useState(0)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+
+  // ── Context modal ──────────────────────────────────────────────────────────
   const [contextItemId, setContextItemId] = useState('')
   const [contextTags, setContextTags] = useState('')
   const [contextWikiRefs, setContextWikiRefs] = useState('')
   const [contextConstraints, setContextConstraints] = useState('')
   const [contextCommitIds, setContextCommitIds] = useState('')
+
+  function handleOpenEditModal(item: BacklogItem) {
+    setEditingItem(item)
+    setEditTitle(item.title)
+    setEditDescription(item.description)
+    setEditStoryPoints(item.storyPoints)
+    setEditPriority(item.priority)
+    setEditStatus(toNumberStatus(item.status))
+  }
+
+  function handleCloseEditModal() {
+    setEditingItem(null)
+  }
+
+  async function handleSaveEdit() {
+    if (!editingItem || !selectedProjectId) return
+    setIsSavingEdit(true)
+    try {
+      await apiClient.updateBacklogItem(editingItem.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        storyPoints: editStoryPoints,
+        priority: editPriority,
+        status: editStatus,
+      })
+      setEditingItem(null)
+      await refreshProjectViews(selectedProjectId)
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
 
   function handleOpenContextModal(id: string, tags = '', wikiRefs = '', constraints = '', commitIds: string[] = []) {
     setContextItemId(id)
@@ -126,8 +177,15 @@ export function BacklogPage() {
             <Card key={item.id}>
               <CardContent>
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1}>
-                  <Stack spacing={0.6}>
-                    <Typography variant="subtitle1" fontWeight={700}>{item.title}</Typography>
+                  <Stack spacing={0.6} sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="subtitle1" fontWeight={700}>{item.title}</Typography>
+                      <Tooltip title="Edit this backlog item">
+                        <IconButton size="small" onClick={() => handleOpenEditModal(item)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
                     <Typography color="text.secondary">{item.description}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -179,6 +237,7 @@ export function BacklogPage() {
         )}
       </Stack>
 
+      {/* ── Create modal ──────────────────────────────────────────────────── */}
       <Dialog open={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} fullWidth maxWidth="md">
         <Stack component="form" onSubmit={handleCreateBacklogItem}>
           <DialogTitle>New Story</DialogTitle>
@@ -216,6 +275,70 @@ export function BacklogPage() {
           </DialogActions>
         </Stack>
       </Dialog>
+
+      {/* ── Edit modal ────────────────────────────────────────────────────── */}
+      <Dialog open={Boolean(editingItem)} onClose={handleCloseEditModal} fullWidth maxWidth="md">
+        <DialogTitle>Edit Story</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ mt: 1 }}>
+            <TextField
+              label="Title"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              required
+              fullWidth
+            />
+            <MarkdownField label="Description" value={editDescription} onChange={setEditDescription} required />
+            <Grid container spacing={1.2}>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  type="number"
+                  label="Story points"
+                  value={editStoryPoints}
+                  onChange={(e) => setEditStoryPoints(Number(e.target.value))}
+                  inputProps={{ min: 1 }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  type="number"
+                  label="Priority"
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(Number(e.target.value))}
+                  inputProps={{ min: 1 }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel id="edit-backlog-status-label">Status</InputLabel>
+                  <Select
+                    labelId="edit-backlog-status-label"
+                    label="Status"
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(Number(e.target.value))}
+                  >
+                    <MenuItem value={0}>New</MenuItem>
+                    <MenuItem value={1}>Planned</MenuItem>
+                    <MenuItem value={2}>In Sprint</MenuItem>
+                    <MenuItem value={3}>Done</MenuItem>
+                    <MenuItem value={4}>Blocked</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditModal}>Cancel</Button>
+          <Button variant="contained" onClick={handleSaveEdit} disabled={isSavingEdit}>
+            {isSavingEdit ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Context modal ─────────────────────────────────────────────────── */}
       <Dialog open={Boolean(contextItemId)} onClose={() => setContextItemId('')} fullWidth maxWidth="sm">
         <DialogTitle>Edit Context</DialogTitle>
         <DialogContent>

@@ -1,4 +1,4 @@
-﻿using PandoraTodoList.Api.Domain;
+using PandoraTodoList.Api.Domain;
 
 namespace PandoraTodoList.Api.Contracts;
 
@@ -31,6 +31,26 @@ public record UpdateWorkItemStatusRequest(
 public record AddSubTaskRequest(string Title, string Description, string Assignee = "", string Branch = "", string Tags = "");
 public record UpdateBacklogItemContextRequest(string? Tags, string? WikiRefs, string? Constraints, string[]? CommitIds = null);
 public record UpdateSprintCommitIdsRequest(string[] CommitIds);
+
+// Full-field update requests (edit modals)
+public record UpdateBacklogItemRequest(
+    string? Title,
+    string? Description,
+    int? StoryPoints,
+    int? Priority,
+    BacklogItemStatus? Status);
+
+public record UpdateSprintRequest(
+    string? Name,
+    string? Goal,
+    DateOnly? StartDate,
+    DateOnly? EndDate,
+    SprintStatus? Status);
+
+public record UpdateWorkItemRequest(
+    string? Title,
+    string? Description,
+    string? Tags);
 public record AddReviewRequest(string Type, string Summary, string Notes);
 public record AddWikiPageRequest(string Title, string ContentMarkdown, string Tags, string Category = "General");
 public record AddCheckpointRequest(string Name, string ContextSnapshot, string Decisions, string Risks, string NextActions, string Category = "General");

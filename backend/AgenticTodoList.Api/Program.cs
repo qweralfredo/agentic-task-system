@@ -315,6 +315,55 @@ app.MapDelete("/api/backlog-items/{backlogItemId:guid}", async (Guid backlogItem
     }
 });
 
+// ── Full-field update endpoints (edit modals) ──────────────────────────────
+
+app.MapPatch("/api/backlog-items/{backlogItemId:guid}", async (Guid backlogItemId, UpdateBacklogItemRequest request, AppDbContext db, CancellationToken ct) =>
+{
+    var item = await db.BacklogItems.FirstOrDefaultAsync(b => b.Id == backlogItemId, ct);
+    if (item is null)
+        return Results.NotFound(new { error = "Backlog item not found." });
+
+    if (request.Title is not null) item.Title = request.Title.Trim();
+    if (request.Description is not null) item.Description = request.Description.Trim();
+    if (request.StoryPoints is not null) item.StoryPoints = request.StoryPoints.Value;
+    if (request.Priority is not null) item.Priority = request.Priority.Value;
+    if (request.Status is not null) item.Status = request.Status.Value;
+
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(item);
+});
+
+app.MapPatch("/api/sprints/{sprintId:guid}", async (Guid sprintId, UpdateSprintRequest request, AppDbContext db, CancellationToken ct) =>
+{
+    var sprint = await db.Sprints.FirstOrDefaultAsync(s => s.Id == sprintId, ct);
+    if (sprint is null)
+        return Results.NotFound(new { error = "Sprint not found." });
+
+    if (request.Name is not null) sprint.Name = request.Name.Trim();
+    if (request.Goal is not null) sprint.Goal = request.Goal.Trim();
+    if (request.StartDate is not null) sprint.StartDate = request.StartDate.Value;
+    if (request.EndDate is not null) sprint.EndDate = request.EndDate.Value;
+    if (request.Status is not null) sprint.Status = request.Status.Value;
+
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { sprint.Id, sprint.Name, sprint.Goal, sprint.StartDate, sprint.EndDate, sprint.Status });
+});
+
+app.MapPatch("/api/work-items/{workItemId:guid}", async (Guid workItemId, UpdateWorkItemRequest request, AppDbContext db, CancellationToken ct) =>
+{
+    var item = await db.WorkItems.FirstOrDefaultAsync(w => w.Id == workItemId, ct);
+    if (item is null)
+        return Results.NotFound(new { error = "Work item not found." });
+
+    if (request.Title is not null) item.Title = request.Title.Trim();
+    if (request.Description is not null) item.Description = request.Description.Trim();
+    if (request.Tags is not null) item.Tags = request.Tags.Trim();
+    item.UpdatedAt = DateTimeOffset.UtcNow;
+
+    await db.SaveChangesAsync(ct);
+    return Results.Ok(new { item.Id, item.Title, item.Description, item.Tags, item.UpdatedAt });
+});
+
 app.MapPatch("/api/sprints/{sprintId:guid}/commits", async (Guid sprintId, UpdateSprintCommitIdsRequest request, ScrumService service, CancellationToken ct) =>
 {
     try

@@ -138,4 +138,28 @@ export const apiClient = {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
+  updateBacklogItem: (
+    backlogItemId: string,
+    payload: { title?: string; description?: string; storyPoints?: number; priority?: number; status?: number },
+  ) =>
+    request(`/api/backlog-items/${backlogItemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  updateSprint: (
+    sprintId: string,
+    payload: { name?: string; goal?: string; startDate?: string; endDate?: string; status?: number },
+  ) =>
+    request(`/api/sprints/${sprintId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  updateWorkItem: (
+    workItemId: string,
+    payload: { title?: string; description?: string; tags?: string },
+  ) =>
+    request(`/api/work-items/${workItemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
 }
