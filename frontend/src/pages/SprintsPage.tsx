@@ -36,6 +36,62 @@ function parseCommitIds(value: string): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Generates dynamic deep-link buttons for VSCode/Antigravity based on
+ * project config (localPath, gitHubUrl) + task branch. Nothing is stored
+ * in the database — links are computed at render time.
+ */
+function buildIdeLinks(
+  branch: string | undefined,
+  localPath: string | undefined,
+  gitHubUrl: string | undefined,
+): { label: string; href: string; color: string }[] {
+  const links: { label: string; href: string; color: string }[] = []
+
+  if (localPath) {
+    // Normalize Windows backslashes → forward slashes for the URI
+    const normalized = localPath.replace(/\\/g, '/')
+    const fileUri = normalized.startsWith('/') ? `file://${normalized}` : `file:///${normalized}`
+
+    if (branch) {
+      // Standard file URI opens the repository in the IDE
+      const params = new URLSearchParams()
+      if (branch) {
+        params.set('ref', branch)
+      }
+
+      // Adding the ref query parameter in case a specific extension hooks into it,
+      // but primarily we just open the folder.
+      links.push({
+        label: '⎇ VSCode',
+        href: `vscode://file/${normalized}?${params.toString()}`,
+        color: '#0078d4',
+      })
+      links.push({
+        label: '⎇ Antigravity',
+        href: `antigravity://file/${normalized}?${params.toString()}`,
+        color: '#6f42c1',
+      })
+    } else {
+      // Fall back to just opening the folder
+      links.push({ label: '📂 VSCode', href: `vscode://file/${normalized}`, color: '#0078d4' })
+      links.push({ label: '📂 Antigravity', href: `antigravity://file/${normalized}`, color: '#6f42c1' })
+    }
+  }
+
+  if (gitHubUrl && branch) {
+    // Strip trailing .git suffix
+    const repoUrl = gitHubUrl.replace(/\.git$/, '')
+    links.push({
+      label: '🐙 GitHub',
+      href: `${repoUrl}/tree/${encodeURIComponent(branch)}`,
+      color: '#24292f',
+    })
+  }
+
+  return links
+}
+
 function stringifyCommitIds(commitIds?: string[]): string {
   return (commitIds ?? []).join(', ')
 }
@@ -659,6 +715,7 @@ export function SprintsPage() {
                 <Grid key={item.id} size={{ xs: 12, md: 6, xl: 4 }}>
                   <WorkItemCard
                     item={item}
+                    project={selectedProject}
                     priority={getWorkItemPriority(item)}
                     isDragging={false}
                     showDragHandle={false}
@@ -735,6 +792,7 @@ export function SprintsPage() {
                         <WorkItemCard
                           key={item.id}
                           item={item}
+                          project={selectedProject}
                           priority={getWorkItemPriority(item)}
                           isDragging={draggedWorkItemId === item.id}
                           feedbackExpanded={expandedFeedbackIds.has(item.id)}
@@ -1010,6 +1068,7 @@ import type { SprintWorkItem, WorkItemFeedback } from '../types'
 
 function WorkItemCard({
   item,
+  project,
   priority,
   isDragging,
   showDragHandle = true,
@@ -1022,6 +1081,7 @@ function WorkItemCard({
   contextChips,
 }: {
   item: SprintWorkItem
+  project?: import('../types').Project | null
   priority: number | undefined
   isDragging: boolean
   showDragHandle?: boolean
@@ -1033,6 +1093,7 @@ function WorkItemCard({
   onEdit: () => void
   contextChips?: React.ReactNode
 }) {
+  const ideLinks = buildIdeLinks(item.branch, project?.localPath, project?.gitHubUrl)
   const statusNum = typeof item.status === 'number' ? item.status : Number(item.status)
   const borderColor = statusBorderColor[statusNum] ?? '#2f78c5'
   const lastActivity = item.updatedAt ?? item.createdAt
@@ -1110,11 +1171,41 @@ function WorkItemCard({
             </Stack>
           )}
 
-          {/* Branch */}
+          {/* Branch + IDE deep-links (computed dynamically from project config) */}
           {item.branch && (
-            <Typography variant="caption" sx={{ color: '#1565c0', fontFamily: 'monospace' }}>
-              ⎇ {item.branch}
-            </Typography>
+            <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+              <Typography variant="caption" sx={{ color: '#1565c0', fontFamily: 'monospace', mr: 0.5 }}>
+                ⎇ {item.branch}
+              </Typography>
+              {ideLinks.map((link) => (
+                <Tooltip key={link.href} title={link.href}>
+                  <Box
+                    component="a"
+                    href={link.href}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      border: `1px solid ${link.color}22`,
+                      bgcolor: `${link.color}11`,
+                      color: link.color,
+                      textDecoration: 'none',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: `${link.color}22` },
+                      transition: 'background-color 120ms ease',
+                    }}
+                  >
+                    {link.label}
+                  </Box>
+                </Tooltip>
+              ))}
+            </Stack>
           )}
 
           {item.commitIds && item.commitIds.length > 0 && (

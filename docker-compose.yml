@@ -5,6 +5,7 @@ services:
   postgres:
     image: postgres:17-alpine
     container_name: pandora-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: pandora_todo_list
       POSTGRES_USER: pandora
@@ -25,6 +26,7 @@ services:
     build:
       context: ./backend/AgenticTodoList.Api
     container_name: pandora-api
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
@@ -43,6 +45,7 @@ services:
       args:
         VITE_API_BASE_URL: http://localhost:8480
     container_name: pandora-frontend
+    restart: unless-stopped
     depends_on:
       - api
     ports:
@@ -80,6 +83,7 @@ services:
     build:
       context: ./mcp-server-python
     container_name: pandora-mcp
+    restart: unless-stopped
     depends_on:
       - api
     environment:
@@ -97,6 +101,7 @@ services:
   superset:
     image: apache/superset:latest
     container_name: pandora-superset
+    restart: unless-stopped
     environment:
       SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-a_very_secret_and_secure_key_12345}
       SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://pandora:pandora@postgres:5432/pandora_todo_list
