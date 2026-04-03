@@ -122,6 +122,15 @@ def resource_about() -> str:
                 "pandora://projects/{project_id}/tasks/triage",
                 "pandora://projects/{project_id}/knowledge",
             ],
+            "writeTools": {
+                "projects": ["project_create", "project_list", "project_config_update", "project_delete"],
+                "backlog": ["backlog_add", "backlog_list", "backlog_context_update", "backlog_item_update"],
+                "sprints": ["sprint_create", "sprint_update"],
+                "workItems": ["workitem_list", "workitem_update", "workitem_add_subtask", "work_item_fields_update"],
+                "knowledge": ["wiki_add", "wiki_list", "documentation_add", "documentation_list",
+                              "knowledge_checkpoint", "checkpoint_list", "knowledge_list",
+                              "get_modification_impact"],
+            },
         }
     )
 
@@ -517,6 +526,130 @@ def backlog_context_update(
     return _request("PATCH", f"/api/backlog-items/{backlog_item_id}/context", payload=payload)
 
 
+_BACKLOG_ITEM_STATUS_ALIASES = {
+    "0": 0, "new": 0,
+    "1": 1, "planned": 1,
+    "2": 2, "in_sprint": 2, "in-sprint": 2,
+    "3": 3, "done": 3, "completed": 3,
+    "4": 4, "blocked": 4,
+}
+
+_SPRINT_STATUS_ALIASES = {
+    "0": 0, "planned": 0,
+    "1": 1, "active": 1,
+    "2": 2, "closed": 2, "done": 2,
+}
+
+
+@mcp.tool(name="backlog_item_update")
+def backlog_item_update(
+    backlog_item_id: str,
+    title: str | None = None,
+    description: str | None = None,
+    story_points: int | None = None,
+    priority: int | None = None,
+    status: str | None = None,
+) -> dict[str, Any]:
+    """Update core fields of a backlog item (partial update — only provided fields are changed).
+
+    status — string label or integer:
+      new / 0       → New (not yet planned)
+      planned / 1   → Planned
+      in_sprint / 2 → In Sprint
+      done / 3      → Done
+      blocked / 4   → Blocked
+
+    priority — integer: 1=low ... 5=critical
+    story_points — positive integer (Fibonacci recommended: 1,2,3,5,8,13)
+    """
+    payload: dict[str, Any] = {}
+    if title is not None:
+        payload["title"] = title.strip()
+    if description is not None:
+        payload["description"] = description.strip()
+    if story_points is not None:
+        payload["storyPoints"] = story_points
+    if priority is not None:
+        payload["priority"] = priority
+    if status is not None:
+        key = str(status).strip().lower()
+        if key not in _BACKLOG_ITEM_STATUS_ALIASES:
+            raise ApiError(
+                f"Invalid backlog item status '{status}'. "
+                "Valid labels: new, planned, in_sprint, done, blocked (or integer 0-4)."
+            )
+        payload["status"] = _BACKLOG_ITEM_STATUS_ALIASES[key]
+    if not payload:
+        raise ApiError("At least one field must be provided (title, description, story_points, priority or status).")
+    return _request("PATCH", f"/api/backlog-items/{backlog_item_id}", payload=payload)
+
+
+@mcp.tool(name="sprint_update")
+def sprint_update(
+    sprint_id: str,
+    name: str | None = None,
+    goal: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    status: str | None = None,
+) -> dict[str, Any]:
+    """Update core fields of a sprint (partial update — only provided fields are changed).
+
+    status — string label or integer:
+      planned / 0 → Planned
+      active / 1  → Active
+      closed / 2  → Closed
+
+    start_date / end_date — ISO 8601 format: YYYY-MM-DD
+    """
+    payload: dict[str, Any] = {}
+    if name is not None:
+        payload["name"] = name.strip()
+    if goal is not None:
+        payload["goal"] = goal.strip()
+    if start_date is not None:
+        payload["startDate"] = start_date
+    if end_date is not None:
+        payload["endDate"] = end_date
+    if status is not None:
+        key = str(status).strip().lower()
+        if key not in _SPRINT_STATUS_ALIASES:
+            raise ApiError(
+                f"Invalid sprint status '{status}'. "
+                "Valid labels: planned, active, closed (or integer 0-2)."
+            )
+        payload["status"] = _SPRINT_STATUS_ALIASES[key]
+    if not payload:
+        raise ApiError("At least one field must be provided (name, goal, start_date, end_date or status).")
+    return _request("PATCH", f"/api/sprints/{sprint_id}", payload=payload)
+
+
+@mcp.tool(name="work_item_fields_update")
+def work_item_fields_update(
+    work_item_id: str,
+    title: str | None = None,
+    description: str | None = None,
+    tags: str | None = None,
+) -> dict[str, Any]:
+    """Update title, description and/or tags of a work item (partial update).
+
+    This is separate from workitem_update (which handles status/assignee/tokens).
+    Use this tool when you need to correct or enrich the work item's content fields.
+
+    tags — comma-separated labels (e.g. 'auth,backend,performance')
+    """
+    payload: dict[str, Any] = {}
+    if title is not None:
+        payload["title"] = title.strip()
+    if description is not None:
+        payload["description"] = description.strip()
+    if tags is not None:
+        payload["tags"] = tags.strip()
+    if not payload:
+        raise ApiError("At least one field must be provided (title, description or tags).")
+    return _request("PATCH", f"/api/work-items/{work_item_id}", payload=payload)
+
+
 @mcp.tool(name="knowledge_checkpoint")
 def knowledge_checkpoint(
     project_id: str,
@@ -759,9 +892,12 @@ def pandora_resources_guide(project_id: str = "<project-id>") -> str:
         "- MCP: backlog_list, backlog_add\n"
         "- API real: GET/POST /api/projects/{project_id}/backlog\n\n"
         "3) Sprints (/sprints):\n"
-        "- Operacoes: criar sprint com backlog_item_ids, listar work items por sprint, mover status e atribuir responsavel.\n"
-        "- MCP: sprint_create, workitem_list, workitem_update\n"
-        "- API real: POST /api/projects/{project_id}/sprints, POST /api/work-items/{work_item_id}/status\n\n"
+        "- Operacoes: criar sprint, atualizar sprint (nome/goal/datas/status), listar work items, mover status, atribuir responsavel, editar campos de work item.\n"
+        "- MCP: sprint_create, sprint_update, workitem_list, workitem_update, work_item_fields_update\n"
+        "- API real: POST /api/projects/{project_id}/sprints\n"
+        "         PATCH /api/sprints/{sprint_id}\n"
+        "         POST  /api/work-items/{work_item_id}/status\n"
+        "         PATCH /api/work-items/{work_item_id}\n\n"
         "4) Knowledge (/knowledge):\n"
         "- Operacoes na UI: wiki, checkpoints, documentacao, visao por categoria.\n"
         "- MCP Tools: knowledge_list, wiki_add, wiki_list, documentation_add, documentation_list, knowledge_checkpoint, checkpoint_list.\n"
@@ -771,13 +907,19 @@ def pandora_resources_guide(project_id: str = "<project-id>") -> str:
         "  - POST /api/projects/{project_id}/wiki\n"
         "  - POST /api/projects/{project_id}/documentation\n"
         "  - POST /api/projects/{project_id}/checkpoints\n\n"
-        "5) Projetos (seletor global no layout):\n"
+        "5) Backlog (/backlog):\n"
+        "- Operacoes: listar, criar e ATUALIZAR backlog item (titular/descricao/story_points/prioridade/status). Editar contexto (tags/wiki_refs/constraints).\n"
+        "- MCP: backlog_list, backlog_add, backlog_item_update, backlog_context_update\n"
+        "- API real: GET/POST /api/projects/{project_id}/backlog\n"
+        "         PATCH /api/backlog-items/{backlog_item_id}\n"
+        "         PATCH /api/backlog-items/{backlog_item_id}/context\n\n"
+        "6) Projetos (seletor global no layout):\n"
         "- Operacoes: criar, listar ativos, arquivar, configurar ambiente (GitHub, local path, stack).\n"
         "- MCP: project_create, project_list, project_delete, project_config_update\n"
         "- Resource config: pandora://projects/{project_id}/config\n"
         "- API real: GET/POST /api/projects, DELETE /api/projects/{project_id}, PATCH /api/projects/{project_id}/config\n\n"
         "Fluxo recomendado objetivo:\n"
-        "project_create -> project_config_update (github/path/stack) -> backlog_add/list -> sprint_create -> workitem_list/update -> knowledge_checkpoint -> validacao dashboard/knowledge via API.\n"
+        "project_create -> project_config_update -> backlog_add -> backlog_item_update (se precisar corrigir) -> sprint_create -> sprint_update (se precisar ajustar) -> workitem_list -> workitem_update (status/assignee) -> work_item_fields_update (titulo/desc/tags) -> knowledge_checkpoint.\n"
         f"Contexto sugerido para execucao agora: project_id='{project_id}'."
     )
 
@@ -834,11 +976,14 @@ def pandora_context_first_execute(
         f"- pandora://projects/{project_id}/tasks/overview (visao geral)\n"
         f"- pandora://projects/{project_id}/tasks/triage   (revisao/bloqueios)\n\n"
         "### Tools de Escrita neste Fluxo\n"
-        "- workitem_update       (status, branch, tokens, feedback)\n"
-        "- workitem_add_subtask  (sub-tarefas recursivas)\n"
-        "- backlog_context_update (tags, wiki_refs, constraints)\n"
-        "- wiki_add              (documentar decisoes)\n"
-        "- knowledge_checkpoint  (salvar contexto ao final de epic/sprint)\n"
+        "- workitem_update          (status, branch, tokens, feedback)\n"
+        "- work_item_fields_update  (title, description, tags — correcao de conteudo)\n"
+        "- sprint_update            (name, goal, start/end date, status)\n"
+        "- backlog_item_update      (title, description, story_points, priority, status)\n"
+        "- workitem_add_subtask     (sub-tarefas recursivas)\n"
+        "- backlog_context_update   (tags, wiki_refs, constraints)\n"
+        "- wiki_add                 (documentar decisoes)\n"
+        "- knowledge_checkpoint     (salvar contexto ao final de epic/sprint)\n"
     )
 
 
