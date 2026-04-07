@@ -1,4 +1,4 @@
-# Wikis Pandora — Pandora Todo List
+# Wikis Pandora — SDD Task Manager
 
 Este diretório contém **páginas de wiki** alinhadas ao hub de conhecimento do Pandora (wiki por projeto, decisões técnicas e onboarding de agentes). Use o conteúdo como base para criar ou sincronizar páginas via MCP (`wiki_add`) no projeto correspondente no Pandora.
 

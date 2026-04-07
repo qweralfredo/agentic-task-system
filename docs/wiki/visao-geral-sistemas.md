@@ -1,6 +1,6 @@
 # Sistemas — visão geral
 
-O repositório **Pandora Todo List** agrupa vários subsistemas que, juntos, formam uma plataforma **humano + agente** para Scrum, conhecimento e observabilidade opcional.
+O repositório **Pandora SDD Task Manager** agrupa vários subsistemas que, juntos, formam uma plataforma **humano + agente** para Spec-Driven Development, Scrum, conhecimento e observabilidade opcional.
 
 ## Diagrama lógico
 
@@ -60,4 +60,4 @@ Ativa serviços adicionais (MySQL do lake, DevLake, Config UI, Grafana, coletor)
 ## Decisão de fronteiras
 
 - O **núcleo operacional** (tarefas, sprints, wiki) vive na API + Postgres; o MCP apenas **proxy** autenticado pela rede interna do compose.
-- O **Code Agent** não é obrigatório para usar o Pandora Todo List; serve experimentação local com modelos via Ollama.
+- O **Code Agent** não é obrigatório para usar o Pandora SDD Task Manager; serve experimentação local com modelos via Ollama.

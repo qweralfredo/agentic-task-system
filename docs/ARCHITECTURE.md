@@ -1,10 +1,10 @@
-# Arquitetura do Pandora Todo List
+# Arquitetura do Pandora — SDD Task Manager
 
 ## Objetivo
 
-Disponibilizar uma plataforma onde humanos e agentes de IA compartilham contexto operacional do ciclo de software (Scrum), com dados versionaveis, rastreaveis e persistentes.
+Disponibilizar uma plataforma (Spec-Driven Development Task Manager) onde humanos e agentes de IA compartilham contexto operacional do ciclo de software (Scrum/SDD), com dados versionados, rastreáveis e persistentes. A especificação (spec) serve como a fonte da verdade para a geração de código.
 
-## Contexto para IA (Knowledge-first)
+## Contexto para IA (Spec-first & Knowledge-first)
 
 Cada projeto possui:
 - Wiki pages: conhecimento acumulado estruturado
@@ -12,8 +12,8 @@ Cada projeto possui:
 - Agent runs: historico de execucoes para auditoria e replay de aprendizado
 
 Esses artefatos permitem:
-- onboarding acelerado de agentes
-- retomada de contexto sem perda de informacao
+- onboarding acelerado de agentes (via Memory Bank)
+- retomada de contexto sem perda de informacao (Spec-anchored)
 - checkpoints para comparar decisoes tecnicas e riscos
 
 ## Entidades principais
@@ -60,7 +60,7 @@ Esses artefatos permitem:
 8. Registrar review
 9. Atualizar wiki/checkpoints com aprendizados
 
-## Fluxo do Pandora Todo List via MCP (Python SDK oficial)
+## Fluxo do Pandora via MCP (Spec-Driven Workflow)
 
 1. Agente conecta no servidor `mcp-server-python/server.py` (stdio)
 2. Invoca prompt `pandora_context_first_execute` para workflow estruturado

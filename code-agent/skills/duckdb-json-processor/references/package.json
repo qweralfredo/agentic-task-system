@@ -1,0 +1,40 @@
+{
+  "name": "duckdb-json-processor",
+  "version": "1.0.0",
+  "description": "DuckDB JSON processing utilities for MCP and Pandora API payloads",
+  "type": "module",
+  "main": "duckdb_utilities.js",
+  "exports": {
+    ".": "./duckdb_utilities.js"
+  },
+  "scripts": {
+    "test": "node --test tests/**/*.test.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "duckdb",
+    "json",
+    "mcp",
+    "pandora",
+    "analytics",
+    "sql"
+  ],
+  "author": "Your Team",
+  "license": "MIT",
+  "dependencies": {
+    "@duckdb/wasm": "^1.28.0",
+    "duckdb": "^1.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0",
+    "jest": "^29.7.0"
+  },
+  "optionalDependencies": {
+    "apache-arrow": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

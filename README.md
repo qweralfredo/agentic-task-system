@@ -1,17 +1,17 @@
-﻿# Pandora Todo List — Agentic Task System
+# Pandora — Spec-Driven Development (SDD) Task Manager
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![MCP Python Server](https://img.shields.io/badge/MCP-Python%20FastMCP-3776AB?style=for-the-badge&logo=python&logoColor=white)](mcp-server-python/README.md)
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](backend/AgenticTodoList.Api)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](frontend)
 
-An open-source, full-stack **Agentic Task System** designed for **human + AI collaboration**. Built around the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), it integrates natively with agentic environments such as VS Code Copilot, enabling AI agents to create sprints, manage backlogs, and track work items — all in real time.
+An open-source, full-stack **Spec-Driven Development (SDD) Task Manager** designed for **human + AI collaboration**. Built around the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), it integrates natively with agentic environments such as VS Code Copilot and tools like Cline, Roo, Tessl, or Kiro. It enables your AI agents to treat specs as code, creating sprints, managing backlogs, and tracking work items — all in real time, supporting a true spec-first and spec-anchored workflow.
 
 - **Backend:** .NET 10 Web API with PostgreSQL (EF Core)
 - **Frontend:** React 19 + TypeScript (Vite + MUI)
-- **Agentic protocol:** Python MCP server (official FastMCP SDK) for integration with agentic apps and VS Code
-- **Methodology:** Full Scrum structure — projects, backlog, sprints, tasks, reviews
-- **Knowledge hub:** wiki pages, context checkpoints, agentic run history
+- **Agentic protocol:** Python MCP server (official FastMCP SDK) for seamless AI integration
+- **Methodology:** Spec-Driven Development (SDD) & Scrum — projects, backlog, sprints, tasks, reviews
+- **Knowledge hub:** Living specifications (spec-as-source), context memory banks, agentic run history
 - **Operations:** Docker Compose with local disk persistence and backup scripts
 
 ---
@@ -79,6 +79,14 @@ ops/postgres/backups/                # Backup files generated on the host
 ops/scripts/                         # PowerShell backup/restore scripts
 docker-compose.yml                   # Full stack definition
 ```
+
+---
+
+## What is Spec-Driven Development (SDD)?
+
+Spec-driven development (SDD) is a modern approach where specifications ("specs") describe intent in structured, behavior-oriented language, becoming the primary artifact. Agents and AI coding assistants rely on these specs to generate code. 
+
+Pandora is an SDD platform acting as a robust **Memory Bank** and Context Manager. Whether you aim for spec-first, spec-anchored, or spec-as-source patterns, Pandora ensures you have semantic tracking of all living requirements and design documents before writing code with AI.
 
 ---
 

@@ -95,11 +95,11 @@ _STATUS_LABELS = {0: "Todo", 1: "InProgress", 2: "Review", 3: "Done", 4: "Blocke
 
 @mcp.resource("pandora://about")
 def resource_about() -> str:
-    """Describe MCP resources available for the Pandora todo workflow."""
+    """Describe MCP resources available for the Pandora SDD workflow."""
     return _json_resource(
         {
             "name": "pandora-todo-list-mcp",
-            "purpose": "Read-only context resources for projects, backlog, sprints, work items and knowledge.",
+            "purpose": "Read-only context resources for projects, backlog, sprints, work items and knowledge (SDD Spec context).",
             "notes": [
                 "Resources are read-only context for agents.",
                 "Use tools for write operations.",

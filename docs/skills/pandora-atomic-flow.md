@@ -105,22 +105,35 @@ workitem_update(
 )
 ```
 
-### 2.3 Hierarquia Git
+### 2.3 Hierarquia Git — Backlog Branching Model
 
 ```text
 main
   └── develop
-        ├── task/{subtask-id-1}   ← merge → develop → delete
-        ├── task/{subtask-id-2}   ← merge → develop → delete
-        ├── task/{subtask-id-3}   ← merge → develop → delete
-        └── task/{subtask-id-n}
+        ├── backlog/{backlog-id-1}      ← criado a partir de develop
+        │     ├── task/{subtask-id-1}   ← merge → backlog/{backlog-id-1}
+        │     ├── task/{subtask-id-2}   ← merge → backlog/{backlog-id-1}
+        │     └── task/{subtask-id-n}
+        │     ↓ [ao concluir backlog 1]
+        │     merge → develop (--no-ff) + DELETE
+        │
+        ├── backlog/{backlog-id-2}      ← criado a partir de develop (SEMPRE!)
+        │     ├── task/{subtask-id-n+1} ← merge → backlog/{backlog-id-2}
+        │     └── ...
+        │     ↓ [ao concluir backlog 2]
+        │     merge → develop (--no-ff) + DELETE
+        │
+        └── backlog/{backlog-id-n}
 ```
 
 **Invariantes do git flow:**
 
 - Nunca commitar diretamente em `main` ou `develop`
-- A branch efêmera sempre parte de `develop` (ou `mainBranch` do projeto)
-- Branch deletada obrigatoriamente após o merge
+- **Cada backlog recebe sua própria branch:** `backlog/{backlog-id}` criada **a partir de develop**
+- Subtasks são mergeadas **na branch do backlog pai**, não em develop
+- **Ao concluir um backlog:** fazer merge de `backlog/{id}` → `develop` com `--no-ff`
+- **Próximo backlog:** sempre criado a partir de `develop` (REGRA OBRIGATÓRIA)
+- Branches deletadas obrigatoriamente após o merge
 - `branch` e `feedback` sempre registrados no `workitem_update`
 
 ---
@@ -141,25 +154,73 @@ main
     ├── 2. Aprovação do Usuário
     │     └── Apresentar plano → aguardar confirmação
     │
-    ├── 3. Registro no Pandora (MCP)
-    │     ├── backlog_add          × 10C
-    │     ├── backlog_context_update (tags: atomic-flow, C{n})
-    │     ├── sprint_create        × 7C por backlog
+    ├── 3. Criar Primeira Branch de Backlog (OBRIGATÓRIO)
+    │     ├── git checkout develop
+    │     ├── git pull (sincronizar com remoto)
+    │     ├── git checkout -b backlog/{backlog-id-1}
+    │     └── Avançar para passo 4
+    │
+    ├── 4. Registro no Pandora (MCP) — Backlog 1
+    │     ├── backlog_add          × 1
+    │     ├── backlog_context_update (branch: backlog/{backlog-id-1})
+    │     ├── sprint_create        × 7C para este backlog
     │     ├── workitem_update      (status=todo) × 3C por sprint
     │     └── workitem_add_subtask × 4C por task
     │
-    ├── 4. Execução Atômica (/pandora-execute por subtask)
-    │     ├── git checkout -b task/{id}
+    ├── 5. Execução Atômica (/pandora-execute por subtask)
+    │     ├── git checkout -b task/{id} (a partir de backlog/{backlog-id})
     │     ├── implementação atômica (escopo único)
-    │     ├── git commit + merge → develop
+    │     ├── git commit + merge → backlog/{backlog-id}
     │     ├── git branch -d task/{id}
     │     └── workitem_update(status=done)
     │
-    ├── 5. Checkpoint por Sprint (/pandora-checkpoint)
-    │     └── knowledge_checkpoint ao fechar cada sprint
+    ├── 6. Checkpoint por Sprint (/pandora-checkpoint)
+    │     └── knowledge_checkpoint ao fechar cada sprint (mesmo branch: backlog/{id})
     │
-    └── 6. Conclusão (/pandora-done)
+    ├── 7. Conclusão de Backlog — MERGE PARA DEVELOP
+    │     ├── Verificar que TODAS as sprints do backlog estão done
+    │     ├── git checkout develop
+    │     ├── git pull (sincronizar com remoto antes de merge)
+    │     ├── git merge backlog/{backlog-id-1} --no-ff
+    │     ├── Resolver conflicts (se houver)
+    │     ├── git push
+    │     ├── git branch -d backlog/{backlog-id-1}
+    │     ├── workitem_update(status=done) para backlog
+    │     └── Criar knowledge_checkpoint final do backlog
+    │
+    ├── 8. Próximo Backlog (SE HOUVER) — SEMPRE A PARTIR DE DEVELOP
+    │     ├── git checkout develop (OBRIGATÓRIO!)
+    │     ├── git pull (sincronizar antes de criar nova branch)
+    │     ├── git checkout -b backlog/{backlog-id-2}  ← criada de develop
+    │     └── Retornar ao passo 4 (Registro no Pandora)
+    │
+    └── 9. Conclusão Final (/pandora-done)
           └── Checklist final ao fechar todos os backlogs
+```
+
+**FLUXO CRÍTICO DE BRANCHES — DIAGRAMA DETALHADO:**
+
+```
+[1] Criar primeira backlog a partir de develop
+    git checkout develop
+    git checkout -b backlog/001
+         ↓
+[2] Executar sprints (subtasks) dentro de backlog/001
+    Cada subtask → task/{id} → merge → backlog/001
+         ↓
+[3] Ao terminar backlog/001: MERGE PARA DEVELOP
+    git merge backlog/001 --no-ff
+    git push
+    DELETE backlog/001
+         ↓
+[4] OBRIGATÓRIO: Sincronizar com develop
+    git checkout develop
+    git pull  ← sincronizar antes de próxima backlog
+         ↓
+[5] Criar próxima backlog SEMPRE a partir de develop
+    git checkout -b backlog/002  ← criada de develop!
+         ↓
+[6] Repetir ciclo: sprints → merge → delete
 ```
 
 ---
@@ -248,15 +309,73 @@ mcp__local__workitem_add_subtask(
 
 ---
 
-## 7. Regras Inegociáveis
+## 7. Protocolo de Conclusão de Backlog — Merge para Develop
+
+**QUANDO**: Ao concluir a última sprint de um backlog (todas as tasks = done)
+
+**CHECKLIST OBRIGATÓRIO:**
+
+```bash
+# 1. Verificar status no Pandora
+backlog_list(project_id) → confirmar status = "planned" ou "active"
+workitem_list(sprint_id) → confirmar TODAS as tasks = "done"
+
+# 2. Sincronizar branches
+git checkout backlog/{backlog-id}
+git pull origin backlog/{backlog-id}  # atualizar local
+
+# 3. Preparar merge
+git checkout develop
+git pull origin develop  # CRÍTICO: sincronizar antes de merge
+
+# 4. Executar merge com registro
+git merge backlog/{backlog-id} --no-ff -m "merge: conclude backlog/{backlog-id} → develop"
+
+# 5. Resolver conflitos (se houver)
+# Se conflicts aparecerem:
+#   a) git status → listar conflitos
+#   b) Resolver manualmente em cada arquivo
+#   c) git add <conflito-resolvido>
+#   d) git commit (merge commit será criado automaticamente)
+
+# 6. Publicar merge
+git push origin develop
+
+# 7. Limpeza de branches
+git branch -d backlog/{backlog-id}              # local
+git push origin --delete backlog/{backlog-id}   # remoto
+
+# 8. Registrar conclusão no Pandora
+mcp__local__backlog_item_update(
+  backlog_item_id = "<id>",
+  status         = "done",
+  feedback       = "Merged to develop via Atomic Flow"
+)
+
+# 9. Criar knowledge_checkpoint final
+mcp__local__knowledge_checkpoint(
+  name            = "Backlog {id} Complete — Atomic Flow",
+  context_snapshot = "All sprints completed and merged to develop",
+  decisions       = ["Backlog branch strategy", "conflict resolutions"],
+  next_actions    = ["Start next backlog from develop"]
+)
+```
+
+---
+
+## 8. Regras Inegociáveis
 
 1. O plano completo da malha C× deve ser **apresentado e aprovado pelo usuário** antes de qualquer registro
 2. Subtasks devem ter escopo de **arquivo único ou operação única** — sem ambiguidade de responsabilidade
-3. Branches efêmeras **devem ser deletadas** após o merge — sem acúmulo de branches
-4. Nunca estime `tokens_used` — passe `null` ou o valor real de observabilidade
-5. Verificar com `backlog_list` e `workitem_list` antes de criar — evite duplicatas
-6. Ao fechar cada sprint: registrar `knowledge_checkpoint`
-7. Ao concluir todos os backlogs: executar `/pandora-done`
+3. **CADA BACKLOG RECEBE SUA PRÓPRIA BRANCH** — `backlog/{backlog-id}` criada a partir de `develop`
+4. **Ao terminar um backlog:** fazer merge de `backlog/{id}` → `develop` com `--no-ff`
+5. **OBRIGATÓRIO:** Sincronizar com `develop` (`git pull`) antes de criar próximo backlog
+6. **Próximo backlog SEMPRE criado a partir de `develop`** — NUNCA a partir de outra backlog
+7. Branches efêmeras **devem ser deletadas** após o merge — sem acúmulo de branches (local + remoto)
+8. Nunca estime `tokens_used` — passe `null` ou o valor real de observabilidade
+9. Verificar com `backlog_list` e `workitem_list` antes de criar — evite duplicatas
+10. Ao fechar cada sprint: registrar `knowledge_checkpoint`
+11. Ao concluir todos os backlogs: executar `/pandora-done`
 
 ---
 

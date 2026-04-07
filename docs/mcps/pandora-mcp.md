@@ -1,4 +1,4 @@
-# MCP: Pandora Todo List
+# MCP: Pandora SDD Task Manager
 
 > **Type:** Model Context Protocol (MCP) Server  
 > **Protocol:** HTTP Streamable (FastMCP)  
@@ -9,7 +9,7 @@
 
 ## What It Is
 
-The **Pandora MCP Server** is a Python MCP server (FastMCP) that exposes the Pandora Todo List API as tools for AI agents. It enables GitHub Copilot and other agents to:
+The **Pandora MCP Server** is a Python MCP server (FastMCP) that exposes the Pandora SDD Task Manager API as tools for AI agents. It enables GitHub Copilot and other agents to:
 
 - Create and manage projects, backlog items, sprints, and work items
 - Update task status in real time during development

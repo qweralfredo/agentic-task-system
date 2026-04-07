@@ -4,7 +4,7 @@
 
 O diretório `code-agent` é um **projeto isolado** que roda em Node e oferece uma UI inspirada em fluxos tipo Copilot/Claude Code, com **Ollama** para modelos locais e ferramentas restritas a um workspace de runtime.
 
-## Relação com o Pandora Todo List
+## Relação com o Pandora SDD Task Manager
 
 - **Não** é necessário para subir `docker compose` do núcleo (API + frontend + MCP + Postgres).
 - **Não** depende do restante do repositório em runtime; útil para experimentação de agente com skills (`SKILL.md`) e sandbox de ficheiros/comandos.

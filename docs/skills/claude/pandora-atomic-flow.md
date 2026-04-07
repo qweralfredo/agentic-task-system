@@ -137,11 +137,11 @@ Cada subtask recebe sua própria branch de vida curta:
 branch: task/{work_item_id}
 ```
 
-### Ciclo Completo por Subtask
+### Ciclo Completo por Subtask (Dentro de um Backlog)
 
 ```bash
-# 1. Isolamento
-git checkout develop
+# 1. Isolamento — criar a partir de backlog/{backlog-id}
+git checkout backlog/{backlog-id}
 git checkout -b task/{id}
 
 # 2. Implementação atômica (escopo único)
@@ -151,8 +151,8 @@ git checkout -b task/{id}
 git add <arquivo(s) do escopo>
 git commit -m "feat(task/{id}): <descrição atômica>"
 
-# 4. Merge de volta
-git checkout develop
+# 4. Merge DE VOLTA PARA O BACKLOG (não para develop!)
+git checkout backlog/{backlog-id}
 git merge task/{id} --no-ff
 git branch -d task/{id}
 
@@ -165,34 +165,67 @@ mcp__local__workitem_update(
 )
 ```
 
-### Hierarquia de Branches
+### Hierarquia de Branches — Backlog Strategy
 
 ```text
 main
   └── develop
-        └── task/{subtask_id_1}    (vida curta)
-        └── task/{subtask_id_2}    (vida curta)
-        └── task/{subtask_id_n}    (vida curta)
+        ├── backlog/{backlog_id_1}    (vida média: 1-2 semanas)
+        │     ├── task/{subtask_id_1} (vida curta) → merge → backlog/{backlog_id_1}
+        │     ├── task/{subtask_id_2} (vida curta) → merge → backlog/{backlog_id_1}
+        │     └── task/{subtask_id_n}
+        │     ↓ [ao concluir backlog 1]
+        │     merge → develop (--no-ff) + DELETE
+        │
+        └── backlog/{backlog_id_2}    ← SEMPRE criado de develop!
+              ├── task/{subtask_id_n+1} → merge → backlog/{backlog_id_2}
+              └── ...
 ```
 
+**Regras de Branches:**
+
 - **Nunca** commite diretamente em `main` ou `develop`
-- **Sempre** crie a branch a partir de `develop` (ou `mainBranch` do projeto)
-- **Sempre** delete a branch efêmera após o merge
+- **Cada backlog:** crie branch `backlog/{backlog-id}` a partir de `develop`
+- **Cada subtask:** crie branch `task/{task-id}` a partir de `backlog/{backlog-id}`
+- **Sempre** delete as branches efêmeras após o merge (local e remoto)
 - **Sempre** registre o `branch` e `feedback` no `workitem_update` ao concluir
+- **AO TERMINAR UM BACKLOG:** fazer merge de `backlog/{id}` → `develop` com `--no-ff`
+- **ANTES DE PRÓXIMO BACKLOG:** sincronizar com `develop` (`git pull`) e criar nova branch a partir dele
 
 ---
 
-## 4. Execução Delegada à Skill Pandora
+## 4. Execução Delegada à Skill Pandora — Ciclo Completo
 
-Para cada subtask, chame `/pandora-execute` (ou `/pandora-done` ao concluir):
-
+### 4.1 Por Subtask
+Para cada subtask, chame `/pandora-execute`:
 ```text
-Para executar uma subtask:
-  → /pandora-execute   # contexto + implementação atômica
-  → /pandora-done      # checklist de conclusão + merge + registro
+/pandora-execute → contexto + implementação atômica
+                → merge task/{id} para backlog/{backlog-id}
+                → workitem_update(status=done)
 ```
 
 Ao concluir **todas as subtasks de uma task**, o pai é marcado `done` automaticamente pelo backend.
+
+### 4.2 Ao Terminar um Backlog (Todas as Sprints = Done)
+Chame `/pandora-done` com protocolo de conclusão:
+```bash
+# 1. Verificar todas as sprints estão done
+# 2. Sincronizar develop: git checkout develop && git pull
+# 3. Fazer merge de backlog/{id} → develop com --no-ff
+# 4. Resolver conflicts se houver
+# 5. git push
+# 6. Deletar backlog/{id} (local + remoto)
+# 7. workitem_update(backlog_item_id, status="done")
+# 8. knowledge_checkpoint final do backlog
+# 9. Preparar próximo backlog (se houver)
+```
+
+### 4.3 Antes de Próximo Backlog (OBRIGATÓRIO)
+```bash
+git checkout develop
+git pull  # sincronizar com remoto
+git checkout -b backlog/{next-backlog-id}  # criar a partir de develop!
+```
 
 ---
 
@@ -221,11 +254,32 @@ mcp__local__knowledge_checkpoint(
 
 ---
 
-## 7. Regras Inegociáveis
+## 7. Regras Inegociáveis — Git Flow com Backlog Strategy
 
+### Planejamento
 - O plano completo (toda a malha C×) deve ser **apresentado e aprovado antes** de qualquer registro
 - Subtasks devem ter escopo de **arquivo único ou operação única**
-- Branches efêmeras devem ser deletadas após o merge — sem acúmulo
 - Nunca estime `tokens_used` — passe `null` ou o valor real de observabilidade
 - Evite duplicatas — verifique com `backlog_list` e `workitem_list` antes de criar
+
+### Branches — OBRIGATÓRIO
+1. **Cada backlog recebe sua própria branch:** `backlog/{backlog-id}` criada a partir de `develop`
+2. **Cada subtask tem sua branch:** `task/{task-id}` criada a partir de `backlog/{backlog-id}`
+3. **Subtasks mergeam para backlog**, não para develop
+4. **Ao terminar backlog:** fazer merge de `backlog/{id}` → `develop` com `--no-ff`
+5. **OBRIGATÓRIO:** Sincronizar com `develop` antes de criar próximo backlog (`git checkout develop && git pull`)
+6. **Próximo backlog SEMPRE criado a partir de `develop`** — NUNCA a partir de outra backlog
+7. Branches deletadas após merge (local **E** remoto): `git branch -d` + `git push origin --delete`
+
+### Checkpoints e Registro
 - Ao finalizar cada sprint, registre um `knowledge_checkpoint`
+- Ao concluir um backlog, criar checkpoint final do backlog
+- Sempre registre `branch` e `feedback` no `workitem_update`
+
+### Conflitos de Merge
+- Se conflitos aparecerem ao fazer merge de backlog → develop:
+  1. `git status` para listar conflitos
+  2. Resolver manualmente em cada arquivo conflitante
+  3. `git add <arquivo-resolvido>`
+  4. Deixar git completar o merge commit automaticamente
+  5. `git push origin develop` após resolução

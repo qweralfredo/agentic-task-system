@@ -1,0 +1,24 @@
+# DuckDB JSON Processor - Python Dependencies
+
+# Core DuckDB functionality
+duckdb>=1.0.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# API clients and utilities
+requests>=2.31.0
+python-dateutil>=2.8.2
+
+# Optional: Performance and optimization
+pyarrow>=14.0.0  # For better Parquet support
+
+# Optional: Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Optional: Development tools
+black>=23.0.0  # Code formatter
+flake8>=6.0.0  # Linter
+mypy>=1.0.0    # Type checker

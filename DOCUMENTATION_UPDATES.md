@@ -1,4 +1,4 @@
-# Documentação — Atualizações v2.1 (Sub-tasks, Branch, Context-First)
+# Pandora SDD Task Manager — Atualizações v2.1 (Sub-tasks, Branch, Context-First, SDD)
 
 Data: 21/03/2026
 

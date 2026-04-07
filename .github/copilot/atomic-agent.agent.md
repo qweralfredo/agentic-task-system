@@ -21,15 +21,29 @@ instructions: |
 
   At maximum complexity (C=3), orchestrate up to 22,680 atomic subtasks.
 
-  ## Execution Protocol
+  ## Execution Protocol — Backlog Branch Strategy
 
-  For each subtask, follow the Ephemeral Branches protocol:
+  ### Per Backlog (Lifecycle: 1-2 weeks)
+  1. **Create backlog branch** from `develop`: `git checkout develop && git pull && git checkout -b backlog/{backlog-id}`
+  2. **Execute all sprints** within this backlog branch
+  3. **Upon completion**: Merge `backlog/{id}` → `develop` with `--no-ff`
+  4. **Cleanup**: Delete backlog branch locally and remotely
 
-  1. **Isolation**: Create short-lived branch `task/{work_item_id}`
+  ### Per Subtask (Lifecycle: hours to days)
+  1. **Isolation**: Create branch `task/{work_item_id}` from `backlog/{backlog-id}`
   2. **Atomic Development**: Implement exclusively within subtask scope
   3. **Self-Healing & Lint**: Automated syntax and unit test validation
   4. **Conventional Commits**: Semantic commit messages (feat, fix, test, refactor)
-  5. **Squash & Merge**: Clean integration into feature branch
+  5. **Merge to Backlog**: Merge `task/{id}` → `backlog/{id}` with `--no-ff`
+  6. **Cleanup**: Delete task branch
+
+  ### Critical Rule: Next Backlog ALWAYS from Develop
+  Before creating the next backlog, ALWAYS:
+  ```bash
+  git checkout develop
+  git pull  # CRITICAL: synchronize before new backlog branch
+  git checkout -b backlog/{next-backlog-id}
+  ```
 
   ## Mandatory Flow
 
@@ -95,9 +109,43 @@ instructions: |
 
   Decompose complex tasks recursively using `workitem_add_subtask`. Parent auto-completes when all children are done.
 
-  ## Branch Tracking
+  ## Branch Tracking & Merge Protocol
 
-  Include `branch` field in `workitem_update` for traceability.
+  ### Per Work Item
+  Include `branch` field in `workitem_update` for traceability:
+  - Backlog branch: `backlog/{backlog-id}`
+  - Task branch: `task/{task-id}` (merged to backlog/{id})
+
+  ### Upon Backlog Completion
+  ```python
+  # 1. Merge backlog to develop
+  git checkout develop
+  git pull
+  git merge backlog/{backlog-id} --no-ff
+  git push origin develop
+  git branch -d backlog/{backlog-id}
+  git push origin --delete backlog/{backlog-id}
+
+  # 2. Update Pandora
+  mcp__local__backlog_item_update(
+    backlog_item_id = "{id}",
+    status         = "done",
+    feedback       = "Merged to develop via Atomic Flow"
+  )
+
+  # 3. Create final checkpoint
+  mcp__local__knowledge_checkpoint(
+    name            = "Backlog {id} Complete — Atomic Flow",
+    context_snapshot = "All sprints merged to develop",
+    decisions       = ["Backlog strategy applied"],
+    next_actions    = ["Start next backlog from develop"]
+  )
+
+  # 4. Before next backlog: ALWAYS sync develop
+  git checkout develop
+  git pull
+  git checkout -b backlog/{next-backlog-id}
+  ```
 
   ## Validation
 
